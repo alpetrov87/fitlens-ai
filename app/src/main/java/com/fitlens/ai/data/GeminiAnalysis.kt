@@ -113,21 +113,60 @@ class GeminiAnalysis(private val keyStore: GeminiApiKeyStore) {
             .put("parts", JSONArray().put(JSONObject().put("text", prompt)))))
             .put("generationConfig", JSONObject().put("temperature", 0.4).put("maxOutputTokens", 800))
             .toString().toRequestBody("application/json".toMediaType())
-        val request = Request.Builder()
-            .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent")
-            .header("x-goog-api-key", apiKey).header("Accept", "application/json")
-            .post(requestBody).build()
+        val models = listAvailableFlashModels(apiKey)
+        for (model in models) {
+            val request = Request.Builder()
+                .url("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent")
+                .header("x-goog-api-key", apiKey).header("Accept", "application/json")
+                .post(requestBody).build()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    if (response.code == 404) return@use
+                    throw geminiError(response.code)
+                }
+                val candidates = JSONObject(response.body?.string().orEmpty()).optJSONArray("candidates") ?: JSONArray()
+                val parts = candidates.optJSONObject(0)?.optJSONObject("content")?.optJSONArray("parts") ?: JSONArray()
+                val text = (0 until parts.length()).mapNotNull { parts.optJSONObject(it)?.optString("text") }
+                    .filter(String::isNotBlank).joinToString("\n").trim()
+                return@withContext text.takeIf(String::isNotBlank) ?: error("Gemini не върна текстов анализ. Опитай отново.")
+            }
+        }
+        error("Google показва Gemini Flash модели за този ключ, но всички върнаха 404. Провери наличните модели в Google AI Studio и опитай отново.")
+    }
+
+    private fun listAvailableFlashModels(apiKey: String): List<String> {
+        val request = Request.Builder().url("https://generativelanguage.googleapis.com/v1beta/models")
+            .header("x-goog-api-key", apiKey).header("Accept", "application/json").get().build()
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) throw IllegalStateException(when (response.code) {
-                400, 403 -> "Google Gemini отказа заявката. Провери API ключа, достъпа до модела и AI Studio настройките."
-                429 -> "Безплатната Gemini квота е изчерпана или ограничена. Изчакай обновяването ѝ или провери актуалните квоти."
-                else -> "Gemini анализът не успя (HTTP ${response.code}). Опитай отново."
-            })
-            val candidates = JSONObject(response.body?.string().orEmpty()).optJSONArray("candidates") ?: JSONArray()
-            val parts = candidates.optJSONObject(0)?.optJSONObject("content")?.optJSONArray("parts") ?: JSONArray()
-            val text = (0 until parts.length()).mapNotNull { parts.optJSONObject(it)?.optString("text") }
-                .filter(String::isNotBlank).joinToString("\n").trim()
-            text.takeIf(String::isNotBlank) ?: error("Gemini не върна текстов анализ. Опитай отново.")
+            if (!response.isSuccessful) throw when (response.code) {
+                400, 401, 403 -> IllegalStateException("Google Gemini не прие ключа или API достъпа (HTTP ${response.code}). Провери ключа и дали Generative Language API е активен.")
+                404 -> IllegalStateException("Google не намери Gemini Models API (404). Провери Google AI Studio проекта и активирай Generative Language API.")
+                429 -> IllegalStateException("Google Gemini ограничи проверката на ключа (429). Изчакай малко и опитай отново.")
+                else -> IllegalStateException("Gemini моделите не могат да бъдат заредени (HTTP ${response.code}).")
+            }
+            val rows = JSONObject(response.body?.string().orEmpty()).optJSONArray("models") ?: JSONArray()
+            val available = (0 until rows.length()).mapNotNull { index ->
+                val row = rows.optJSONObject(index) ?: return@mapNotNull null
+                val name = row.optString("name").removePrefix("models/")
+                val methods = row.optJSONArray("supportedGenerationMethods") ?: JSONArray()
+                val supportsGenerate = (0 until methods.length()).any { methods.optString(it) == "generateContent" }
+                name.takeIf { supportsGenerate && it.startsWith("gemini-") && it.contains("flash", true) &&
+                    !it.contains("preview", true) && !it.contains("experimental", true) &&
+                    !it.contains("image", true) && !it.contains("audio", true) && !it.contains("tts", true) }
+            }.distinct()
+            if (available.isEmpty()) throw IllegalStateException(
+                "Ключът се свърза, но Google не връща Gemini Flash модел с generateContent за този проект/регион. Провери безплатните модели и достъпа в Google AI Studio.",
+            )
+            val preferred = listOf("gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite")
+            return (preferred.filter(available::contains) + available.filterNot(preferred::contains)).take(MAX_MODEL_ATTEMPTS)
         }
     }
+
+    private fun geminiError(code: Int): IllegalStateException = when (code) {
+        400, 401, 403 -> IllegalStateException("Google Gemini отказа заявката (HTTP $code). Провери API ключа и настройките на проекта.")
+        429 -> IllegalStateException("Безплатната Gemini квота е изчерпана или ограничена. Изчакай обновяването ѝ или провери актуалните квоти.")
+        else -> IllegalStateException("Gemini анализът не успя (HTTP $code). Опитай отново.")
+    }
+
+    private companion object { const val MAX_MODEL_ATTEMPTS = 3 }
 }
