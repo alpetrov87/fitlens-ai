@@ -7,8 +7,8 @@ import com.fitlens.ai.data.Dashboard
 import com.fitlens.ai.data.CsvImportRepository
 import com.fitlens.ai.data.CsvImportSource
 import com.fitlens.ai.data.CalendarEvent
-import com.fitlens.ai.data.OpenAiAnalysis
-import com.fitlens.ai.data.OpenAiApiKeyStore
+import com.fitlens.ai.data.GeminiAnalysis
+import com.fitlens.ai.data.GeminiApiKeyStore
 import com.fitlens.ai.data.GarminTrainingHistory
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
@@ -25,8 +25,8 @@ sealed interface DashboardState {
 }
 class DashboardViewModel(
     private val repository: CsvImportRepository,
-    private val openAiKeyStore: OpenAiApiKeyStore,
-    private val openAiAnalysis: OpenAiAnalysis,
+    private val geminiKeyStore: GeminiApiKeyStore,
+    private val geminiAnalysis: GeminiAnalysis,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<DashboardState>(DashboardState.Loading)
     val state = mutableState.asStateFlow()
@@ -36,8 +36,8 @@ class DashboardViewModel(
     val garminConnected = mutableGarminConnected.asStateFlow()
     private val mutableGarminBusy = MutableStateFlow(false)
     val garminBusy = mutableGarminBusy.asStateFlow()
-    private val mutableOpenAiConnected = MutableStateFlow(openAiKeyStore.hasKey())
-    val openAiConnected = mutableOpenAiConnected.asStateFlow()
+    private val mutableAiConnected = MutableStateFlow(geminiKeyStore.hasKey())
+    val aiConnected = mutableAiConnected.asStateFlow()
     private val mutableHistoryBusy = MutableStateFlow(false)
     val historyBusy = mutableHistoryBusy.asStateFlow()
     private val mutableHistoryCount = MutableStateFlow(0)
@@ -80,24 +80,24 @@ class DashboardViewModel(
         mutableGarminConnected.value = false
     }
 
-    fun saveOpenAiKey(value: String) {
+    fun saveGeminiKey(value: String) {
         try {
-            openAiKeyStore.save(value)
-            mutableOpenAiConnected.value = true
-            mutableImportMessage.value = "OpenAI API ключът е запазен криптирано на устройството."
+            geminiKeyStore.save(value)
+            mutableAiConnected.value = true
+            mutableImportMessage.value = "Gemini API ключът е запазен криптирано на устройството."
         } catch (failure: Exception) {
-            mutableImportMessage.value = failure.message ?: "OpenAI ключът не може да бъде запазен."
+            mutableImportMessage.value = failure.message ?: "Gemini ключът не може да бъде запазен."
         }
     }
 
-    fun disconnectOpenAi() {
+    fun disconnectGemini() {
         try {
-            openAiKeyStore.clear()
-            mutableOpenAiConnected.value = false
+            geminiKeyStore.clear()
+            mutableAiConnected.value = false
             mutableAnalysis.value = null
-            mutableImportMessage.value = "OpenAI ключът е изтрит от устройството."
+            mutableImportMessage.value = "Gemini ключът е изтрит от устройството."
         } catch (failure: Exception) {
-            mutableImportMessage.value = failure.message ?: "OpenAI ключът не може да бъде изтрит."
+            mutableImportMessage.value = failure.message ?: "Gemini ключът не може да бъде изтрит."
         }
     }
 
@@ -135,7 +135,7 @@ class DashboardViewModel(
                     )
                 }
                 mutableHistoryCount.value = history.activities.size
-                mutableAnalysis.value = openAiAnalysis.analyze(history.activities, history.recovery, event)
+                mutableAnalysis.value = geminiAnalysis.analyze(history.activities, history.recovery, event)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -191,13 +191,13 @@ class DashboardViewModel(
     }
     class Factory(
         private val repository: CsvImportRepository,
-        private val openAiKeyStore: OpenAiApiKeyStore,
-        private val openAiAnalysis: OpenAiAnalysis,
+        private val geminiKeyStore: GeminiApiKeyStore,
+        private val geminiAnalysis: GeminiAnalysis,
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(DashboardViewModel::class.java))
             @Suppress("UNCHECKED_CAST")
-            return DashboardViewModel(repository, openAiKeyStore, openAiAnalysis) as T
+            return DashboardViewModel(repository, geminiKeyStore, geminiAnalysis) as T
         }
     }
 }

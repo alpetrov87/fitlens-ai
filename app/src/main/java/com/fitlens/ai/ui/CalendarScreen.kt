@@ -1,5 +1,7 @@
 package com.fitlens.ai.ui
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -11,17 +13,20 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.fitlens.ai.data.CalendarEvent
 import com.fitlens.ai.data.EventDraft
+import com.fitlens.ai.data.EventLinkImport
 import java.time.*
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
 internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit) -> Unit,
+    onImportLink: (String, String, (EventLinkImport) -> Unit) -> Unit,
     onDelete: (String) -> Unit, onRetry: () -> Unit) {
     var monthText by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     var selected by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
@@ -105,7 +110,8 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     if (showAdd) EventDialog(selected, state.loading, state.error,
-        onDismiss = { showAdd = false }, onSave = { onAdd(it) { showAdd = false } })
+        onDismiss = { showAdd = false }, onSave = { onAdd(it) { showAdd = false } },
+        onImportLink = { url, imported -> onImportLink(url, selected, imported) })
     deleteEvent?.let { event ->
         AlertDialog(onDismissRequest = { deleteEvent = null }, title = { Text("Изтриване на събитие") },
             text = { Text("Да се изтрие ли „${event.title}“ от календара?") },
@@ -116,6 +122,7 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
 
 @Composable
 private fun EventCard(event: CalendarEvent, enabled: Boolean, onDelete: () -> Unit) {
+    val context = LocalContext.current
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically) {
@@ -125,6 +132,9 @@ private fun EventCard(event: CalendarEvent, enabled: Boolean, onDelete: () -> Un
                 Text("${event.date} · ${event.time.ifBlank { "Цял ден" }}", style = MaterialTheme.typography.bodySmall)
                 Text(sportLabel(event.sport), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 if (event.location.isNotBlank()) Text(event.location, style = MaterialTheme.typography.bodySmall)
+                if (event.sourceUrl.isNotBlank()) TextButton(onClick = {
+                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(event.sourceUrl))) }
+                }, contentPadding = PaddingValues(0.dp)) { Text("Отвори страницата на събитието") }
             }
             IconButton(onClick = onDelete, enabled = enabled) { Icon(Icons.Default.DeleteOutline, contentDescription = "Изтрий ${event.title}") }
         }
@@ -133,11 +143,14 @@ private fun EventCard(event: CalendarEvent, enabled: Boolean, onDelete: () -> Un
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?, onDismiss: () -> Unit, onSave: (EventDraft) -> Unit) {
+private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?, onDismiss: () -> Unit,
+    onSave: (EventDraft) -> Unit, onImportLink: (String, (EventLinkImport) -> Unit) -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     var date by rememberSaveable { mutableStateOf(initialDate) }
     var time by rememberSaveable { mutableStateOf("") }
     var location by rememberSaveable { mutableStateOf("") }
+    var sourceUrl by rememberSaveable { mutableStateOf("") }
+    var linkStatus by remember { mutableStateOf<String?>(null) }
     var sport by rememberSaveable { mutableStateOf("running") }
     var sportsOpen by remember { mutableStateOf(false) }
     var dateOpen by remember { mutableStateOf(false) }
@@ -146,6 +159,26 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
         text = {
             Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(title, { title = it.take(120) }, label = { Text("Име на събитието") }, singleLine = true)
+                OutlinedTextField(sourceUrl, { sourceUrl = it.take(500); linkStatus = null },
+                    label = { Text("Линк към официалната страница (по избор)") }, singleLine = true,
+                    placeholder = { Text("https://…") }, enabled = !busy)
+                Text("При попълване FitLens отваря публичната HTTPS страница от телефона ти. Провери намерените данни преди запис.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = { onImportLink(sourceUrl) { imported ->
+                    title = imported.draft.title
+                    date = imported.draft.date
+                    time = imported.draft.time
+                    sport = imported.draft.sport
+                    location = imported.draft.location
+                    sourceUrl = imported.draft.sourceUrl
+                    linkStatus = if (imported.dateWasFound) "Данните са попълнени. Провери ги преди запис." else
+                        "Намерих името, но не и датата. Провери и попълни останалото ръчно."
+                    error = null
+                } }, enabled = sourceUrl.isNotBlank() && !busy, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.Link, contentDescription = null)
+                    Spacer(Modifier.width(8.dp)); Text(if (busy) "Чета страницата…" else "Попълни от линка")
+                }
+                linkStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }
                 OutlinedButton(onClick = { dateOpen = true }, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.DateRange, contentDescription = null)
                     Spacer(Modifier.width(8.dp)); Text(date)
@@ -168,7 +201,7 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
             }
         },
         confirmButton = { TextButton(enabled = !busy, onClick = {
-            val draft = EventDraft(title, date, time.trim(), sport, location)
+            val draft = EventDraft(title, date, time.trim(), sport, location, sourceUrl.trim())
             val failure = runCatching { draft.validate() }.exceptionOrNull()
             if (failure != null) error = failure.message else { error = null; onSave(draft) }
         }) { Text(if (busy) "Запазване…" else "Запази") } },

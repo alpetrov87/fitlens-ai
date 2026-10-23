@@ -20,31 +20,42 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
-/** The OpenAI API key is kept locally, encrypted with a separate Android Keystore key. */
-class OpenAiApiKeyStore(context: Context) {
-    private val prefs = context.getSharedPreferences("openai_api_key", Context.MODE_PRIVATE)
+/** Stores the user's Gemini API key locally, encrypted with a dedicated Android Keystore key. */
+class GeminiApiKeyStore(context: Context) {
+    private val prefs = context.getSharedPreferences("gemini_api_key", Context.MODE_PRIVATE)
+
+    init {
+        // Clean up the credential from the previous OpenAI-backed app version after the provider switch.
+        runCatching {
+            context.getSharedPreferences("openai_api_key", Context.MODE_PRIVATE)
+                .edit().remove("api_key_aes_gcm_v1").commit()
+            KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+                .takeIf { it.containsAlias("fitlens_openai_api_key_v1") }
+                ?.deleteEntry("fitlens_openai_api_key_v1")
+        }
+    }
 
     @Synchronized fun save(value: String) {
         val key = value.trim()
-        require(key.startsWith("sk-") && key.length in 20..4096) { "Въведи валиден OpenAI API ключ." }
+        require(key.length in 20..512) { "Въведи валиден Gemini API ключ от Google AI Studio." }
         val cipher = Cipher.getInstance(TRANSFORMATION).apply { init(Cipher.ENCRYPT_MODE, encryptionKey()) }
         val encrypted = cipher.iv + cipher.doFinal(key.toByteArray(StandardCharsets.UTF_8))
         check(prefs.edit().putString(KEY, Base64.encodeToString(encrypted, Base64.NO_WRAP)).commit()) {
-            "OpenAI ключът не можа да се запази на устройството."
+            "Gemini ключът не можа да се запази на устройството."
         }
     }
 
     @Synchronized fun load(): String? {
         val encoded = prefs.getString(KEY, null) ?: return null
         val bytes = Base64.decode(encoded, Base64.NO_WRAP)
-        require(bytes.size > IV_BYTES) { "Локалният OpenAI ключ е повреден. Добави го отново." }
+        require(bytes.size > IV_BYTES) { "Локалният Gemini ключ е повреден. Добави го отново." }
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE, encryptionKey(), GCMParameterSpec(TAG_BITS, bytes.copyOfRange(0, IV_BYTES)))
         return String(cipher.doFinal(bytes.copyOfRange(IV_BYTES, bytes.size)), StandardCharsets.UTF_8)
     }
 
     @Synchronized fun clear() {
-        check(prefs.edit().remove(KEY).commit()) { "OpenAI ключът не можа да бъде изтрит." }
+        check(prefs.edit().remove(KEY).commit()) { "Gemini ключът не можа да бъде изтрит." }
         val store = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
         if (store.containsAlias(ALIAS)) store.deleteEntry(ALIAS)
     }
@@ -63,7 +74,7 @@ class OpenAiApiKeyStore(context: Context) {
 
     private companion object {
         const val ANDROID_KEYSTORE = "AndroidKeyStore"
-        const val ALIAS = "fitlens_openai_api_key_v1"
+        const val ALIAS = "fitlens_gemini_api_key_v1"
         const val KEY = "api_key_aes_gcm_v1"
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val IV_BYTES = 12
@@ -71,12 +82,12 @@ class OpenAiApiKeyStore(context: Context) {
     }
 }
 
-class OpenAiAnalysis(private val keyStore: OpenAiApiKeyStore) {
+class GeminiAnalysis(private val keyStore: GeminiApiKeyStore) {
     private val client = OkHttpClient.Builder().connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS).callTimeout(75, TimeUnit.SECONDS).build()
 
     suspend fun analyze(activities: List<GarminActivity>, recovery: List<GarminRecoveryDay>, event: CalendarEvent?): String = withContext(Dispatchers.IO) {
-        val apiKey = keyStore.load() ?: error("Добави OpenAI API ключ в Настройки.")
+        val apiKey = keyStore.load() ?: error("Добави Gemini API ключ в Настройки.")
         require(activities.isNotEmpty()) { "Няма Garmin активности за анализа. Синхронизирай историята от Настройки." }
         val payload = JSONObject().put("activities", JSONArray().apply {
             activities.takeLast(100).forEach { a ->
@@ -92,35 +103,31 @@ class OpenAiAnalysis(private val keyStore: OpenAiApiKeyStore) {
             JSONObject().put("title", it.title.take(100)).put("date", it.date).put("sport", it.sport)
                 .put("location", it.location.take(100))
         } ?: JSONObject.NULL)
-        val prompt = """You are a cautious endurance-training analysis assistant. The user has shared Garmin summaries for their own review. """ +
-            "Analyze trends in training frequency, duration, sport specificity, sleep, HRV, and recovery spacing from the supplied summaries. " +
-            "If an event is supplied, discuss preparation as a tentative, evidence-limited assessment and practical next steps. " +
-            "Use sleep/HRV only when supplied and explicitly state when recent nights or HRV values are missing. Activity summaries do not contain full workload, training zones, injury, or subjective fatigue context. " +
-            "Do not diagnose, prescribe treatment, or claim certainty that the user is ready. Reply in Bulgarian as plain text without Markdown, with a short headline, " +
-            "2-4 evidence-based observations, one cautious event-readiness paragraph, and 2-3 practical suggestions. Never invent metrics.\n\n" + payload
-        val requestBody = JSONObject().put("model", "gpt-4.1-mini").put("input", prompt)
-            .put("max_output_tokens", 800).toString().toRequestBody("application/json".toMediaType())
-        val request = Request.Builder().url("https://api.openai.com/v1/responses")
-            .header("Authorization", "Bearer $apiKey").header("Accept", "application/json")
+        val prompt = """You are a cautious endurance-training analysis assistant. Analyze the supplied Garmin summaries for the user's personal review. """ +
+            "Analyze training frequency, duration, sport specificity, sleep, HRV, and recovery spacing. " +
+            "If an upcoming event is supplied, discuss preparation as a tentative, evidence-limited assessment and practical next steps. " +
+            "Use sleep/HRV only when supplied and state if recent measurements are missing. Activity summaries do not contain full workload, training zones, injury, or subjective fatigue context. " +
+            "Do not diagnose, prescribe treatment, or claim certainty that the user is ready. Reply in Bulgarian as plain text without Markdown, with a short headline, 2-4 evidence-based observations, " +
+            "a cautious event-readiness paragraph, and 2-3 practical suggestions. Never invent metrics.\n\n" + payload
+        val requestBody = JSONObject().put("contents", JSONArray().put(JSONObject().put("role", "user")
+            .put("parts", JSONArray().put(JSONObject().put("text", prompt)))))
+            .put("generationConfig", JSONObject().put("temperature", 0.4).put("maxOutputTokens", 800))
+            .toString().toRequestBody("application/json".toMediaType())
+        val request = Request.Builder()
+            .url("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent")
+            .header("x-goog-api-key", apiKey).header("Accept", "application/json")
             .post(requestBody).build()
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IllegalStateException(when (response.code) {
-                    401 -> "OpenAI отказа ключа (401). Провери API ключа в Настройки."
-                    429 -> "OpenAI ограничи заявките или няма наличен API кредит (429). Провери API billing настройките."
-                    else -> "OpenAI анализът не успя (HTTP ${response.code}). Опитай отново."
-                })
-            }
-            val result = JSONObject(response.body?.string().orEmpty())
-            val output = result.optJSONArray("output") ?: JSONArray()
-            val text = buildString {
-                for (i in 0 until output.length()) {
-                    val content = output.optJSONObject(i)?.optJSONArray("content") ?: continue
-                    for (j in 0 until content.length()) content.optJSONObject(j)?.optString("text")
-                        ?.takeIf(String::isNotBlank)?.let { append(it).append("\n") }
-                }
-            }.trim()
-            text.takeIf(String::isNotBlank) ?: error("OpenAI не върна текстов анализ. Опитай отново.")
+            if (!response.isSuccessful) throw IllegalStateException(when (response.code) {
+                400, 403 -> "Google Gemini отказа заявката. Провери API ключа, достъпа до модела и AI Studio настройките."
+                429 -> "Безплатната Gemini квота е изчерпана или ограничена. Изчакай обновяването ѝ или провери актуалните квоти."
+                else -> "Gemini анализът не успя (HTTP ${response.code}). Опитай отново."
+            })
+            val candidates = JSONObject(response.body?.string().orEmpty()).optJSONArray("candidates") ?: JSONArray()
+            val parts = candidates.optJSONObject(0)?.optJSONObject("content")?.optJSONArray("parts") ?: JSONArray()
+            val text = (0 until parts.length()).mapNotNull { parts.optJSONObject(it)?.optString("text") }
+                .filter(String::isNotBlank).joinToString("\n").trim()
+            text.takeIf(String::isNotBlank) ?: error("Gemini не върна текстов анализ. Опитай отново.")
         }
     }
 }

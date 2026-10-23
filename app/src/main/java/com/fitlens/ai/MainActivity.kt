@@ -27,8 +27,9 @@ import com.fitlens.ai.ui.DashboardViewModel
 import com.fitlens.ai.ui.FitLensTheme
 import com.fitlens.ai.ui.CalendarViewModel
 import com.fitlens.ai.data.CalendarEventStore
-import com.fitlens.ai.data.OpenAiAnalysis
-import com.fitlens.ai.data.OpenAiApiKeyStore
+import com.fitlens.ai.data.EventLinkImporter
+import com.fitlens.ai.data.GeminiAnalysis
+import com.fitlens.ai.data.GeminiApiKeyStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,10 +45,10 @@ class MainActivity : ComponentActivity() {
                 DemoActivitySource(), DemoNutritionSource(), SharedPreferencesImportedMetricsStore(applicationContext),
                 GarminPersonalApi(GarminPersonalKeyStore(applicationContext)),
             ),
-            OpenAiApiKeyStore(applicationContext),
-            OpenAiAnalysis(OpenAiApiKeyStore(applicationContext)),
+            GeminiApiKeyStore(applicationContext),
+            GeminiAnalysis(GeminiApiKeyStore(applicationContext)),
         )
-        val calendarFactory = CalendarViewModel.Factory(CalendarEventStore(applicationContext))
+        val calendarFactory = CalendarViewModel.Factory(CalendarEventStore(applicationContext), EventLinkImporter())
         setContent {
             FitLensTheme {
                 val model: DashboardViewModel = viewModel(factory = factory)
@@ -73,20 +74,21 @@ class MainActivity : ComponentActivity() {
                     importMessage = model.importMessage.collectAsStateWithLifecycle().value,
                     garminConnected = model.garminConnected.collectAsStateWithLifecycle().value,
                     garminBusy = model.garminBusy.collectAsStateWithLifecycle().value,
-                    openAiConnected = model.openAiConnected.collectAsStateWithLifecycle().value,
+                    aiConnected = model.aiConnected.collectAsStateWithLifecycle().value,
                     historyBusy = model.historyBusy.collectAsStateWithLifecycle().value,
                     historyCount = model.historyCount.collectAsStateWithLifecycle().value,
                     analysisBusy = model.analysisBusy.collectAsStateWithLifecycle().value,
                     analysis = model.analysis.collectAsStateWithLifecycle().value,
                     calendar = calendarModel.state.collectAsStateWithLifecycle().value,
                     onAddEvent = calendarModel::add,
+                    onImportEventLink = calendarModel::importLink,
                     onDeleteEvent = calendarModel::delete,
                     onRetryCalendar = calendarModel::retry,
                     onConnectGarmin = model::connectGarmin,
                     onSyncGarmin = model::syncGarmin,
                     onDisconnectGarmin = model::disconnectGarmin,
-                    onSaveOpenAiKey = model::saveOpenAiKey,
-                    onDisconnectOpenAi = model::disconnectOpenAi,
+                    onSaveGeminiKey = model::saveGeminiKey,
+                    onDisconnectGemini = model::disconnectGemini,
                     onSyncHistory = { model.syncTrainingHistory() },
                     onAnalyzeTraining = model::analyzeTraining,
                     onRefresh = model::refresh,

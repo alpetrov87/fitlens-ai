@@ -14,6 +14,7 @@ data class CalendarEvent(
     val time: String,
     val sport: String,
     val location: String,
+    val sourceUrl: String = "",
 )
 
 data class EventDraft(
@@ -22,6 +23,7 @@ data class EventDraft(
     val time: String = "",
     val sport: String = "running",
     val location: String = "",
+    val sourceUrl: String = "",
 ) {
     fun validate() {
         require(title.trim().length in 1..120) { "Въведи име на събитието (до 120 знака)." }
@@ -30,6 +32,9 @@ data class EventDraft(
             "Въведи час във формат ЧЧ:ММ, например 09:30."
         }
         require(location.length <= 200) { "Мястото трябва да е до 200 знака." }
+        require(sourceUrl.length <= 500 && (sourceUrl.isBlank() || sourceUrl.startsWith("https://", ignoreCase = true))) {
+            "Линкът към събитието трябва да е HTTPS и до 500 знака."
+        }
     }
 }
 
@@ -43,7 +48,7 @@ class CalendarEventStore(context: Context) {
         return (0 until rows.length()).map { index ->
             val row = rows.getJSONObject(index)
             CalendarEvent(row.getString("id"), row.getString("title"), row.getString("date"),
-                row.optString("time"), row.optString("sport", "other"), row.optString("location"))
+                row.optString("time"), row.optString("sport", "other"), row.optString("location"), row.optString("sourceUrl"))
         }.sortedWith(compareBy(CalendarEvent::date, CalendarEvent::time, CalendarEvent::title))
     }
 
@@ -51,7 +56,7 @@ class CalendarEventStore(context: Context) {
     fun add(draft: EventDraft) {
         draft.validate()
         write(all() + CalendarEvent(UUID.randomUUID().toString(), draft.title.trim(), draft.date,
-            draft.time.trim(), draft.sport, draft.location.trim()))
+            draft.time.trim(), draft.sport, draft.location.trim(), draft.sourceUrl.trim()))
     }
 
     @Synchronized
@@ -61,7 +66,8 @@ class CalendarEventStore(context: Context) {
         val rows = JSONArray()
         events.forEach { event ->
             rows.put(JSONObject().put("id", event.id).put("title", event.title).put("date", event.date)
-                .put("time", event.time).put("sport", event.sport).put("location", event.location))
+                .put("time", event.time).put("sport", event.sport).put("location", event.location)
+                .put("sourceUrl", event.sourceUrl))
         }
         check(preferences.edit().putString("events_v1", rows.toString()).commit()) {
             "Календарът не можа да бъде запазен на устройството."

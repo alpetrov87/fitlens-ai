@@ -19,11 +19,11 @@ import com.fitlens.ai.data.CsvImportSource
 internal fun SettingsScreen(
     connected: Boolean, busy: Boolean, onConnect: (String) -> Unit, onSync: () -> Unit,
     onDisconnect: () -> Unit, onImport: (CsvImportSource) -> Unit, onClear: () -> Unit,
-    openAiConnected: Boolean, historyBusy: Boolean, historyCount: Int,
-    onSaveOpenAiKey: (String) -> Unit, onDisconnectOpenAi: () -> Unit, onSyncHistory: () -> Unit,
+    aiConnected: Boolean, historyBusy: Boolean, historyCount: Int,
+    onSaveGeminiKey: (String) -> Unit, onDisconnectGemini: () -> Unit, onSyncHistory: () -> Unit,
 ) {
     var key by remember { mutableStateOf("") }
-    var openAiKey by remember { mutableStateOf("") }
+    var geminiKey by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
@@ -59,21 +59,25 @@ internal fun SettingsScreen(
                 Spacer(Modifier.width(8.dp)); Text("Импортирай Garmin CSV")
             }
         }
-        InfoCard("OpenAI · AI анализ", Icons.Default.AutoAwesome) {
-            Text(if (openAiConnected) "OpenAI API ключът е запазен на това устройство." else "Добави свой OpenAI API ключ за анализ на тренировките.")
-            if (openAiConnected) {
-                OutlinedButton(onClick = onDisconnectOpenAi, modifier = Modifier.fillMaxWidth()) { Text("Изтрий OpenAI ключа") }
+        InfoCard("Gemini · AI анализ", Icons.Default.AutoAwesome) {
+            Text(if (aiConnected) "Gemini API ключът е запазен на това устройство." else "Добави Gemini API ключ от Google AI Studio за анализ на тренировките.")
+            if (aiConnected) {
+                OutlinedButton(onClick = onDisconnectGemini, modifier = Modifier.fillMaxWidth()) { Text("Изтрий Gemini ключа") }
             } else {
-                OutlinedTextField(value = openAiKey, onValueChange = { openAiKey = it }, singleLine = true,
-                    modifier = Modifier.fillMaxWidth(), label = { Text("OpenAI API key") },
+                OutlinedTextField(value = geminiKey, onValueChange = { geminiKey = it }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth(), label = { Text("Gemini API key") },
                     visualTransformation = PasswordVisualTransformation())
-                Button(onClick = { onSaveOpenAiKey(openAiKey); openAiKey = "" },
-                    enabled = openAiKey.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Запази ключа") }
+                Button(onClick = { onSaveGeminiKey(geminiKey); geminiKey = "" },
+                    enabled = geminiKey.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Запази ключа") }
             }
-                Text("Трябва ти API ключ от platform.openai.com. ChatGPT абонаментът не включва API употреба; тя се таксува отделно от OpenAI. Задай лимит за разходите в OpenAI Platform.",
+            TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW,
+                Uri.parse("https://aistudio.google.com/app/apikey"))) }) { Text("Вземи ключ от Google AI Studio") }
+                Text("Вземи API ключ от Google AI Studio и използвай проект с безплатната Gemini API квота. Квотите и достъпните модели може да се променят. За да избегнеш такси, не свързвай платено billing към проекта: FitLens не може да наложи безплатна квота върху ключ, който има включено платено таксуване.",
                 style = MaterialTheme.typography.bodySmall)
-                Text("При стартиране на анализ FitLens изпраща до OpenAI имената, датите, спортовете, продължителността, дистанцията, пулса и наличните Garmin обобщения за сън/HRV от последните 30 дни, както и избраното събитие. Garmin ключът не се изпраща към OpenAI. Изпращането започва само след потвърждение.",
+            Text("При безплатния cloud план Google може да обработва prompt-овете и отговорите за подобряване на услугите си според актуалните условия и настройките ти. Не включвай чувствителни данни. FitLens изпраща имената, датите, спортовете, времетраенето, дистанцията, пулса, наличните сън/HRV обобщения и избраното събитие само след потвърждение. Garmin ключът не се изпраща към Google.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("При актуализация от предишната OpenAI версия старият API ключ се премахва от устройството.",
+                style = MaterialTheme.typography.bodySmall)
         }
         InfoCard("MyFitnessPal", Icons.Default.Restaurant) {
             Text("Добави хранителни данни от CSV файл. Директна API връзка още не е налична.")
