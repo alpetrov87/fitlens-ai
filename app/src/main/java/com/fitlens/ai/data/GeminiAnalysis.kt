@@ -114,6 +114,7 @@ class GeminiAnalysis(private val keyStore: GeminiApiKeyStore) {
             .put("generationConfig", JSONObject().put("temperature", 0.4).put("maxOutputTokens", 800))
             .toString().toRequestBody("application/json".toMediaType())
         val models = listAvailableFlashModels(apiKey)
+        var lastModelError: String? = null
         for (model in models) {
             val request = Request.Builder()
                 .url("https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent")
@@ -121,7 +122,10 @@ class GeminiAnalysis(private val keyStore: GeminiApiKeyStore) {
                 .post(requestBody).build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    if (response.code == 404) return@use
+                    if (response.code == 404) {
+                        lastModelError = "$model: ${googleError(response.body?.string())}"
+                        return@use
+                    }
                     throw geminiError(response.code)
                 }
                 val candidates = JSONObject(response.body?.string().orEmpty()).optJSONArray("candidates") ?: JSONArray()
@@ -131,7 +135,7 @@ class GeminiAnalysis(private val keyStore: GeminiApiKeyStore) {
                 return@withContext text.takeIf(String::isNotBlank) ?: error("Gemini не върна текстов анализ. Опитай отново.")
             }
         }
-        error("Google показва Gemini Flash модели за този ключ, но всички върнаха 404. Провери наличните модели в Google AI Studio и опитай отново.")
+        error("Google показва Gemini Flash модели за този ключ, но generateContent върна 404. Последен отговор: ${lastModelError ?: "няма детайли"}. Провери дали моделът е разрешен за този проект и регион.")
     }
 
     private fun listAvailableFlashModels(apiKey: String): List<String> {
@@ -140,9 +144,9 @@ class GeminiAnalysis(private val keyStore: GeminiApiKeyStore) {
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw when (response.code) {
                 400, 401, 403 -> IllegalStateException("Google Gemini не прие ключа или API достъпа (HTTP ${response.code}). Провери ключа и дали Generative Language API е активен.")
-                404 -> IllegalStateException("Google не намери Gemini Models API (404). Провери Google AI Studio проекта и активирай Generative Language API.")
+                404 -> IllegalStateException("Проверката към Google Gemini Models API върна HTTP 404. Отговор: ${googleError(response.body?.string())}. Провери дали ключът е от Google AI Studio (не Vertex AI) и дали Generative Language API е достъпен за проекта.")
                 429 -> IllegalStateException("Google Gemini ограничи проверката на ключа (429). Изчакай малко и опитай отново.")
-                else -> IllegalStateException("Gemini моделите не могат да бъдат заредени (HTTP ${response.code}).")
+                else -> IllegalStateException("Gemini Models API върна HTTP ${response.code}. Отговор: ${googleError(response.body?.string())}.")
             }
             val rows = JSONObject(response.body?.string().orEmpty()).optJSONArray("models") ?: JSONArray()
             val available = (0 until rows.length()).mapNotNull { index ->
@@ -163,10 +167,15 @@ class GeminiAnalysis(private val keyStore: GeminiApiKeyStore) {
     }
 
     private fun geminiError(code: Int): IllegalStateException = when (code) {
-        400, 401, 403 -> IllegalStateException("Google Gemini отказа заявката (HTTP $code). Провери API ключа и настройките на проекта.")
+        400, 401, 403 -> IllegalStateException("Google Gemini отказа generateContent (HTTP $code). Отговорът указва дали ключът/моделът няма достъп; провери ключа и настройките на проекта.")
         429 -> IllegalStateException("Безплатната Gemini квота е изчерпана или ограничена. Изчакай обновяването ѝ или провери актуалните квоти.")
-        else -> IllegalStateException("Gemini анализът не успя (HTTP $code). Опитай отново.")
+        else -> IllegalStateException("Gemini generateContent върна HTTP $code. Провери достъпа до модела в Google AI Studio.")
     }
+
+    private fun googleError(body: String?): String = runCatching {
+        JSONObject(body.orEmpty()).optJSONObject("error")?.optString("message")
+            ?.takeIf(String::isNotBlank)?.take(240)
+    }.getOrNull() ?: "Google не върна подробно съобщение"
 
     private companion object { const val MAX_MODEL_ATTEMPTS = 3 }
 }
