@@ -61,10 +61,32 @@ fun DashboardScreen(
                     }
                     MetricCard("Хранене · ${state.dashboard.nutritionOrigin.label()}${state.dashboard.nutritionDate?.let { " · $it" }.orEmpty()}") {
                         Text("${nutrition.calories} / ${nutrition.calorieGoal} kcal", style = MaterialTheme.typography.headlineMedium)
+                        if (state.dashboard.nutritionOrigin == MetricOrigin.GARMIN_PERSONAL_API) {
+                            Text("Записан прием на храна от Garmin Connect", style = MaterialTheme.typography.bodySmall)
+                        }
                         LinearProgressIndicator(progress = { (nutrition.calories.toFloat() / nutrition.calorieGoal.coerceAtLeast(1)).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
                         Text("Протеин ${nutrition.proteinGrams} g • Въглехидрати ${nutrition.carbsGrams} g • Мазнини ${nutrition.fatGrams} g")
                         if (state.dashboard.nutritionOrigin != MetricOrigin.DEMO) {
                             Text("Липсващите показатели и целта са примерни.", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    if (state.dashboard.garminActivities.isNotEmpty()) {
+                        MetricCard("Garmin активности днес · ${state.dashboard.garminActivities.size}") {
+                            state.dashboard.garminActivities.forEach { activity ->
+                                HorizontalDivider()
+                                Text(activity.name, style = MaterialTheme.typography.titleSmall)
+                                Text("${activity.activityTypeKey.displaySport()} · ${activity.startTimeLocal.substringAfter(' ', activity.startTimeLocal)}")
+                                val details = buildList {
+                                    activity.durationSeconds?.let { add("${(it / 60).toInt()} мин") }
+                                    activity.distanceMeters?.let { add("${"%.2f".format(it / 1000.0)} km") }
+                                    activity.calories?.let { add("$it kcal") }
+                                    activity.steps?.let { add("$it крачки") }
+                                    activity.averageHeartRate?.let { add("ср. пулс $it") }
+                                    activity.maxHeartRate?.let { add("макс. пулс $it") }
+                                    activity.elevationGainMeters?.let { add("изкачване ${it.toInt()} m") }
+                                }
+                                if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
+                            }
                         }
                     }
                     MetricCard("Твоят фокус") {
@@ -110,7 +132,7 @@ fun DashboardScreen(
                         Text("Свържи и синхронизирай")
                     }
                 } else {
-                    Button(onClick = onSyncGarmin, modifier = Modifier.fillMaxWidth()) { Text("Синхронизирай днешните данни") }
+                    Button(onClick = onSyncGarmin, modifier = Modifier.fillMaxWidth()) { Text("Изтегли данните за днес") }
                     OutlinedButton(onClick = onDisconnectGarmin, modifier = Modifier.fillMaxWidth()) { Text("Изтрий ключа и Garmin данните") }
                 }
                 Text("Приложението изпраща ключа само към Garmin през HTTPS и го пази криптиран на това устройство. Garmin API key не се изпраща към backend. Personal API е за собствените ти данни и не е достъп за комерсиална multi-user услуга.", style = MaterialTheme.typography.bodySmall)
@@ -135,6 +157,8 @@ private fun MetricOrigin.label(): String = when (this) {
     MetricOrigin.GARMIN_PERSONAL_API -> "Garmin Personal API"
     MetricOrigin.MYFITNESSPAL_CSV -> "MyFitnessPal CSV"
 }
+
+private fun String.displaySport(): String = replace('_', ' ').replaceFirstChar { it.uppercase() }
 
 @Composable
 private fun MetricCard(title: String, content: @Composable ColumnScope.() -> Unit) {

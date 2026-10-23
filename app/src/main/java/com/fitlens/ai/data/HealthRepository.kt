@@ -11,6 +11,8 @@ data class Dashboard(
     val nutritionOrigin: MetricOrigin = MetricOrigin.DEMO,
     val activityDate: String? = null,
     val nutritionDate: String? = null,
+    val garminActivities: List<GarminActivity> = emptyList(),
+    val garminCaloriesConsumed: Int? = null,
 )
 
 enum class CsvImportSource { GARMIN, MYFITNESSPAL }
@@ -28,6 +30,22 @@ data class ImportedDailyMetrics(
     val garminData: Boolean = false,
     val myFitnessPalData: Boolean = false,
     val garminPersonalApiData: Boolean = false,
+    val garminCaloriesConsumed: Int? = null,
+)
+
+/** Garmin's type key stays open-ended so new sports do not require an app schema change. */
+data class GarminActivity(
+    val activityId: Long,
+    val name: String,
+    val activityTypeKey: String,
+    val startTimeLocal: String,
+    val durationSeconds: Double?,
+    val distanceMeters: Double?,
+    val calories: Int?,
+    val steps: Int?,
+    val averageHeartRate: Int?,
+    val maxHeartRate: Int?,
+    val elevationGainMeters: Double?,
 )
 
 interface ImportedMetricsStore {
@@ -36,6 +54,8 @@ interface ImportedMetricsStore {
     fun mergeAll(metrics: List<ImportedDailyMetrics>)
     fun clear()
     fun clearGarmin()
+    fun activitiesForDate(date: String): List<GarminActivity>
+    fun replaceGarminActivities(date: String, activities: List<GarminActivity>)
 }
 
 /** Implement behind a secure backend once Garmin access and consent are approved. */
@@ -62,7 +82,8 @@ class DefaultHealthRepository(
         val nutrition = nutrition.nutrition()
         val latestGarmin = imported?.latestGarmin()
         val latestNutrition = imported?.latestMyFitnessPal()
-        if (latestGarmin == null && latestNutrition == null) return Dashboard(activity, nutrition)
+        val todaysActivities = imported?.activitiesForDate(java.time.LocalDate.now().toString()).orEmpty()
+        if (latestGarmin == null && latestNutrition == null) return Dashboard(activity, nutrition, garminActivities = todaysActivities)
         return Dashboard(
             activity = ActivitySummary(
                 steps = latestGarmin?.steps ?: activity.steps,
@@ -70,7 +91,7 @@ class DefaultHealthRepository(
                 distanceKm = latestGarmin?.distanceKm ?: activity.distanceKm,
             ),
             nutrition = NutritionSummary(
-                calories = latestNutrition?.calories ?: nutrition.calories,
+                calories = latestNutrition?.calories ?: latestGarmin?.garminCaloriesConsumed ?: nutrition.calories,
                 calorieGoal = latestNutrition?.calorieGoal ?: nutrition.calorieGoal,
                 proteinGrams = latestNutrition?.proteinGrams ?: nutrition.proteinGrams,
                 carbsGrams = latestNutrition?.carbsGrams ?: nutrition.carbsGrams,
@@ -81,9 +102,15 @@ class DefaultHealthRepository(
                 latestGarmin != null -> MetricOrigin.GARMIN_CSV
                 else -> MetricOrigin.DEMO
             },
-            nutritionOrigin = if (latestNutrition != null) MetricOrigin.MYFITNESSPAL_CSV else MetricOrigin.DEMO,
+            nutritionOrigin = when {
+                latestNutrition != null -> MetricOrigin.MYFITNESSPAL_CSV
+                latestGarmin?.garminCaloriesConsumed != null -> MetricOrigin.GARMIN_PERSONAL_API
+                else -> MetricOrigin.DEMO
+            },
             activityDate = latestGarmin?.date,
-            nutritionDate = latestNutrition?.date,
+            nutritionDate = latestNutrition?.date ?: latestGarmin?.date?.takeIf { latestGarmin.garminCaloriesConsumed != null },
+            garminActivities = todaysActivities,
+            garminCaloriesConsumed = latestGarmin?.garminCaloriesConsumed,
         )
     }
 
@@ -103,13 +130,17 @@ class DefaultHealthRepository(
     override suspend fun connectGarmin(apiKey: String) {
         val store = checkNotNull(imported) { "Garmin storage is unavailable" }
         val api = checkNotNull(garminApi) { "Garmin Personal API is unavailable" }
-        store.mergeAll(listOf(api.connect(apiKey)))
+        val data = api.connect(apiKey)
+        store.mergeAll(listOf(data.summary))
+        store.replaceGarminActivities(data.summary.date, data.activities)
     }
 
     override suspend fun syncGarmin() {
         val store = checkNotNull(imported) { "Garmin storage is unavailable" }
         val api = checkNotNull(garminApi) { "Garmin Personal API is unavailable" }
-        store.mergeAll(listOf(api.sync()))
+        val data = api.sync()
+        store.mergeAll(listOf(data.summary))
+        store.replaceGarminActivities(data.summary.date, data.activities)
     }
 
     override suspend fun disconnectGarmin() {

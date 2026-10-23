@@ -46,7 +46,7 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 `MainActivity` свързва зависимостите → `DashboardViewModel` управлява `StateFlow` с Loading/Ready/Error → Compose наблюдава състоянието с lifecycle awareness. `HealthRepository` предоставя общ `Dashboard`; `DefaultHealthRepository` комбинира `ActivitySource` и `NutritionSource`. В MVP те са `DemoActivitySource` и `DemoNutritionSource`. Preview е наличен в `DashboardScreen.kt`.
 
-За Garmin вече има личен Personal API адаптер, който се управлява от таблото. Той взема токен директно от Garmin и изтегля дневното обобщение за текущата дата; ключът се криптира с Android Keystore, а краткотрайният токен остава само в паметта.
+За Garmin има личен Personal API адаптер, който се управлява от таблото. При синхронизация той изтегля дневните крачки, разстояние, активни минути, записан прием на калории и списъка с активности за текущата дата. Обобщенията и общите детайли за всяка активност се пазят локално; спортният `typeKey` се пази отворен, така че нови Garmin спортове не изискват промяна на модела. API ключът се криптира с Android Keystore, а краткотрайният токен остава само в паметта.
 
 MyFitnessPal продължава да работи чрез CSV импорт. Няма AI модел или медицински препоръки. Импортираните обобщения се пазят локално на устройството.
 
@@ -77,10 +77,12 @@ Date,Calories,Protein (g),Carbs (g),Fat (g)
 2. Избери **Create Key**, приеми условията и задай срок на ключа. Garmin посочва срокове до една година; екранът на Garmin Connect показва наличните опции.
 3. Копирай ключа, когато бъде показан. Той се вижда само веднъж. Не го изпращай в чат, issue или commit.
 4. Инсталирай актуалния debug APK, отвори секцията **Garmin Personal API**, постави ключа и избери **Свържи и синхронизирай**. Приложението заявява access token и тегли днешното обобщение. На таблото източникът се показва като Garmin Personal API.
-5. Използвай **Синхронизирай днешните данни** за следващо изтегляне. Ключът се пази криптиран локално с Android Keystore. Токенът не се записва; нов 24-часов token се заявява при всяка синхронизация, защото Garmin Personal API няма refresh token.
-6. **Изтрий ключа и Garmin данните** премахва ключа от приложението, локалния Android Keystore ключ и синхронизираните Garmin обобщения. За отнемане от Garmin Connect използвай управлението на Personal API ключовете в Garmin профила.
+5. Следващия път натисни **Изтегли данните за днес**. Синхронизират се крачки, дистанция, активно време, Garmin Connect дневните калории от храна и активности за днешната локална дата. За всяка активност се пазят Garmin ID, име, спортен type key, локален начален час, продължителност, дистанция, калории, крачки, среден/максимален пулс и изкачване, когато Garmin ги предоставя. Приложението показва тези данни под обобщението за активностите.
+6. Garmin API описва спортовете като `activityType.typeKey` (примерите в схемата включват running, cycling и swimming); полето не е ограничено до фиксиран enum. Така се запазват и други върнати спортове, включително отделните части на multisport сесия.
+7. Ключът се пази криптиран локално с Android Keystore. Токенът не се записва; нов 24-часов token се заявява при всяка синхронизация, защото Garmin Personal API няма refresh token.
+8. **Изтрий ключа и Garmin данните** премахва ключа от приложението, локалния Android Keystore ключ, обобщенията и записаните активности. За отнемане от Garmin Connect използвай управлението на Personal API ключовете в Garmin профила.
 
-Интеграцията следва официалните [Personal API инструкции](https://developer.garmin.com/gc-developer-program/personal/personal-api/), [FAQ](https://developer.garmin.com/gc-developer-program/personal/personal-faq/) и [API описание](https://developer.garmin.com/gc-developer-program/personal/swagger-docs/). Garmin Personal API е за личните данни на собственика на ключа, не за комерсиално multi-user приложение. Текущата версия чете дневното обобщение (`usersummary/daily`), а не пълната история и всички активности. Трябва да имаш Garmin Connect акаунт и да приемеш условията им.
+Интеграцията следва официалните [Personal API инструкции](https://developer.garmin.com/gc-developer-program/personal/personal-api/), [FAQ](https://developer.garmin.com/gc-developer-program/personal/personal-faq/) и [API описание](https://developer.garmin.com/gc-developer-program/personal/swagger-docs/). Използва `usersummary/daily` за крачки/калории и `activitylist-service/activities/search/activities` с днешните `startDate`/`endDate`. Това пази summary данните за активностите, не оригинални FIT/GPX тракове или цялата подробна телеметрия. Garmin Personal API е за личните данни на собственика на ключа, не за комерсиално multi-user приложение. Трябва да имаш Garmin Connect акаунт и да приемеш условията им.
 
 ### MyFitnessPal и бъдещ API достъп
 

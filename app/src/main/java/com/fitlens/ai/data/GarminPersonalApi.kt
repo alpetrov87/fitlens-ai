@@ -6,9 +6,12 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit
+import org.json.JSONArray
 import org.json.JSONObject
 
 /** Garmin Personal API client for one person's own account. Never logs credentials or responses. */
+data class GarminDayData(val summary: ImportedDailyMetrics, val activities: List<GarminActivity>)
+
 class GarminPersonalApi(
     private val keyStore: GarminPersonalKeyStore,
     private val client: OkHttpClient = OkHttpClient.Builder()
@@ -17,22 +20,53 @@ class GarminPersonalApi(
         .callTimeout(45, TimeUnit.SECONDS)
         .build(),
 ) {
-    suspend fun connect(apiKey: String): ImportedDailyMetrics = withContext(Dispatchers.IO) {
+    suspend fun connect(apiKey: String): GarminDayData = withContext(Dispatchers.IO) {
         val token = exchangeKey(apiKey)
         val today = LocalDate.now().toString()
-        val metrics = fetchDailySummary(token, today)
+        val data = fetchDay(token, today)
         keyStore.save(apiKey)
-        metrics
+        data
     }
 
-    suspend fun sync(): ImportedDailyMetrics = withContext(Dispatchers.IO) {
+    suspend fun sync(): GarminDayData = withContext(Dispatchers.IO) {
         val apiKey = keyStore.load() ?: error("Добави Garmin Personal API ключ, за да синхронизираш.")
         val token = exchangeKey(apiKey) // Garmin access tokens last 24h; there is no refresh token.
-        fetchDailySummary(token, LocalDate.now().toString())
+        fetchDay(token, LocalDate.now().toString())
     }
 
     fun disconnect() = keyStore.clear()
     fun isConnected(): Boolean = keyStore.hasKey()
+
+    private fun fetchDay(token: String, date: String): GarminDayData {
+        val summaryJson = getJson(
+            token,
+            "$BASE_URL/usersummary-service/usersummary/daily?calendarDate=$date",
+            "дневното обобщение",
+        ) as? JSONObject
+        val summary = ImportedDailyMetrics(
+            date = summaryJson?.optString("calendarDate")?.takeIf { it.isNotBlank() } ?: date,
+            steps = summaryJson?.optNullableInt("totalSteps"),
+            activeMinutes = summaryJson?.optNullableDouble("activeSeconds")?.let { (it / 60).toInt() },
+            distanceKm = summaryJson?.optNullableDouble("totalDistanceMeters")?.div(1000.0),
+            garminPersonalApiData = true,
+            garminCaloriesConsumed = summaryJson?.optNullableDouble("consumedKilocalories")?.toInt(),
+        )
+        val activities = mutableListOf<GarminActivity>()
+        var start = 0
+        do {
+            val page = getJson(
+                token,
+                "$BASE_URL/activitylist-service/activities/search/activities?start=$start&limit=$ACTIVITY_PAGE_SIZE&sortOrder=asc&startDate=$date&endDate=$date&excludeChildren=false",
+                "дневните активности",
+            ) as? JSONArray ?: JSONArray()
+            for (index in 0 until page.length()) {
+                val item = page.optJSONObject(index) ?: continue
+                activities += item.toGarminActivity()
+            }
+            start += page.length()
+        } while (page.length() == ACTIVITY_PAGE_SIZE && start < MAX_DAILY_ACTIVITIES)
+        return GarminDayData(summary, activities)
+    }
 
     private fun exchangeKey(apiKey: String): String {
         val request = Request.Builder()
@@ -51,28 +85,34 @@ class GarminPersonalApi(
         }
     }
 
-    private fun fetchDailySummary(token: String, date: String): ImportedDailyMetrics {
-        val request = Request.Builder()
-            .url("$BASE_URL/usersummary-service/usersummary/daily?calendarDate=$date")
-            .header("Authorization", "Bearer $token")
-            .get()
-            .build()
+    /** Empty 204 responses represent an available resource with no records for the requested day. */
+    private fun getJson(token: String, url: String, resource: String): Any? {
+        val request = Request.Builder().url(url).header("Authorization", "Bearer $token").get().build()
         client.newCall(request).execute().use { response ->
-            if (response.code == 204) return ImportedDailyMetrics(date = date, garminPersonalApiData = true)
-            if (!response.isSuccessful) throw apiError(response.code, "данните")
+            if (response.code == 204) return null
+            if (!response.isSuccessful) throw apiError(response.code, resource)
             val body = response.body?.string().orEmpty()
-            val json = JSONObject(body)
-            val actualDate = json.optString("calendarDate", date).takeIf { it.isNotBlank() } ?: date
-            val meters = json.optNullableDouble("totalDistanceMeters")
-            val activeSeconds = json.optNullableDouble("activeSeconds")
-            return ImportedDailyMetrics(
-                date = actualDate,
-                steps = json.optNullableInt("totalSteps"),
-                activeMinutes = activeSeconds?.let { (it / 60).toInt() },
-                distanceKm = meters?.div(1000.0),
-                garminPersonalApiData = true,
-            )
+            if (body.isBlank()) return null
+            return if (body.trimStart().startsWith("[")) JSONArray(body) else JSONObject(body)
         }
+    }
+
+    private fun JSONObject.toGarminActivity(): GarminActivity {
+        val sport = optJSONObject("activityType")?.optString("typeKey")?.takeIf { it.isNotBlank() }
+            ?: optString("sportTypeId", "other")
+        return GarminActivity(
+            activityId = optLong("activityId"),
+            name = optString("activityName").ifBlank { sport.replace('_', ' ').replaceFirstChar { it.uppercase() } },
+            activityTypeKey = sport,
+            startTimeLocal = optString("startTimeLocal"),
+            durationSeconds = optNullableDouble("duration"),
+            distanceMeters = optNullableDouble("distance"),
+            calories = optNullableDouble("calories")?.toInt(),
+            steps = optNullableInt("steps"),
+            averageHeartRate = optNullableDouble("averageHR")?.toInt(),
+            maxHeartRate = optNullableDouble("maxHR")?.toInt(),
+            elevationGainMeters = optNullableDouble("elevationGain"),
+        )
     }
 
     private fun apiError(code: Int, resource: String): IllegalStateException = when (code) {
@@ -84,5 +124,9 @@ class GarminPersonalApi(
     private fun JSONObject.optNullableInt(key: String): Int? = if (isNull(key) || !has(key)) null else optInt(key)
     private fun JSONObject.optNullableDouble(key: String): Double? = if (isNull(key) || !has(key)) null else optDouble(key)
 
-    private companion object { const val BASE_URL = "https://personal.connectapi.garmin.com" }
+    private companion object {
+        const val BASE_URL = "https://personal.connectapi.garmin.com"
+        const val ACTIVITY_PAGE_SIZE = 99
+        const val MAX_DAILY_ACTIVITIES = 990
+    }
 }

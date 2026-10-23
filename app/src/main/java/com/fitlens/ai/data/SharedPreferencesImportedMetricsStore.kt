@@ -18,18 +18,35 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
     }
 
     override fun clear() = synchronized(lock) {
-        check(preferences.edit().remove(KEY_DAILY).commit()) { "Не успях да изтрия импортираните данни." }
+        check(preferences.edit().remove(KEY_DAILY).remove(KEY_GARMIN_ACTIVITIES).commit()) { "Не успях да изтрия импортираните данни." }
     }
 
     override fun clearGarmin() = synchronized(lock) {
         val rows = readRows().map { row ->
             if (row.garminData || row.garminPersonalApiData) row.copy(
                 steps = null, activeMinutes = null, distanceKm = null,
+                garminCaloriesConsumed = null,
                 garminData = false, garminPersonalApiData = false,
             ) else row
         }.filter { it.myFitnessPalData }
         val array = JSONArray().apply { rows.forEach { put(it.toJson()) } }
-        check(preferences.edit().putString(KEY_DAILY, array.toString()).commit()) { "Не успях да изтрия Garmin данните." }
+        check(preferences.edit().putString(KEY_DAILY, array.toString()).remove(KEY_GARMIN_ACTIVITIES).commit()) { "Не успях да изтрия Garmin данните." }
+    }
+
+    override fun activitiesForDate(date: String): List<GarminActivity> = synchronized(lock) {
+        val activities = readActivities()
+        (0 until activities.length()).mapNotNull { index ->
+            runCatching { activities.getJSONObject(index).toActivity() }.getOrNull()
+        }.filter { it.startTimeLocal.startsWith(date) }.sortedBy(GarminActivity::startTimeLocal)
+    }
+
+    override fun replaceGarminActivities(date: String, activities: List<GarminActivity>) = synchronized(lock) {
+        val current = readActivities()
+        val all = (0 until current.length()).mapNotNull { index ->
+            runCatching { current.getJSONObject(index).toActivity() }.getOrNull()
+        }.filterNot { it.startTimeLocal.startsWith(date) } + activities
+        val array = JSONArray().apply { all.sortedBy(GarminActivity::startTimeLocal).forEach { put(it.toJson()) } }
+        check(preferences.edit().putString(KEY_GARMIN_ACTIVITIES, array.toString()).commit()) { "Не успях да запазя Garmin активностите." }
     }
 
     override fun mergeAll(metrics: List<ImportedDailyMetrics>) = synchronized(lock) {
@@ -43,11 +60,13 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
                     distanceKm = metricsForDate.distanceKm ?: previous.distanceKm,
                     garminData = true,
                     garminPersonalApiData = false,
+                    garminCaloriesConsumed = null,
                 )
                 metricsForDate.garminPersonalApiData -> previous.copy(
                     steps = metricsForDate.steps,
                     activeMinutes = metricsForDate.activeMinutes,
                     distanceKm = metricsForDate.distanceKm,
+                    garminCaloriesConsumed = metricsForDate.garminCaloriesConsumed,
                     garminData = false,
                     garminPersonalApiData = true,
                 )
@@ -88,6 +107,7 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
         .put("fatGrams", fatGrams.jsonValue())
         .put("garminData", garminData)
         .put("garminPersonalApiData", garminPersonalApiData)
+        .put("garminCaloriesConsumed", garminCaloriesConsumed.jsonValue())
         .put("myFitnessPalData", myFitnessPalData)
 
     private fun JSONObject.toMetrics() = ImportedDailyMetrics(
@@ -102,6 +122,7 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
         fatGrams = optNullableInt("fatGrams"),
         garminData = optBoolean("garminData"),
         garminPersonalApiData = optBoolean("garminPersonalApiData"),
+        garminCaloriesConsumed = optNullableInt("garminCaloriesConsumed"),
         myFitnessPalData = optBoolean("myFitnessPalData"),
     )
 
@@ -110,5 +131,26 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
     private fun JSONObject.optNullableInt(key: String): Int? = if (isNull(key)) null else optInt(key)
     private fun JSONObject.optNullableDouble(key: String): Double? = if (isNull(key)) null else optDouble(key)
 
-    private companion object { const val KEY_DAILY = "daily_metrics_v1" }
+    private fun readActivities(): JSONArray = JSONArray(preferences.getString(KEY_GARMIN_ACTIVITIES, "[]"))
+
+    private fun GarminActivity.toJson() = JSONObject()
+        .put("activityId", activityId).put("name", name).put("activityTypeKey", activityTypeKey)
+        .put("startTimeLocal", startTimeLocal).put("durationSeconds", durationSeconds.jsonValue())
+        .put("distanceMeters", distanceMeters.jsonValue()).put("calories", calories.jsonValue())
+        .put("steps", steps.jsonValue()).put("averageHeartRate", averageHeartRate.jsonValue())
+        .put("maxHeartRate", maxHeartRate.jsonValue()).put("elevationGainMeters", elevationGainMeters.jsonValue())
+
+    private fun JSONObject.toActivity() = GarminActivity(
+        activityId = getLong("activityId"), name = getString("name"),
+        activityTypeKey = getString("activityTypeKey"), startTimeLocal = getString("startTimeLocal"),
+        durationSeconds = optNullableDouble("durationSeconds"), distanceMeters = optNullableDouble("distanceMeters"),
+        calories = optNullableInt("calories"), steps = optNullableInt("steps"),
+        averageHeartRate = optNullableInt("averageHeartRate"), maxHeartRate = optNullableInt("maxHeartRate"),
+        elevationGainMeters = optNullableDouble("elevationGainMeters"),
+    )
+
+    private companion object {
+        const val KEY_DAILY = "daily_metrics_v1"
+        const val KEY_GARMIN_ACTIVITIES = "garmin_activities_v1"
+    }
 }
