@@ -20,6 +20,8 @@ import com.fitlens.ai.data.DefaultHealthRepository
 import com.fitlens.ai.data.DemoActivitySource
 import com.fitlens.ai.data.DemoNutritionSource
 import com.fitlens.ai.data.SharedPreferencesImportedMetricsStore
+import com.fitlens.ai.data.GarminPersonalApi
+import com.fitlens.ai.data.GarminPersonalKeyStore
 import com.fitlens.ai.ui.DashboardScreen
 import com.fitlens.ai.ui.DashboardViewModel
 import com.fitlens.ai.ui.FitLensTheme
@@ -36,6 +38,7 @@ class MainActivity : ComponentActivity() {
         val factory = DashboardViewModel.Factory(
             DefaultHealthRepository(
                 DemoActivitySource(), DemoNutritionSource(), SharedPreferencesImportedMetricsStore(applicationContext),
+                GarminPersonalApi(GarminPersonalKeyStore(applicationContext)),
             ),
         )
         setContent {
@@ -60,6 +63,10 @@ class MainActivity : ComponentActivity() {
                 DashboardScreen(
                     state = model.state.collectAsStateWithLifecycle().value,
                     importMessage = model.importMessage.collectAsStateWithLifecycle().value,
+                    garminConnected = model.garminConnected.collectAsStateWithLifecycle().value,
+                    onConnectGarmin = model::connectGarmin,
+                    onSyncGarmin = model::syncGarmin,
+                    onDisconnectGarmin = model::disconnectGarmin,
                     onRefresh = model::refresh,
                     onImport = { source ->
                         importSource = source

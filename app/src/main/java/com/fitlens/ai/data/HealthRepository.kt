@@ -3,7 +3,7 @@ package com.fitlens.ai.data
 /** Provider-neutral models. Dates and OAuth/token storage belong in production adapters. */
 data class ActivitySummary(val steps: Int, val activeMinutes: Int, val distanceKm: Double)
 data class NutritionSummary(val calories: Int, val calorieGoal: Int, val proteinGrams: Int, val carbsGrams: Int, val fatGrams: Int)
-enum class MetricOrigin { DEMO, GARMIN_CSV, MYFITNESSPAL_CSV }
+enum class MetricOrigin { DEMO, GARMIN_CSV, GARMIN_PERSONAL_API, MYFITNESSPAL_CSV }
 data class Dashboard(
     val activity: ActivitySummary,
     val nutrition: NutritionSummary,
@@ -27,6 +27,7 @@ data class ImportedDailyMetrics(
     val fatGrams: Int? = null,
     val garminData: Boolean = false,
     val myFitnessPalData: Boolean = false,
+    val garminPersonalApiData: Boolean = false,
 )
 
 interface ImportedMetricsStore {
@@ -34,6 +35,7 @@ interface ImportedMetricsStore {
     fun latestMyFitnessPal(): ImportedDailyMetrics?
     fun mergeAll(metrics: List<ImportedDailyMetrics>)
     fun clear()
+    fun clearGarmin()
 }
 
 /** Implement behind a secure backend once Garmin access and consent are approved. */
@@ -44,11 +46,16 @@ interface HealthRepository { suspend fun dashboard(): Dashboard }
 interface CsvImportRepository : HealthRepository {
     suspend fun importCsv(source: CsvImportSource, contents: String): Int
     suspend fun clearImports()
+    fun isGarminConnected(): Boolean
+    suspend fun connectGarmin(apiKey: String)
+    suspend fun syncGarmin()
+    suspend fun disconnectGarmin()
 }
 class DefaultHealthRepository(
     private val activities: ActivitySource,
     private val nutrition: NutritionSource,
     private val imported: ImportedMetricsStore? = null,
+    private val garminApi: GarminPersonalApi? = null,
 ) : CsvImportRepository {
     override suspend fun dashboard(): Dashboard {
         val activity = activities.activity()
@@ -69,7 +76,11 @@ class DefaultHealthRepository(
                 carbsGrams = latestNutrition?.carbsGrams ?: nutrition.carbsGrams,
                 fatGrams = latestNutrition?.fatGrams ?: nutrition.fatGrams,
             ),
-            activityOrigin = if (latestGarmin != null) MetricOrigin.GARMIN_CSV else MetricOrigin.DEMO,
+            activityOrigin = when {
+                latestGarmin?.garminPersonalApiData == true -> MetricOrigin.GARMIN_PERSONAL_API
+                latestGarmin != null -> MetricOrigin.GARMIN_CSV
+                else -> MetricOrigin.DEMO
+            },
             nutritionOrigin = if (latestNutrition != null) MetricOrigin.MYFITNESSPAL_CSV else MetricOrigin.DEMO,
             activityDate = latestGarmin?.date,
             nutritionDate = latestNutrition?.date,
@@ -85,6 +96,25 @@ class DefaultHealthRepository(
 
     override suspend fun clearImports() {
         checkNotNull(imported) { "CSV import storage is unavailable" }.clear()
+    }
+
+    override fun isGarminConnected(): Boolean = garminApi?.isConnected() == true
+
+    override suspend fun connectGarmin(apiKey: String) {
+        val store = checkNotNull(imported) { "Garmin storage is unavailable" }
+        val api = checkNotNull(garminApi) { "Garmin Personal API is unavailable" }
+        store.mergeAll(listOf(api.connect(apiKey)))
+    }
+
+    override suspend fun syncGarmin() {
+        val store = checkNotNull(imported) { "Garmin storage is unavailable" }
+        val api = checkNotNull(garminApi) { "Garmin Personal API is unavailable" }
+        store.mergeAll(listOf(api.sync()))
+    }
+
+    override suspend fun disconnectGarmin() {
+        checkNotNull(garminApi) { "Garmin Personal API is unavailable" }.disconnect()
+        checkNotNull(imported) { "Garmin storage is unavailable" }.clearGarmin()
     }
 }
 class DemoActivitySource : ActivitySource {

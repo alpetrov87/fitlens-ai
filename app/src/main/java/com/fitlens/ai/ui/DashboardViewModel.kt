@@ -23,6 +23,8 @@ class DashboardViewModel(private val repository: CsvImportRepository) : ViewMode
     val state = mutableState.asStateFlow()
     private val mutableImportMessage = MutableStateFlow<String?>(null)
     val importMessage = mutableImportMessage.asStateFlow()
+    private val mutableGarminConnected = MutableStateFlow(repository.isGarminConnected())
+    val garminConnected = mutableGarminConnected.asStateFlow()
     init { refresh() }
 
     fun importCsv(source: CsvImportSource, csv: String) {
@@ -44,6 +46,33 @@ class DashboardViewModel(private val repository: CsvImportRepository) : ViewMode
     }
 
     fun reportImportError(message: String) { mutableImportMessage.value = message }
+
+    fun connectGarmin(apiKey: String) = runGarminAction("Garmin е свързан и днешните данни са синхронизирани.") {
+        repository.connectGarmin(apiKey)
+        mutableGarminConnected.value = true
+    }
+
+    fun syncGarmin() = runGarminAction("Данните от Garmin са обновени.") { repository.syncGarmin() }
+
+    fun disconnectGarmin() = runGarminAction("Garmin ключът и синхронизираните Garmin данни са изтрити от устройството.") {
+        repository.disconnectGarmin()
+        mutableGarminConnected.value = false
+    }
+
+    private fun runGarminAction(success: String, action: suspend () -> Unit) {
+        viewModelScope.launch {
+            mutableImportMessage.value = "Свързване с Garmin…"
+            try {
+                withContext(Dispatchers.IO) { action() }
+                mutableImportMessage.value = success
+                refresh()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                mutableImportMessage.value = failure.message ?: "Garmin синхронизацията неуспешна."
+            }
+        }
+    }
 
     fun clearImportedMetrics() {
         viewModelScope.launch {

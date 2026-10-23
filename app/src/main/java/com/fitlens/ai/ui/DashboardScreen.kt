@@ -27,11 +27,17 @@ fun FitLensTheme(content: @Composable () -> Unit) {
 fun DashboardScreen(
     state: DashboardState,
     importMessage: String?,
+    garminConnected: Boolean = false,
+    onConnectGarmin: (String) -> Unit = {},
+    onSyncGarmin: () -> Unit = {},
+    onDisconnectGarmin: () -> Unit = {},
     onRefresh: () -> Unit,
     onImport: (CsvImportSource) -> Unit,
     onClearImports: () -> Unit,
 ) {
     var confirmClear by remember { mutableStateOf(false) }
+    var garminKey by remember { mutableStateOf("") }
+    val context = androidx.compose.ui.platform.LocalContext.current
     Scaffold { padding ->
         Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
             .padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -84,7 +90,30 @@ fun DashboardScreen(
                 }
                 if (importMessage != null) Text(importMessage, color = MaterialTheme.colorScheme.secondary)
                 Text("Импортират се само измерванията от CSV. Файлът и акаунт пароли не се изпращат.", style = MaterialTheme.typography.bodySmall)
-                Text("Garmin Personal API синхронизацията чака одобрен API достъп и backend.", style = MaterialTheme.typography.bodySmall)
+            }
+            MetricCard("Garmin Personal API · ${if (garminConnected) "свързан" else "настройка"}") {
+                Text("За лична употреба: създай Personal API key в Garmin Connect Web. Ключът се показва еднократно и трябва да се пази като парола.")
+                TextButton(onClick = {
+                    context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://connect.garmin.com/app/settings/personalApiToken")))
+                }) { Text("Отвори Garmin Connect · Personal API keys") }
+                if (!garminConnected) {
+                    OutlinedTextField(
+                        value = garminKey,
+                        onValueChange = { garminKey = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Garmin Personal API key") },
+                        placeholder = { Text("Постави личния си ключ") },
+                        singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                    )
+                    Button(onClick = { onConnectGarmin(garminKey); garminKey = "" }, enabled = garminKey.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
+                        Text("Свържи и синхронизирай")
+                    }
+                } else {
+                    Button(onClick = onSyncGarmin, modifier = Modifier.fillMaxWidth()) { Text("Синхронизирай днешните данни") }
+                    OutlinedButton(onClick = onDisconnectGarmin, modifier = Modifier.fillMaxWidth()) { Text("Изтрий ключа и Garmin данните") }
+                }
+                Text("Приложението изпраща ключа само към Garmin през HTTPS и го пази криптиран на това устройство. Garmin API key не се изпраща към backend. Personal API е за собствените ти данни и не е достъп за комерсиална multi-user услуга.", style = MaterialTheme.typography.bodySmall)
             }
             OutlinedButton(onClick = onRefresh, enabled = state != DashboardState.Loading) { Text("Обнови демо данните") }
         }
@@ -103,6 +132,7 @@ fun DashboardScreen(
 private fun MetricOrigin.label(): String = when (this) {
     MetricOrigin.DEMO -> "демо"
     MetricOrigin.GARMIN_CSV -> "Garmin CSV"
+    MetricOrigin.GARMIN_PERSONAL_API -> "Garmin Personal API"
     MetricOrigin.MYFITNESSPAL_CSV -> "MyFitnessPal CSV"
 }
 

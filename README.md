@@ -1,6 +1,6 @@
 # FitLens AI — Android MVP
 
-Първа демо версия с Kotlin и Jetpack Compose. Работи офлайн, без акаунт, ключове или разрешения за лични данни. Екранът показва примерни крачки, активни минути, разстояние, калории и макронутриенти, демо съвет и статус на интеграциите. Бутонът за обновяване презарежда същите фиксирани демо стойности.
+Първа версия с Kotlin и Jetpack Compose. Без Garmin ключ приложението показва примерни крачки, активни минути, разстояние, калории и макронутриенти. С личен Garmin Personal API key може да се синхронизират дневните Garmin показатели. MyFitnessPal данните могат да се добавят чрез CSV импорт.
 
 ## Изтегляне на APK от GitHub
 
@@ -42,13 +42,13 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 
 Отчети: `app/build/reports/tests/testDebugUnitTest/index.html` и `app/build/reports/lint-results-debug.html`. Unit тестовете проверяват композицията на доставчиците, демо стойностите и предаването на грешки. Това не замества UI проверка на телефон/емулатор.
 
-## Архитектура и бъдещи интеграции
+## Архитектура и Garmin Personal API
 
 `MainActivity` свързва зависимостите → `DashboardViewModel` управлява `StateFlow` с Loading/Ready/Error → Compose наблюдава състоянието с lifecycle awareness. `HealthRepository` предоставя общ `Dashboard`; `DefaultHealthRepository` комбинира `ActivitySource` и `NutritionSource`. В MVP те са `DemoActivitySource` и `DemoNutritionSource`. Preview е наличен в `DashboardScreen.kt`.
 
-За Garmin/MyFitnessPal добави реални адаптери зад съответните интерфейси и ги подай на repository, без да променяш екрана. Преди това са нужни одобрен API достъп/партньорство според условията на доставчика, потребителско съгласие, backend OAuth поток, сигурно съхранение на токени, синхронизация, обработка на часови зони, единици, rate limits и изтриване на данни. Наличието на публичен API не е предпоставка на тази демо версия. Не вграждай client secrets или access tokens в APK/репозитори. Реалните адаптери трябва да получат собствени contract/integration тестове.
+За Garmin вече има личен Personal API адаптер, който се управлява от таблото. Той взема токен директно от Garmin и изтегля дневното обобщение за текущата дата; ключът се криптира с Android Keystore, а краткотрайният токен остава само в паметта.
 
-В момента няма мрежови заявки, автоматична Garmin/MyFitnessPal връзка, AI модел или медицински препоръки. Импортираните обобщения се пазят локално на устройството.
+MyFitnessPal продължава да работи чрез CSV импорт. Няма AI модел или медицински препоръки. Импортираните обобщения се пазят локално на устройството.
 
 ## Импорт от Garmin Connect и MyFitnessPal
 
@@ -71,9 +71,19 @@ Date,Calories,Protein (g),Carbs (g),Fat (g)
 
 Всеки източник показва отделно най-новата дата от своя файл. Метриките, които липсват от избрания файл, остават изрично обозначени като демо. Тази версия импортира CSV; не импортира Garmin FIT/GPX/TCX архиви и не влиза в Garmin Connect или MyFitnessPal вместо потребителя.
 
-### Официални API интеграции
+### Garmin Personal API: първоначална настройка
 
-- Garmin Personal API: [Garmin Connect Developer Program — Personal API](https://developer.garmin.com/gc-developer-program/personal/personal-api/). За реално автоматично теглене ще са нужни одобрена регистрация/достъп от Garmin, OAuth поток за свързване на потребителския акаунт и backend, който държи confidential client credentials и пази/подновява токените. Не се поставят secret или refresh token в APK. В тази версия няма live API клиент или входен екран; текущите условия и конкретният OAuth процес трябва да се потвърдят в Garmin портала след активиране на достъпа.
-- MyFitnessPal: тази версия приема CSV без директен API достъп. Поради network ограниченията не успяхме да проверим от официалния [MyFitnessPal сайт](https://www.myfitnesspal.com/) и [Support Center](https://support.myfitnesspal.com/) дали има достъпна self-service API или какви партньорски условия важат. Проверете одобрените възможности там преди backend интеграция. Не използвайте неофициални endpoints, scraping или извлечени session cookies. При одобрен API или документиран потребителски export може да се добави provider adapter, без промяна на dashboard слоя.
+1. Впиши се в Garmin Connect Web със своя акаунт и отвори [Personal API keys](https://connect.garmin.com/app/settings/personalApiToken).
+2. Избери **Create Key**, приеми условията и задай срок на ключа. Garmin посочва срокове до една година; екранът на Garmin Connect показва наличните опции.
+3. Копирай ключа, когато бъде показан. Той се вижда само веднъж. Не го изпращай в чат, issue или commit.
+4. Инсталирай актуалния debug APK, отвори секцията **Garmin Personal API**, постави ключа и избери **Свържи и синхронизирай**. Приложението заявява access token и тегли днешното обобщение. На таблото източникът се показва като Garmin Personal API.
+5. Използвай **Синхронизирай днешните данни** за следващо изтегляне. Ключът се пази криптиран локално с Android Keystore. Токенът не се записва; нов 24-часов token се заявява при всяка синхронизация, защото Garmin Personal API няма refresh token.
+6. **Изтрий ключа и Garmin данните** премахва ключа от приложението, локалния Android Keystore ключ и синхронизираните Garmin обобщения. За отнемане от Garmin Connect използвай управлението на Personal API ключовете в Garmin профила.
 
-По време на тази имплементация cloud network proxy отказа (`403`) достъп до предоставения Garmin developer URL и официалните MyFitnessPal страници; следователно текущата API документация не беше независимо прегледана. Точните партньорски условия и Garmin endpoints остават непотвърдени. Добавените домейни са запазени в environment configuration draft; те се прилагат след преглед и публикация на средата.
+Интеграцията следва официалните [Personal API инструкции](https://developer.garmin.com/gc-developer-program/personal/personal-api/), [FAQ](https://developer.garmin.com/gc-developer-program/personal/personal-faq/) и [API описание](https://developer.garmin.com/gc-developer-program/personal/swagger-docs/). Garmin Personal API е за личните данни на собственика на ключа, не за комерсиално multi-user приложение. Текущата версия чете дневното обобщение (`usersummary/daily`), а не пълната история и всички активности. Трябва да имаш Garmin Connect акаунт и да приемеш условията им.
+
+### MyFitnessPal и бъдещ API достъп
+
+- MyFitnessPal: тази версия приема CSV без директен API достъп. Официалният API/support сайт не беше достъпен за проверка в тази среда, затова наличието на self-service API и условията за партньорство остават непотвърдени. Не използваме scraping, неофициални endpoints или session cookies. CSV импортът е наличният път за добавяне на MyFitnessPal данни.
+
+Garmin API е личен ключов поток, а не OAuth client/backend интеграция. MyFitnessPal API статусът не е потвърден; преди да добавяме директна връзка, трябва да се използва официално документиран или одобрен от MyFitnessPal достъп.

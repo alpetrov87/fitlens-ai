@@ -10,7 +10,7 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
     private val lock = Any()
 
     override fun latestGarmin(): ImportedDailyMetrics? = synchronized(lock) {
-        readRows().filter(ImportedDailyMetrics::garminData).maxByOrNull(ImportedDailyMetrics::date)
+        readRows().filter { it.garminData || it.garminPersonalApiData }.maxByOrNull(ImportedDailyMetrics::date)
     }
 
     override fun latestMyFitnessPal(): ImportedDailyMetrics? = synchronized(lock) {
@@ -19,6 +19,17 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
 
     override fun clear() = synchronized(lock) {
         check(preferences.edit().remove(KEY_DAILY).commit()) { "Не успях да изтрия импортираните данни." }
+    }
+
+    override fun clearGarmin() = synchronized(lock) {
+        val rows = readRows().map { row ->
+            if (row.garminData || row.garminPersonalApiData) row.copy(
+                steps = null, activeMinutes = null, distanceKm = null,
+                garminData = false, garminPersonalApiData = false,
+            ) else row
+        }.filter { it.myFitnessPalData }
+        val array = JSONArray().apply { rows.forEach { put(it.toJson()) } }
+        check(preferences.edit().putString(KEY_DAILY, array.toString()).commit()) { "Не успях да изтрия Garmin данните." }
     }
 
     override fun mergeAll(metrics: List<ImportedDailyMetrics>) = synchronized(lock) {
@@ -31,6 +42,14 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
                     activeMinutes = metricsForDate.activeMinutes ?: previous.activeMinutes,
                     distanceKm = metricsForDate.distanceKm ?: previous.distanceKm,
                     garminData = true,
+                    garminPersonalApiData = false,
+                )
+                metricsForDate.garminPersonalApiData -> previous.copy(
+                    steps = metricsForDate.steps,
+                    activeMinutes = metricsForDate.activeMinutes,
+                    distanceKm = metricsForDate.distanceKm,
+                    garminData = false,
+                    garminPersonalApiData = true,
                 )
                 metricsForDate.myFitnessPalData -> previous.copy(
                     calories = metricsForDate.calories ?: previous.calories,
@@ -68,6 +87,7 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
         .put("carbsGrams", carbsGrams.jsonValue())
         .put("fatGrams", fatGrams.jsonValue())
         .put("garminData", garminData)
+        .put("garminPersonalApiData", garminPersonalApiData)
         .put("myFitnessPalData", myFitnessPalData)
 
     private fun JSONObject.toMetrics() = ImportedDailyMetrics(
@@ -81,6 +101,7 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
         carbsGrams = optNullableInt("carbsGrams"),
         fatGrams = optNullableInt("fatGrams"),
         garminData = optBoolean("garminData"),
+        garminPersonalApiData = optBoolean("garminPersonalApiData"),
         myFitnessPalData = optBoolean("myFitnessPalData"),
     )
 
