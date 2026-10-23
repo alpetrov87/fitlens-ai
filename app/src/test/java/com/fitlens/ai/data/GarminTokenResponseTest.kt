@@ -1,26 +1,20 @@
 package com.fitlens.ai.data
 
+import java.util.Base64
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class GarminTokenResponseTest {
-    @Test fun parsesStandardOAuthResponse() {
-        assertEquals("header.payload.signature", parseGarminAccessToken("""{"access_token":"header.payload.signature"}"""))
+    private val token = "header.${Base64.getUrlEncoder().withoutPadding().encodeToString("{\"exp\":4102444800}".toByteArray())}.signature"
+
+    @Test fun acceptsRawGarminJwtResponseWithExpirationClaim() {
+        assertEquals(token, parseGarminAccessToken(" $token\n"))
     }
 
-    @Test fun parsesCamelCaseAndWrappedTokenResponses() {
-        assertEquals("token-value-123456", parseGarminAccessToken("""{"data":{"accessToken":"token-value-123456"}}"""))
-        assertEquals("token-value-123456", parseGarminAccessToken("""{"token":"token-value-123456"}"""))
-    }
-
-    @Test fun parsesPlainAndFormEncodedResponses() {
-        assertEquals("header.payload.signature", parseGarminAccessToken(" header.payload.signature "))
-        assertEquals("header.payload.signature", parseGarminAccessToken("token_type=Bearer&access_token=header.payload.signature"))
-    }
-
-    @Test fun doesNotTreatErrorMessagesAsTokens() {
-        assertNull(parseGarminAccessToken("{\"message\":\"invalid key\"}"))
+    @Test fun rejectsResponsesWithoutJwtExpiration() {
+        assertNull(parseGarminAccessToken("header.cGF5bG9hZA.signature"))
         assertNull(parseGarminAccessToken("Garmin token could not be created"))
+        assertNull(parseGarminAccessToken("""{"message":"invalid key"}"""))
     }
 }

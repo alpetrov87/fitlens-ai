@@ -25,7 +25,7 @@ internal fun parseGarminAccessToken(body: String): String? {
             val keys = json.keys().asSequence().toList()
             for (key in keys) {
                 val value = json.opt(key)
-                if (key.lowercase() in acceptedNames && value is String && value.isNotBlank()) return value.trim()
+                if (key.lowercase() in acceptedNames && value is String && isGarminJwt(value.trim())) return value.trim()
             }
             if (depth > 0) {
                 for (key in keys) {
@@ -39,12 +39,24 @@ internal fun parseGarminAccessToken(body: String): String? {
     }
     if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
         runCatching { org.json.JSONTokener(trimmed).nextValue() as? String }.getOrNull()
-            ?.takeIf { it.isNotBlank() }?.let { return it.trim() }
+            ?.trim()?.takeIf(::isGarminJwt)?.let { return it }
     }
     val formToken = Regex("(?:^|&)access_token=([^&]+)").find(trimmed)?.groupValues?.get(1)
         ?.let { java.net.URLDecoder.decode(it, Charsets.UTF_8.name()) }
-    if (!formToken.isNullOrBlank()) return formToken
-    return trimmed.takeIf { it.length >= 16 && it.matches(Regex("[A-Za-z0-9._~+/=-]+")) }
+    if (!formToken.isNullOrBlank() && isGarminJwt(formToken)) return formToken
+    return trimmed.takeIf(::isGarminJwt)
+}
+
+/** Matches Garmin's official client: the token response is a JWT whose payload contains exp. */
+private fun isGarminJwt(token: String): Boolean {
+    val parts = token.split('.')
+    if (parts.size != 3 || parts.any { it.isEmpty() }) return false
+    val payload = runCatching {
+        String(java.util.Base64.getUrlDecoder().decode(parts[1]), Charsets.UTF_8)
+    }.getOrNull() ?: return false
+    val expiration = Regex("\\\"exp\\\"\\s*:\\s*\\\"?([0-9]+(?:\\.[0-9]+)?)\\\"?")
+        .find(payload)?.groupValues?.get(1)?.toDoubleOrNull()
+    return expiration != null && expiration > 0.0
 }
 
 class GarminPersonalApi(
@@ -108,6 +120,7 @@ class GarminPersonalApi(
     private fun exchangeKey(apiKey: String): String {
         val request = Request.Builder()
             .url("$BASE_URL/personalapitoken-service/personal-api/personal-api-key/token")
+            .header("Accept", "*/*")
             .header("Authorization", "ApiKey $apiKey")
             .post(okhttp3.RequestBody.create(null, ByteArray(0)))
             .build()
