@@ -27,6 +27,11 @@ fun DashboardScreen(
     importMessage: String?,
     garminConnected: Boolean = false,
     garminBusy: Boolean = false,
+    openAiConnected: Boolean = false,
+    historyBusy: Boolean = false,
+    historyCount: Int = 0,
+    analysisBusy: Boolean = false,
+    analysis: String? = null,
     calendar: CalendarState = CalendarState(loading = false),
     onAddEvent: (EventDraft, () -> Unit) -> Unit = { _, _ -> },
     onDeleteEvent: (String) -> Unit = {},
@@ -34,6 +39,10 @@ fun DashboardScreen(
     onConnectGarmin: (String) -> Unit = {},
     onSyncGarmin: () -> Unit = {},
     onDisconnectGarmin: () -> Unit = {},
+    onSaveOpenAiKey: (String) -> Unit = {},
+    onDisconnectOpenAi: () -> Unit = {},
+    onSyncHistory: () -> Unit = {},
+    onAnalyzeTraining: (CalendarEvent?) -> Unit = {},
     onRefresh: () -> Unit,
     onImport: (CsvImportSource) -> Unit,
     onClearImports: () -> Unit,
@@ -73,9 +82,11 @@ fun DashboardScreen(
                 when (page) {
                     "calendar" -> CalendarScreen(calendar, onAddEvent, onDeleteEvent, onRetryCalendar)
                     "settings" -> SettingsScreen(garminConnected, garminBusy, onConnectGarmin, onSyncGarmin,
-                        onDisconnectGarmin, onImport, onClearImports)
+                        onDisconnectGarmin, onImport, onClearImports, openAiConnected, historyBusy, historyCount,
+                        onSaveOpenAiKey, onDisconnectOpenAi, onSyncHistory)
                     else -> HomeScreen(state, garminConnected, garminBusy, calendar.events, onSyncGarmin,
-                        onRefresh, { page = "settings" }, { page = "calendar" })
+                        onRefresh, { page = "settings" }, { page = "calendar" }, openAiConnected, historyBusy,
+                        analysisBusy, analysis, onAnalyzeTraining, { page = "settings" })
                 }
             }
         }
@@ -86,14 +97,19 @@ fun DashboardScreen(
 private fun HomeScreen(
     state: DashboardState, connected: Boolean, busy: Boolean, events: List<CalendarEvent>,
     onSync: () -> Unit, onRefresh: () -> Unit, onSettings: () -> Unit, onCalendar: () -> Unit,
+    openAiConnected: Boolean, historyBusy: Boolean, analysisBusy: Boolean, analysis: String?,
+    onAnalyze: (CalendarEvent?) -> Unit, onAiSettings: () -> Unit,
 ) {
+    var showAiConsent by rememberSaveable { mutableStateOf(false) }
+    var eventMenu by remember { mutableStateOf(false) }
+    var selectedEventId by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
         .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Text("Твоят ден, в баланс.", style = MaterialTheme.typography.headlineMedium)
         Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forLanguageTag("bg"))),
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (connected) {
-            FilledTonalButton(onClick = onSync, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+            FilledTonalButton(onClick = onSync, enabled = !busy && !historyBusy, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Default.Sync, contentDescription = null, Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp)); Text(if (busy) "Изтегляне…" else "Изтегли данните за днес")
             }
@@ -169,6 +185,47 @@ private fun HomeScreen(
             }
             TextButton(onClick = onCalendar) { Text("Отвори календара") }
         }
+        InfoCard("AI анализ на тренировките", Icons.Default.AutoAwesome) {
+            Text("Прегледай натоварването през последните 30 дни и обсъди подготовката за състезание.")
+            if (!openAiConnected) {
+                Text("Добави OpenAI API ключ в настройките.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                OutlinedButton(onClick = onAiSettings, modifier = Modifier.fillMaxWidth()) { Text("Отвори настройките") }
+            } else if (!connected) {
+                Text("Свържи Garmin, за да изтеглиш тренировките си.")
+                OutlinedButton(onClick = onAiSettings, modifier = Modifier.fillMaxWidth()) { Text("Настрой Garmin") }
+            } else {
+                OutlinedButton(onClick = { eventMenu = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text(events.firstOrNull { it.id == selectedEventId }?.let { "Състезание: ${it.title}" } ?: "Избери предстоящо събитие (по избор)")
+                }
+                DropdownMenu(expanded = eventMenu, onDismissRequest = { eventMenu = false }) {
+                    DropdownMenuItem(text = { Text("Без избрано събитие") }, onClick = { selectedEventId = ""; eventMenu = false })
+                    events.filter { it.date >= LocalDate.now().toString() }.forEach { event ->
+                        DropdownMenuItem(text = { Text("${event.title} · ${event.date}") },
+                            onClick = { selectedEventId = event.id; eventMenu = false })
+                    }
+                }
+                Button(onClick = { showAiConsent = true }, enabled = !historyBusy && !analysisBusy,
+                    modifier = Modifier.fillMaxWidth()) {
+                    if (analysisBusy || historyBusy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    else Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp)); Text(when { historyBusy -> "Синхронизиране…"; analysisBusy -> "Подготвям анализа…"; else -> "Изтегли и анализирай 30 дни" })
+                }
+                Text("Ще бъдат изпратени тренировъчни обобщения към OpenAI след потвърждение. Не е медицинска оценка.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                analysis?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+            }
+        }
+    }
+    if (showAiConsent) {
+        AlertDialog(onDismissRequest = { showAiConsent = false },
+            title = { Text("Изпращане на данни за AI анализ") },
+            text = { Text("FitLens ще изтегли активностите, наличните обобщения за сън и HRV от Garmin за последните 30 дни и ще изпрати тези показатели към OpenAI. Ако избереш събитие, ще изпрати и името, датата, спорта и мястото му. Garmin ключът не се изпраща към OpenAI; OpenAI ключът се използва само за удостоверяване на заявката. Продължаваш ли?") },
+            confirmButton = { TextButton(onClick = {
+                showAiConsent = false
+                val event = events.firstOrNull { it.id == selectedEventId && it.date >= LocalDate.now().toString() }
+                onAnalyze(event)
+            }) { Text("Продължи") } },
+            dismissButton = { TextButton(onClick = { showAiConsent = false }) { Text("Отказ") } })
     }
 }
 

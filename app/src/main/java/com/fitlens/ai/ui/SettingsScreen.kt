@@ -19,8 +19,11 @@ import com.fitlens.ai.data.CsvImportSource
 internal fun SettingsScreen(
     connected: Boolean, busy: Boolean, onConnect: (String) -> Unit, onSync: () -> Unit,
     onDisconnect: () -> Unit, onImport: (CsvImportSource) -> Unit, onClear: () -> Unit,
+    openAiConnected: Boolean, historyBusy: Boolean, historyCount: Int,
+    onSaveOpenAiKey: (String) -> Unit, onDisconnectOpenAi: () -> Unit, onSyncHistory: () -> Unit,
 ) {
     var key by remember { mutableStateOf("") }
+    var openAiKey by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
@@ -31,8 +34,13 @@ internal fun SettingsScreen(
             Text(if (connected) "Свързан с личен API ключ" else "Добави личния си Personal API ключ",
                 color = MaterialTheme.colorScheme.primary)
             if (connected) {
-                Button(onClick = onSync, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text("Изтегли данните за днес") }
-                OutlinedButton(onClick = { confirm = "garmin" }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = onSync, enabled = !busy && !historyBusy, modifier = Modifier.fillMaxWidth()) { Text("Изтегли данните за днес") }
+                OutlinedButton(onClick = onSyncHistory, enabled = !busy && !historyBusy, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp)); Text(if (historyBusy) "Изтегляне на история…" else "Изтегли тренировките за 30 дни")
+                }
+                Text("Активности в последната синхронизация: $historyCount", style = MaterialTheme.typography.bodySmall)
+                OutlinedButton(onClick = { confirm = "garmin" }, enabled = !busy && !historyBusy, modifier = Modifier.fillMaxWidth()) {
                     Text("Премахни връзката и Garmin данните")
                 }
             } else {
@@ -50,6 +58,22 @@ internal fun SettingsScreen(
                 Icon(Icons.Default.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp)); Text("Импортирай Garmin CSV")
             }
+        }
+        InfoCard("OpenAI · AI анализ", Icons.Default.AutoAwesome) {
+            Text(if (openAiConnected) "OpenAI API ключът е запазен на това устройство." else "Добави свой OpenAI API ключ за анализ на тренировките.")
+            if (openAiConnected) {
+                OutlinedButton(onClick = onDisconnectOpenAi, modifier = Modifier.fillMaxWidth()) { Text("Изтрий OpenAI ключа") }
+            } else {
+                OutlinedTextField(value = openAiKey, onValueChange = { openAiKey = it }, singleLine = true,
+                    modifier = Modifier.fillMaxWidth(), label = { Text("OpenAI API key") },
+                    visualTransformation = PasswordVisualTransformation())
+                Button(onClick = { onSaveOpenAiKey(openAiKey); openAiKey = "" },
+                    enabled = openAiKey.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Запази ключа") }
+            }
+                Text("Трябва ти API ключ от platform.openai.com. ChatGPT абонаментът не включва API употреба; тя се таксува отделно от OpenAI. Задай лимит за разходите в OpenAI Platform.",
+                style = MaterialTheme.typography.bodySmall)
+                Text("При стартиране на анализ FitLens изпраща до OpenAI имената, датите, спортовете, продължителността, дистанцията, пулса и наличните Garmin обобщения за сън/HRV от последните 30 дни, както и избраното събитие. Garmin ключът не се изпраща към OpenAI. Изпращането започва само след потвърждение.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         InfoCard("MyFitnessPal", Icons.Default.Restaurant) {
             Text("Добави хранителни данни от CSV файл. Директна API връзка още не е налична.")
@@ -82,7 +106,7 @@ internal fun SettingsScreen(
         AlertDialog(onDismissRequest = { confirm = null },
             title = { Text(if (garmin) "Премахване на Garmin връзката" else "Изтриване на импортираните данни") },
             text = { Text(if (garmin) "Garmin ключът и локалните Garmin данни ще бъдат изтрити. Календарът и MyFitnessPal данните ще останат."
-                else "Изтеглените Garmin и MyFitnessPal показатели ще бъдат изтрити. Календарът и Garmin ключът ще останат.") },
+                else "Изтеглените Garmin и MyFitnessPal показатели, активности, сън и HRV ще бъдат изтрити. Календарът и Garmin ключът ще останат.") },
             confirmButton = { TextButton(onClick = { confirm = null; if (garmin) onDisconnect() else onClear() }) { Text("Изтрий") } },
             dismissButton = { TextButton(onClick = { confirm = null }) { Text("Отказ") } })
     }

@@ -18,7 +18,7 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
     }
 
     override fun clear() = synchronized(lock) {
-        check(preferences.edit().remove(KEY_DAILY).remove(KEY_GARMIN_ACTIVITIES).commit()) { "Не успях да изтрия импортираните данни." }
+        check(preferences.edit().remove(KEY_DAILY).remove(KEY_GARMIN_ACTIVITIES).remove(KEY_GARMIN_RECOVERY).commit()) { "Не успях да изтрия импортираните данни." }
     }
 
     override fun clearGarmin() = synchronized(lock) {
@@ -30,7 +30,7 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
             ) else row
         }.filter { it.myFitnessPalData }
         val array = JSONArray().apply { rows.forEach { put(it.toJson()) } }
-        check(preferences.edit().putString(KEY_DAILY, array.toString()).remove(KEY_GARMIN_ACTIVITIES).commit()) { "Не успях да изтрия Garmin данните." }
+        check(preferences.edit().putString(KEY_DAILY, array.toString()).remove(KEY_GARMIN_ACTIVITIES).remove(KEY_GARMIN_RECOVERY).commit()) { "Не успях да изтрия Garmin данните." }
     }
 
     override fun activitiesForDate(date: String): List<GarminActivity> = synchronized(lock) {
@@ -40,13 +40,40 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
         }.filter { it.startTimeLocal.startsWith(date) }.sortedBy(GarminActivity::startTimeLocal)
     }
 
+    override fun activitiesBetween(startDate: String, endDate: String): List<GarminActivity> = synchronized(lock) {
+        readActivitiesList().filter { it.startTimeLocal.take(10) in startDate..endDate }
+            .sortedBy(GarminActivity::startTimeLocal)
+    }
+
     override fun replaceGarminActivities(date: String, activities: List<GarminActivity>) = synchronized(lock) {
-        val current = readActivities()
-        val all = (0 until current.length()).mapNotNull { index ->
-            runCatching { current.getJSONObject(index).toActivity() }.getOrNull()
-        }.filterNot { it.startTimeLocal.startsWith(date) } + activities
+        val all = readActivitiesList().filterNot { it.startTimeLocal.startsWith(date) } + activities
         val array = JSONArray().apply { all.sortedBy(GarminActivity::startTimeLocal).forEach { put(it.toJson()) } }
         check(preferences.edit().putString(KEY_GARMIN_ACTIVITIES, array.toString()).commit()) { "Не успях да запазя Garmin активностите." }
+    }
+
+    override fun replaceGarminActivitiesBetween(startDate: String, endDate: String, activities: List<GarminActivity>) = synchronized(lock) {
+        val all = readActivitiesList().filterNot { it.startTimeLocal.take(10) in startDate..endDate } + activities
+        val array = JSONArray().apply { all.sortedBy(GarminActivity::startTimeLocal).forEach { put(it.toJson()) } }
+        check(preferences.edit().putString(KEY_GARMIN_ACTIVITIES, array.toString()).commit()) { "Не успях да запазя Garmin историята." }
+    }
+
+    override fun recoveryBetween(startDate: String, endDate: String): List<GarminRecoveryDay> = synchronized(lock) {
+        val array = readRecovery()
+        (0 until array.length()).mapNotNull { i -> runCatching { array.getJSONObject(i).toRecovery() }.getOrNull() }
+            .filter { it.date in startDate..endDate }.sortedBy(GarminRecoveryDay::date)
+    }
+
+    override fun replaceGarminRecoveryBetween(startDate: String, endDate: String, recovery: List<GarminRecoveryDay>) = synchronized(lock) {
+        val all = recoveryBetween("0000-01-01", "9999-12-31").filterNot { it.date in startDate..endDate } + recovery
+        val array = JSONArray().apply { all.sortedBy(GarminRecoveryDay::date).forEach { put(it.toJson()) } }
+        check(preferences.edit().putString(KEY_GARMIN_RECOVERY, array.toString()).commit()) { "Не успях да запазя данните за сън и HRV." }
+    }
+
+    private fun readActivitiesList(): List<GarminActivity> {
+        val current = readActivities()
+        return (0 until current.length()).mapNotNull { index ->
+            runCatching { current.getJSONObject(index).toActivity() }.getOrNull()
+        }
     }
 
     override fun mergeAll(metrics: List<ImportedDailyMetrics>) = synchronized(lock) {
@@ -133,6 +160,15 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
 
     private fun readActivities(): JSONArray = JSONArray(preferences.getString(KEY_GARMIN_ACTIVITIES, "[]"))
 
+    private fun readRecovery(): JSONArray = JSONArray(preferences.getString(KEY_GARMIN_RECOVERY, "[]"))
+
+    private fun GarminRecoveryDay.toJson() = JSONObject().put("date", date)
+        .put("sleepMinutes", sleepMinutes.jsonValue()).put("hrvLastNightMs", hrvLastNightMs.jsonValue())
+        .put("hrvStatus", hrvStatus ?: JSONObject.NULL)
+
+    private fun JSONObject.toRecovery() = GarminRecoveryDay(getString("date"), optNullableInt("sleepMinutes"),
+        optNullableInt("hrvLastNightMs"), optString("hrvStatus").takeIf(String::isNotBlank))
+
     private fun GarminActivity.toJson() = JSONObject()
         .put("activityId", activityId).put("name", name).put("activityTypeKey", activityTypeKey)
         .put("startTimeLocal", startTimeLocal).put("durationSeconds", durationSeconds.jsonValue())
@@ -152,5 +188,6 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
     private companion object {
         const val KEY_DAILY = "daily_metrics_v1"
         const val KEY_GARMIN_ACTIVITIES = "garmin_activities_v1"
+        const val KEY_GARMIN_RECOVERY = "garmin_recovery_v1"
     }
 }

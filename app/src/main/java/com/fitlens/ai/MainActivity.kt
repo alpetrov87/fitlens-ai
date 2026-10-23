@@ -27,6 +27,8 @@ import com.fitlens.ai.ui.DashboardViewModel
 import com.fitlens.ai.ui.FitLensTheme
 import com.fitlens.ai.ui.CalendarViewModel
 import com.fitlens.ai.data.CalendarEventStore
+import com.fitlens.ai.data.OpenAiAnalysis
+import com.fitlens.ai.data.OpenAiApiKeyStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -42,6 +44,8 @@ class MainActivity : ComponentActivity() {
                 DemoActivitySource(), DemoNutritionSource(), SharedPreferencesImportedMetricsStore(applicationContext),
                 GarminPersonalApi(GarminPersonalKeyStore(applicationContext)),
             ),
+            OpenAiApiKeyStore(applicationContext),
+            OpenAiAnalysis(OpenAiApiKeyStore(applicationContext)),
         )
         val calendarFactory = CalendarViewModel.Factory(CalendarEventStore(applicationContext))
         setContent {
@@ -69,6 +73,11 @@ class MainActivity : ComponentActivity() {
                     importMessage = model.importMessage.collectAsStateWithLifecycle().value,
                     garminConnected = model.garminConnected.collectAsStateWithLifecycle().value,
                     garminBusy = model.garminBusy.collectAsStateWithLifecycle().value,
+                    openAiConnected = model.openAiConnected.collectAsStateWithLifecycle().value,
+                    historyBusy = model.historyBusy.collectAsStateWithLifecycle().value,
+                    historyCount = model.historyCount.collectAsStateWithLifecycle().value,
+                    analysisBusy = model.analysisBusy.collectAsStateWithLifecycle().value,
+                    analysis = model.analysis.collectAsStateWithLifecycle().value,
                     calendar = calendarModel.state.collectAsStateWithLifecycle().value,
                     onAddEvent = calendarModel::add,
                     onDeleteEvent = calendarModel::delete,
@@ -76,6 +85,10 @@ class MainActivity : ComponentActivity() {
                     onConnectGarmin = model::connectGarmin,
                     onSyncGarmin = model::syncGarmin,
                     onDisconnectGarmin = model::disconnectGarmin,
+                    onSaveOpenAiKey = model::saveOpenAiKey,
+                    onDisconnectOpenAi = model::disconnectOpenAi,
+                    onSyncHistory = { model.syncTrainingHistory() },
+                    onAnalyzeTraining = model::analyzeTraining,
                     onRefresh = model::refresh,
                     onImport = { source ->
                         importSource = source

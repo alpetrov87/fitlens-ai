@@ -48,6 +48,15 @@ data class GarminActivity(
     val elevationGainMeters: Double?,
 )
 
+data class GarminRecoveryDay(
+    val date: String,
+    val sleepMinutes: Int? = null,
+    val hrvLastNightMs: Int? = null,
+    val hrvStatus: String? = null,
+)
+
+data class GarminTrainingHistory(val activities: List<GarminActivity>, val recovery: List<GarminRecoveryDay>)
+
 interface ImportedMetricsStore {
     fun latestGarmin(): ImportedDailyMetrics?
     fun latestMyFitnessPal(): ImportedDailyMetrics?
@@ -56,6 +65,10 @@ interface ImportedMetricsStore {
     fun clearGarmin()
     fun activitiesForDate(date: String): List<GarminActivity>
     fun replaceGarminActivities(date: String, activities: List<GarminActivity>)
+    fun activitiesBetween(startDate: String, endDate: String): List<GarminActivity>
+    fun replaceGarminActivitiesBetween(startDate: String, endDate: String, activities: List<GarminActivity>)
+    fun recoveryBetween(startDate: String, endDate: String): List<GarminRecoveryDay>
+    fun replaceGarminRecoveryBetween(startDate: String, endDate: String, recovery: List<GarminRecoveryDay>)
 }
 
 /** Implement behind a secure backend once Garmin access and consent are approved. */
@@ -70,6 +83,9 @@ interface CsvImportRepository : HealthRepository {
     suspend fun connectGarmin(apiKey: String)
     suspend fun syncGarmin()
     suspend fun disconnectGarmin()
+    suspend fun syncTrainingHistory(days: Int): GarminTrainingHistory
+    fun garminActivitiesBetween(startDate: String, endDate: String): List<GarminActivity>
+    fun garminRecoveryBetween(startDate: String, endDate: String): List<GarminRecoveryDay>
 }
 class DefaultHealthRepository(
     private val activities: ActivitySource,
@@ -147,6 +163,24 @@ class DefaultHealthRepository(
         checkNotNull(garminApi) { "Garmin Personal API is unavailable" }.disconnect()
         checkNotNull(imported) { "Garmin storage is unavailable" }.clearGarmin()
     }
+
+    override suspend fun syncTrainingHistory(days: Int): GarminTrainingHistory {
+        require(days in 7..90) { "Избери период между 7 и 90 дни." }
+        val store = checkNotNull(imported) { "Garmin storage is unavailable" }
+        val api = checkNotNull(garminApi) { "Garmin Personal API is unavailable" }
+        val end = java.time.LocalDate.now()
+        val start = end.minusDays(days.toLong() - 1)
+        val history = api.fetchTrainingHistory(start.toString(), end.toString())
+        store.replaceGarminActivitiesBetween(start.toString(), end.toString(), history.activities)
+        store.replaceGarminRecoveryBetween(start.toString(), end.toString(), history.recovery)
+        return history
+    }
+
+    override fun garminActivitiesBetween(startDate: String, endDate: String): List<GarminActivity> =
+        imported?.activitiesBetween(startDate, endDate).orEmpty()
+
+    override fun garminRecoveryBetween(startDate: String, endDate: String): List<GarminRecoveryDay> =
+        imported?.recoveryBetween(startDate, endDate).orEmpty()
 }
 class DemoActivitySource : ActivitySource {
     override suspend fun activity() = ActivitySummary(7840, 42, 5.6)

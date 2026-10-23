@@ -6,6 +6,11 @@ import androidx.lifecycle.viewModelScope
 import com.fitlens.ai.data.Dashboard
 import com.fitlens.ai.data.CsvImportRepository
 import com.fitlens.ai.data.CsvImportSource
+import com.fitlens.ai.data.CalendarEvent
+import com.fitlens.ai.data.OpenAiAnalysis
+import com.fitlens.ai.data.OpenAiApiKeyStore
+import com.fitlens.ai.data.GarminTrainingHistory
+import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +23,11 @@ sealed interface DashboardState {
     data class Ready(val dashboard: Dashboard) : DashboardState
     data object Error : DashboardState
 }
-class DashboardViewModel(private val repository: CsvImportRepository) : ViewModel() {
+class DashboardViewModel(
+    private val repository: CsvImportRepository,
+    private val openAiKeyStore: OpenAiApiKeyStore,
+    private val openAiAnalysis: OpenAiAnalysis,
+) : ViewModel() {
     private val mutableState = MutableStateFlow<DashboardState>(DashboardState.Loading)
     val state = mutableState.asStateFlow()
     private val mutableImportMessage = MutableStateFlow<String?>(null)
@@ -27,6 +36,16 @@ class DashboardViewModel(private val repository: CsvImportRepository) : ViewMode
     val garminConnected = mutableGarminConnected.asStateFlow()
     private val mutableGarminBusy = MutableStateFlow(false)
     val garminBusy = mutableGarminBusy.asStateFlow()
+    private val mutableOpenAiConnected = MutableStateFlow(openAiKeyStore.hasKey())
+    val openAiConnected = mutableOpenAiConnected.asStateFlow()
+    private val mutableHistoryBusy = MutableStateFlow(false)
+    val historyBusy = mutableHistoryBusy.asStateFlow()
+    private val mutableHistoryCount = MutableStateFlow(0)
+    val historyCount = mutableHistoryCount.asStateFlow()
+    private val mutableAnalysisBusy = MutableStateFlow(false)
+    val analysisBusy = mutableAnalysisBusy.asStateFlow()
+    private val mutableAnalysis = MutableStateFlow<String?>(null)
+    val analysis = mutableAnalysis.asStateFlow()
     init { refresh() }
 
     fun importCsv(source: CsvImportSource, csv: String) {
@@ -59,6 +78,70 @@ class DashboardViewModel(private val repository: CsvImportRepository) : ViewMode
     fun disconnectGarmin() = runGarminAction("Garmin ключът и синхронизираните Garmin данни са изтрити от устройството.") {
         repository.disconnectGarmin()
         mutableGarminConnected.value = false
+    }
+
+    fun saveOpenAiKey(value: String) {
+        try {
+            openAiKeyStore.save(value)
+            mutableOpenAiConnected.value = true
+            mutableImportMessage.value = "OpenAI API ключът е запазен криптирано на устройството."
+        } catch (failure: Exception) {
+            mutableImportMessage.value = failure.message ?: "OpenAI ключът не може да бъде запазен."
+        }
+    }
+
+    fun disconnectOpenAi() {
+        try {
+            openAiKeyStore.clear()
+            mutableOpenAiConnected.value = false
+            mutableAnalysis.value = null
+            mutableImportMessage.value = "OpenAI ключът е изтрит от устройството."
+        } catch (failure: Exception) {
+            mutableImportMessage.value = failure.message ?: "OpenAI ключът не може да бъде изтрит."
+        }
+    }
+
+    fun syncTrainingHistory(days: Int = 30) {
+        if (mutableHistoryBusy.value || !mutableGarminConnected.value) return
+        mutableHistoryBusy.value = true
+        viewModelScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) { repository.syncTrainingHistory(days) }
+                mutableHistoryCount.value = result.activities.size
+                mutableAnalysis.value = null
+                mutableImportMessage.value = "Изтеглени са ${result.activities.size} Garmin активности и наличните обобщения за сън/HRV за последните $days дни."
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                mutableImportMessage.value = failure.message ?: "Garmin историята не може да се изтегли."
+            } finally { mutableHistoryBusy.value = false }
+        }
+    }
+
+    fun analyzeTraining(event: CalendarEvent?) {
+        if (mutableAnalysisBusy.value) return
+        mutableAnalysisBusy.value = true
+        mutableAnalysis.value = null
+        mutableHistoryBusy.value = true
+        viewModelScope.launch {
+            try {
+                val to = LocalDate.now()
+                val from = to.minusDays(29)
+                val history = withContext(Dispatchers.IO) {
+                    repository.syncTrainingHistory(30)
+                    GarminTrainingHistory(
+                        repository.garminActivitiesBetween(from.toString(), to.toString()),
+                        repository.garminRecoveryBetween(from.toString(), to.toString()),
+                    )
+                }
+                mutableHistoryCount.value = history.activities.size
+                mutableAnalysis.value = openAiAnalysis.analyze(history.activities, history.recovery, event)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                mutableImportMessage.value = failure.message ?: "AI анализът не успя."
+            } finally { mutableHistoryBusy.value = false; mutableAnalysisBusy.value = false }
+        }
     }
 
     private fun runGarminAction(success: String, action: suspend () -> Unit) {
@@ -106,11 +189,15 @@ class DashboardViewModel(private val repository: CsvImportRepository) : ViewMode
             }
         }
     }
-    class Factory(private val repository: CsvImportRepository) : ViewModelProvider.Factory {
+    class Factory(
+        private val repository: CsvImportRepository,
+        private val openAiKeyStore: OpenAiApiKeyStore,
+        private val openAiAnalysis: OpenAiAnalysis,
+    ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(DashboardViewModel::class.java))
             @Suppress("UNCHECKED_CAST")
-            return DashboardViewModel(repository) as T
+            return DashboardViewModel(repository, openAiKeyStore, openAiAnalysis) as T
         }
     }
 }

@@ -51,6 +51,46 @@ class GarminPersonalApi(
         fetchDay(token, LocalDate.now().toString())
     }
 
+    suspend fun fetchActivities(startDate: String, endDate: String): List<GarminActivity> = withContext(Dispatchers.IO) {
+        require(startDate <= endDate) { "Периодът за Garmin историята е невалиден." }
+        val apiKey = keyStore.load() ?: error("Добави Garmin Personal API ключ, за да синхронизираш историята.")
+        val token = exchangeKey(apiKey)
+        fetchActivities(token, startDate, endDate)
+    }
+
+    suspend fun fetchTrainingHistory(startDate: String, endDate: String): GarminTrainingHistory = withContext(Dispatchers.IO) {
+        require(startDate <= endDate) { "Периодът за Garmin историята е невалиден." }
+        val apiKey = keyStore.load() ?: error("Добави Garmin Personal API ключ, за да синхронизираш историята.")
+        val token = exchangeKey(apiKey)
+        val activities = fetchActivities(token, startDate, endDate)
+        val sleep = getJson(token,
+            "$BASE_URL/sleep-service/sleep/dailySleepSummariesByDate?startDate=$startDate&endDate=$endDate",
+            "обобщенията за сън")
+        val recovery = mutableMapOf<String, GarminRecoveryDay>()
+        fun addSleep(item: JSONObject) {
+            val date = item.optString("calendarDate").takeIf(String::isNotBlank) ?: return
+            recovery[date] = (recovery[date] ?: GarminRecoveryDay(date)).copy(
+                sleepMinutes = item.optNullableDouble("sleepTimeSeconds")?.div(60)?.toInt())
+        }
+        when (sleep) {
+            is JSONArray -> for (i in 0 until sleep.length()) sleep.optJSONObject(i)?.let(::addSleep)
+            is JSONObject -> if (sleep.has("calendarDate")) addSleep(sleep) else {
+                val list = sleep.optJSONArray("dailySleepDTOs") ?: sleep.optJSONArray("sleepSummaries")
+                if (list != null) for (i in 0 until list.length()) list.optJSONObject(i)?.let(::addSleep)
+            }
+        }
+        val hrv = getJson(token, "$BASE_URL/hrv-service/hrv/daily/$startDate/$endDate", "обобщенията за HRV") as? JSONObject
+        val hrvDays = hrv?.optJSONArray("hrvSummaries") ?: JSONArray()
+        for (i in 0 until hrvDays.length()) {
+            val item = hrvDays.optJSONObject(i) ?: continue
+            val date = item.optString("calendarDate").takeIf(String::isNotBlank) ?: continue
+            recovery[date] = (recovery[date] ?: GarminRecoveryDay(date)).copy(
+                hrvLastNightMs = item.optNullableDouble("lastNightAvg")?.toInt(),
+                hrvStatus = item.optString("status").takeIf(String::isNotBlank))
+        }
+        GarminTrainingHistory(activities, recovery.values.sortedBy(GarminRecoveryDay::date))
+    }
+
     fun disconnect() = keyStore.clear()
     fun isConnected(): Boolean = keyStore.hasKey()
 
@@ -68,21 +108,26 @@ class GarminPersonalApi(
             garminPersonalApiData = true,
             garminCaloriesConsumed = summaryJson?.optNullableDouble("consumedKilocalories")?.toInt(),
         )
+        val activities = fetchActivities(token, date, date)
+        return GarminDayData(summary, activities)
+    }
+
+    private fun fetchActivities(token: String, startDate: String, endDate: String): List<GarminActivity> {
         val activities = mutableListOf<GarminActivity>()
         var start = 0
         do {
             val page = getJson(
                 token,
-                "$BASE_URL/activitylist-service/activities/search/activities?start=$start&limit=$ACTIVITY_PAGE_SIZE&sortOrder=asc&startDate=$date&endDate=$date&excludeChildren=false",
-                "дневните активности",
+                "$BASE_URL/activitylist-service/activities/search/activities?start=$start&limit=$ACTIVITY_PAGE_SIZE&sortOrder=asc&startDate=$startDate&endDate=$endDate&excludeChildren=false",
+                "активностите за периода",
             ) as? JSONArray ?: JSONArray()
             for (index in 0 until page.length()) {
                 val item = page.optJSONObject(index) ?: continue
                 activities += item.toGarminActivity()
             }
             start += page.length()
-        } while (page.length() == ACTIVITY_PAGE_SIZE && start < MAX_DAILY_ACTIVITIES)
-        return GarminDayData(summary, activities)
+        } while (page.length() == ACTIVITY_PAGE_SIZE && start < MAX_HISTORY_ACTIVITIES)
+        return activities
     }
 
     private fun exchangeKey(apiKey: String): String {
@@ -145,6 +190,6 @@ class GarminPersonalApi(
     private companion object {
         const val BASE_URL = "https://personal.connectapi.garmin.com"
         const val ACTIVITY_PAGE_SIZE = 99
-        const val MAX_DAILY_ACTIVITIES = 990
+        const val MAX_HISTORY_ACTIVITIES = 2970
     }
 }
