@@ -54,9 +54,12 @@ class EventLinkImporter {
         )
     }
 
-    private fun download(start: HttpUrl): String {
+    internal fun download(start: HttpUrl, allowedDomain: String? = null): String {
         var current = start
         repeat(MAX_REDIRECTS + 1) { redirectCount ->
+            require(allowedDomain == null || current.host == allowedDomain || current.host.endsWith(".$allowedDomain")) {
+                "Профилът препраща извън сайта на доставчика."
+            }
             rejectPrivateHost(current.host)
             val pinnedAddresses = InetAddress.getAllByName(current.host).toList()
             require(pinnedAddresses.isNotEmpty() && pinnedAddresses.all(::isPublicAddress)) {
@@ -80,7 +83,7 @@ class EventLinkImporter {
                     require(current.isHttps) { "Страницата препраща към незащитен адрес." }
                     return@use
                 }
-                if (!response.isSuccessful) throw IllegalStateException("Страницата на събитието не се отвори (HTTP ${response.code}).")
+                if (!response.isSuccessful) throw IllegalStateException("Страницата не се отвори (HTTP ${response.code}).")
                 val type = response.header("Content-Type").orEmpty().lowercase(Locale.ROOT)
                 require(type.isBlank() || type.contains("text/html") || type.contains("application/xhtml+xml")) {
                     "Линкът трябва да води към уеб страница, не към файл."
