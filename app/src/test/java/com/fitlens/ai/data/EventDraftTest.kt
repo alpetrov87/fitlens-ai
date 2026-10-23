@@ -18,4 +18,10 @@ class EventDraftTest {
     @Test fun rejectsBlankTitles() {
         assertTrue(runCatching { EventDraft("  ", "2026-11-08").validate() }.isFailure)
     }
+
+    @Test fun validatesExtendedRaceDetails() {
+        EventDraft("Trail", "2026-11-08", distanceKm = 42.2, cutoffTime = "8 часа", elevationGainMeters = 1800).validate()
+        assertTrue(runCatching { EventDraft("Trail", "2026-11-08", distanceKm = -1.0).validate() }.isFailure)
+        assertTrue(runCatching { EventDraft("Trail", "2026-11-08", elevationGainMeters = -2).validate() }.isFailure)
+    }
 }

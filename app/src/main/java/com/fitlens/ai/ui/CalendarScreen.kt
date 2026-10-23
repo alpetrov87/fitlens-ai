@@ -132,6 +132,12 @@ private fun EventCard(event: CalendarEvent, enabled: Boolean, onDelete: () -> Un
                 Text("${event.date} · ${event.time.ifBlank { "Цял ден" }}", style = MaterialTheme.typography.bodySmall)
                 Text(sportLabel(event.sport), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 if (event.location.isNotBlank()) Text(event.location, style = MaterialTheme.typography.bodySmall)
+                val details = buildList {
+                    event.distanceKm?.let { add("${"%.2f".format(Locale.US, it).trimEnd('0').trimEnd('.')} km") }
+                    event.elevationGainMeters?.let { add("D+ $it m") }
+                    event.cutoffTime.takeIf(String::isNotBlank)?.let { add("лимит $it") }
+                }
+                if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
                 if (event.sourceUrl.isNotBlank()) TextButton(onClick = {
                     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(event.sourceUrl))) }
                 }, contentPadding = PaddingValues(0.dp)) { Text("Отвори страницата на събитието") }
@@ -150,6 +156,9 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
     var time by rememberSaveable { mutableStateOf("") }
     var location by rememberSaveable { mutableStateOf("") }
     var sourceUrl by rememberSaveable { mutableStateOf("") }
+    var distanceKm by rememberSaveable { mutableStateOf("") }
+    var cutoffTime by rememberSaveable { mutableStateOf("") }
+    var elevationGainMeters by rememberSaveable { mutableStateOf("") }
     var linkStatus by remember { mutableStateOf<String?>(null) }
     var sport by rememberSaveable { mutableStateOf("running") }
     var sportsOpen by remember { mutableStateOf(false) }
@@ -171,6 +180,9 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
                     sport = imported.draft.sport
                     location = imported.draft.location
                     sourceUrl = imported.draft.sourceUrl
+                    distanceKm = imported.draft.distanceKm?.toString().orEmpty()
+                    cutoffTime = imported.draft.cutoffTime
+                    elevationGainMeters = imported.draft.elevationGainMeters?.toString().orEmpty()
                     linkStatus = if (imported.dateWasFound) "Данните са попълнени. Провери ги преди запис." else
                         "Намерих името, но не и датата. Провери и попълни останалото ръчно."
                     error = null
@@ -184,6 +196,12 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
                     Spacer(Modifier.width(8.dp)); Text(date)
                 }
                 OutlinedTextField(time, { time = it.take(5) }, label = { Text("Час (по избор)") }, placeholder = { Text("09:30") }, singleLine = true)
+                OutlinedTextField(distanceKm, { distanceKm = it.take(12) }, label = { Text("Дистанция в km (по избор)") },
+                    placeholder = { Text("42.2") }, singleLine = true)
+                OutlinedTextField(elevationGainMeters, { elevationGainMeters = it.take(8) }, label = { Text("Положителна денивелация в m (по избор)") },
+                    placeholder = { Text("1200") }, singleLine = true)
+                OutlinedTextField(cutoffTime, { cutoffTime = it.take(80) }, label = { Text("Контролно време (по избор)") },
+                    placeholder = { Text("6 часа") }, singleLine = true)
                 Box {
                     OutlinedButton(onClick = { sportsOpen = true }, modifier = Modifier.fillMaxWidth()) {
                         Icon(sportIcon(sport), contentDescription = null, modifier = Modifier.size(20.dp))
@@ -201,7 +219,17 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
             }
         },
         confirmButton = { TextButton(enabled = !busy, onClick = {
-            val draft = EventDraft(title, date, time.trim(), sport, location, sourceUrl.trim())
+            val draft = EventDraft(title = title, date = date, time = time.trim(), sport = sport, location = location,
+                sourceUrl = sourceUrl.trim(), distanceKm = distanceKm.trim().replace(',', '.').toDoubleOrNull(),
+                cutoffTime = cutoffTime.trim(), elevationGainMeters = elevationGainMeters.trim().toIntOrNull())
+            if (distanceKm.isNotBlank() && draft.distanceKm == null) {
+                error = "Дистанцията трябва да е число, например 42.2."
+                return@TextButton
+            }
+            if (elevationGainMeters.isNotBlank() && draft.elevationGainMeters == null) {
+                error = "Денивелацията трябва да е цяло число в метри."
+                return@TextButton
+            }
             val failure = runCatching { draft.validate() }.exceptionOrNull()
             if (failure != null) error = failure.message else { error = null; onSave(draft) }
         }) { Text(if (busy) "Запазване…" else "Запази") } },

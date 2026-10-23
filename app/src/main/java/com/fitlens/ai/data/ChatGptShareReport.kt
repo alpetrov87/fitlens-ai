@@ -21,6 +21,10 @@ object ChatGptShareReport {
             appendLine("Дата: ${event.date}${event.time.takeIf(String::isNotBlank)?.let { " $it" }.orEmpty()}")
             appendLine("Спорт: ${event.sport.clean()}")
             if (event.location.isNotBlank()) appendLine("Място: ${event.location.clean()}")
+            event.distanceKm?.let { appendLine("Дистанция: ${it.round(2)} km") }
+            event.elevationGainMeters?.let { appendLine("Положителна денивелация: $it m") }
+            if (event.cutoffTime.isNotBlank()) appendLine("Контролно време: ${event.cutoffTime.clean()}")
+            if (event.sourceUrl.isNotBlank()) appendLine("Официален линк: ${event.sourceUrl.replace(Regex("[\\r\\n\\t]+"), "").take(500)}")
         }
         appendLine()
         appendLine("АКТИВНОСТИ ЗА ПОСЛЕДНИТЕ 30 ДНИ (${activities.size})")

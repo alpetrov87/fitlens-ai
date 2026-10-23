@@ -47,7 +47,9 @@ class EventLinkImporter {
         val date = fields.date ?: fallbackDate
         EventLinkImport(
             EventDraft(title = title.take(120), date = date, time = fields.time.orEmpty(),
-                sport = fields.sport ?: "other", location = fields.location.orEmpty().take(200), sourceUrl = normalized),
+                sport = fields.sport ?: "other", location = fields.location.orEmpty().take(200), sourceUrl = normalized,
+                distanceKm = fields.distanceKm, cutoffTime = fields.cutoffTime.orEmpty().take(80),
+                elevationGainMeters = fields.elevationGainMeters),
             dateWasFound = fields.date != null,
         )
     }
@@ -69,7 +71,7 @@ class EventLinkImporter {
             }
             val safeClient = client.newBuilder().dns(safeDns).build()
             val request = Request.Builder().url(current).header("Accept", "text/html,application/xhtml+xml")
-                .header("User-Agent", "FitLensAI/0.4 (event link import)").get().build()
+                .header("User-Agent", "FitLensAI/0.6 (event link import)").get().build()
             safeClient.newCall(request).execute().use { response ->
                 if (response.code in REDIRECT_CODES) {
                     require(redirectCount < MAX_REDIRECTS) { "Страницата препраща през прекалено много адреси." }
@@ -105,13 +107,13 @@ class EventLinkImporter {
     private fun isPublicAddress(address: InetAddress): Boolean = !address.isAnyLocalAddress &&
         !address.isLoopbackAddress && !address.isLinkLocalAddress && !address.isSiteLocalAddress && !address.isMulticastAddress
 
-    private fun extractFields(html: String): Fields {
+    internal fun extractFields(html: String): Fields {
         var event: JSONObject? = null
-        val scripts = SCRIPT_REGEX.findAll(html)
-        for (script in scripts) {
-            val type = script.groupValues[1].substringBefore(';').trim().lowercase(Locale.ROOT)
+        for ((attributes, body) in scriptBlocks(html)) {
+            val type = SCRIPT_TYPE_REGEX.find(attributes)?.groupValues?.get(1)
+                ?.substringBefore(';')?.trim()?.lowercase(Locale.ROOT)
             if (type != "application/ld+json") continue
-            val parsed = runCatching { JSONTokener(script.groupValues[2].trim()).nextValue() }.getOrNull()
+            val parsed = runCatching { JSONTokener(body.trim()).nextValue() }.getOrNull()
             event = findEvent(parsed) ?: event
         }
         val title = event?.optString("name")?.takeIf(String::isNotBlank)
@@ -134,8 +136,19 @@ class EventLinkImporter {
                 else -> ""
             }
         }.orEmpty() + " " + (event?.optString("name") ?: "")
-        return Fields(title = title?.let(::decodeHtml), date = dateTime?.first, time = dateTime?.second,
-            sport = inferSport(sportText), location = location?.let(::decodeHtml))
+        val pageText = decodeHtml(html.replace(SCRIPT_OR_STYLE_REGEX, " "))
+        val properties = event?.let(::collectProperties).orEmpty()
+        val distance = metricValue(properties, DISTANCE_LABELS, ::parseDistanceKm)
+            ?: DISTANCE_TEXT_REGEX.find(pageText)?.value?.let(::parseDistanceKm)
+            ?: title?.let { TITLE_DISTANCE_REGEX.find(decodeHtml(it))?.value?.let(::parseDistanceKm) }
+        val elevation = metricValue(properties, ELEVATION_LABELS, ::parseElevationMeters)
+            ?: ELEVATION_TEXT_REGEX.find(pageText)?.value?.let(::parseElevationMeters)
+        val cutoff = textValue(properties, CUTOFF_LABELS)?.let(::cleanMetricText)
+            ?: CUTOFF_TEXT_REGEX.find(pageText)?.groupValues?.get(1)?.let(::cleanMetricText)
+        val textStartTime = START_TIME_REGEX.find(pageText)?.groupValues?.get(1)?.let(::normalizeClock)
+        return Fields(title = title?.let(::decodeHtml), date = dateTime?.first, parsedTime = dateTime?.second,
+            sport = inferSport(sportText), location = location?.let(::decodeHtml), distanceKm = distance,
+            cutoffTime = cutoff, elevationGainMeters = elevation, fallbackTime = textStartTime)
     }
 
     private fun findEvent(value: Any?): JSONObject? = when (value) {
@@ -151,6 +164,17 @@ class EventLinkImporter {
             else findEvent(value.opt("@graph")) ?: findEvent(value.opt("itemListElement"))
         }
         else -> null
+    }
+
+    private fun scriptBlocks(html: String): List<Pair<String, String>> = buildList {
+        var cursor = 0
+        while (cursor < html.length) {
+            val open = html.indexOf("<script", cursor, ignoreCase = true).takeIf { it >= 0 } ?: break
+            val bodyStart = html.indexOf('>', open).takeIf { it >= 0 } ?: break
+            val close = html.indexOf("</script", bodyStart + 1, ignoreCase = true).takeIf { it >= 0 } ?: break
+            add(html.substring(open + 7, bodyStart) to html.substring(bodyStart + 1, close))
+            cursor = close + 8
+        }
     }
 
     private fun parseDate(value: String?): Pair<String, String?>? {
@@ -187,21 +211,94 @@ class EventLinkImporter {
         }
     }
 
+    private fun collectProperties(root: JSONObject): List<Pair<String, String>> {
+        val result = mutableListOf<Pair<String, String>>()
+        fun visit(value: Any?) {
+            when (value) {
+                is JSONObject -> {
+                    val propertyName = value.optString("name").takeIf(String::isNotBlank)
+                    val propertyValue = value.opt("value")?.toString()?.takeIf(String::isNotBlank)
+                    if (propertyName != null && propertyValue != null) result += propertyName to propertyValue
+                    value.keys().forEach { key ->
+                        val child = value.opt(key)
+                        if (child is String || child is Number) result += key to child.toString()
+                        else visit(child)
+                    }
+                }
+                is JSONArray -> (0 until value.length()).forEach { visit(value.opt(it)) }
+            }
+        }
+        visit(root)
+        return result
+    }
+
+    private fun <T> metricValue(properties: List<Pair<String, String>>, labels: List<String>, parser: (String) -> T?): T? =
+        properties.firstNotNullOfOrNull { (name, value) ->
+            val normalized = name.lowercase(Locale.ROOT).replace(Regex("[^a-zа-я0-9+]"), "")
+            value.takeIf { labels.any { label -> normalized.contains(label) } }?.let(parser)
+        }
+
+    private fun textValue(properties: List<Pair<String, String>>, labels: List<String>): String? =
+        properties.firstNotNullOfOrNull { (name, value) ->
+            val normalized = name.lowercase(Locale.ROOT).replace(Regex("[^a-zа-я0-9+]"), "")
+            value.takeIf { labels.any { label -> normalized.contains(label) } }
+        }
+
+    private fun parseDistanceKm(value: String): Double? {
+        val match = NUMBER_UNIT_REGEX.find(value.lowercase(Locale.ROOT)) ?: return null
+        val number = match.groupValues[1].replace(" ", "").replace(',', '.').toDoubleOrNull() ?: return null
+        return when (match.groupValues[2].lowercase(Locale.ROOT)) {
+            "m", "meter", "meters", "метър", "метра" -> number / 1000
+            "mi", "mile", "miles", "миля", "мили" -> number * 1.609344
+            else -> number
+        }.takeIf { it in 0.01..2_000.0 }
+    }
+
+    private fun parseElevationMeters(value: String): Int? {
+        val match = NUMBER_UNIT_REGEX.find(value.lowercase(Locale.ROOT)) ?: return null
+        val number = match.groupValues[1].replace(" ", "").replace(',', '.').toDoubleOrNull() ?: return null
+        val meters = if (match.groupValues[2].lowercase(Locale.ROOT) in listOf("ft", "foot", "feet")) number * 0.3048 else number
+        return meters.toInt().takeIf { it in 0..100_000 }
+    }
+
+    private fun cleanMetricText(value: String): String = decodeHtml(value).trim(' ', ':', '-', '–', '—').take(80)
+    private fun normalizeClock(value: String): String? {
+        val parts = value.split(':')
+        val hour = parts.getOrNull(0)?.toIntOrNull() ?: return null
+        val minute = parts.getOrNull(1)?.toIntOrNull() ?: return null
+        return "%02d:%02d".format(Locale.ROOT, hour, minute).takeIf { hour in 0..23 && minute in 0..59 }
+    }
+
     private fun decodeHtml(value: String): String = value.replace(Regex("<[^>]+>"), " ")
         .replace("&amp;", "&", true).replace("&quot;", "\"", true).replace("&#39;", "'", true)
         .replace("&lt;", "<", true).replace("&gt;", ">", true).replace("&nbsp;", " ", true)
         .replace(Regex("\\s+"), " ").trim()
 
-    private data class Fields(val title: String?, val date: String?, val time: String?, val sport: String?, val location: String?)
+    internal data class Fields(
+        val title: String?, val date: String?, private val parsedTime: String?, val sport: String?, val location: String?,
+        val distanceKm: Double?, val cutoffTime: String?, val elevationGainMeters: Int?, val fallbackTime: String?,
+    ) {
+        val time: String? get() = parsedTime ?: fallbackTime
+    }
 
     private companion object {
         const val MAX_URL_LENGTH = 500
         const val MAX_PAGE_BYTES = 2_000_000L
         const val MAX_REDIRECTS = 3
         val REDIRECT_CODES = setOf(301, 302, 303, 307, 308)
-        val SCRIPT_REGEX = Regex("<script\\b[^>]*type=[\"']([^\"']+)[\"'][^>]*>(.*?)</script\\s*>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+        val SCRIPT_TYPE_REGEX = Regex("type\\s*=\\s*[\"']([^\"']+)[\"']", RegexOption.IGNORE_CASE)
         val META_TAG_REGEX = Regex("<meta\\b[^>]*>", RegexOption.IGNORE_CASE)
         val META_ATTRIBUTE_REGEX = Regex("([\\w:-]+)\\s*=\\s*[\"']([^\"']*)[\"']", RegexOption.IGNORE_CASE)
         val TITLE_REGEX = Regex("<title\\b[^>]*>(.*?)</title\\s*>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+        val SCRIPT_OR_STYLE_REGEX = Regex("<(script|style)\\b[^>]*>.*?</\\1\\s*>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+        val NUMBER_UNIT_REGEX = Regex("([0-9]+(?:[ .,][0-9]+)?)\\s*(km|км|kilometers?|m|meters?|метър|метра|mi|miles?|миля|мили|ft|feet|foot)?", RegexOption.IGNORE_CASE)
+        val DISTANCE_TEXT_REGEX = Regex("(?:distance|дистанция|дължина)\\s*[:–—-]?\\s*[0-9]+(?:[.,][0-9]+)?\\s*(?:km|км|kilometers?|mi|miles?|мили?)", RegexOption.IGNORE_CASE)
+        val TITLE_DISTANCE_REGEX = Regex("[0-9]+(?:[.,][0-9]+)?\\s*(?:km|км|kilometers?|mi|miles?|мили?)", RegexOption.IGNORE_CASE)
+        val ELEVATION_TEXT_REGEX = Regex("(?:elevation\\s*gain|vertical\\s*gain|positive\\s*elevation|денивелация|изкачване|d\\+)\\s*[:–—-]?\\s*[0-9][0-9 .]*(?:m|meters?|метра|ft|feet)?", RegexOption.IGNORE_CASE)
+        val CUTOFF_TEXT_REGEX = Regex("(?:cut[ -]?off(?:\\s*time)?|time\\s*limit|control\\s*time|контролно\\s*време|времеви\\s*лимит|лимит)\\s*[:–—-]?\\s*([^|•;,.]{1,40})", RegexOption.IGNORE_CASE)
+        val START_TIME_REGEX = Regex("(?:start(?:\\s*time)?|начален\\s*час|час\\s*на\\s*старта|старт)\\s*[:–—-]?\\s*([0-2]?[0-9]:[0-5][0-9])", RegexOption.IGNORE_CASE)
+        val DISTANCE_LABELS = listOf("distance", "дистанция", "дължина", "length")
+        val ELEVATION_LABELS = listOf("elevationgain", "verticalgain", "positiveelevation", "денивелация", "изкачване", "d+")
+        val CUTOFF_LABELS = listOf("cutoff", "timelimit", "controltime", "контролновреме", "времевилимит")
     }
 }

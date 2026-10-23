@@ -10,13 +10,18 @@ class ChatGptShareReportTest {
             activities = listOf(GarminActivity(42, "Morning Run", "running", "2026-10-22 07:30:00",
                 3600.0, 10_000.0, 620, 9_000, 148, 172, 120.0)),
             recovery = listOf(GarminRecoveryDay("2026-10-22", 450, 58, "BALANCED")),
-            event = CalendarEvent("event-1", "City Marathon", "2026-11-01", "09:00", "running", "Sofia"),
+            event = CalendarEvent("event-1", "City Marathon", "2026-11-01", "09:00", "running", "Sofia",
+                "https://example.com/race", 42.195, "6 hours", 850),
         )
 
         assertTrue(report.contains("Morning Run"))
         assertTrue(report.contains("10.00 km"))
         assertTrue(report.contains("HRV 58 ms"))
         assertTrue(report.contains("City Marathon"))
+        assertTrue(report.contains("42.20 km"))
+        assertTrue(report.contains("6 hours"))
+        assertTrue(report.contains("850 m"))
+        assertTrue(report.contains("https://example.com/race"))
         assertFalse(report.contains("activityId"))
         assertFalse(report.contains("API key", ignoreCase = true))
     }
