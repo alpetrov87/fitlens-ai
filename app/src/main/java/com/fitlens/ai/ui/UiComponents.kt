@@ -1,6 +1,9 @@
 package com.fitlens.ai.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -8,12 +11,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.Alignment
+import com.fitlens.ai.R
 import androidx.compose.ui.unit.dp
 import com.fitlens.ai.data.MetricOrigin
 
 @Composable
 internal fun InfoCard(title: String, icon: ImageVector? = null, content: @Composable ColumnScope.() -> Unit) {
-    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (icon != null) Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -21,6 +31,23 @@ internal fun InfoCard(title: String, icon: ImageVector? = null, content: @Compos
             }
             content()
         }
+    }
+}
+
+@Composable
+internal fun TrailWelcomeCard() {
+    Row(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
+        .background(Brush.linearGradient(listOf(Color(0xFF102F50), Color(0xFF07182E))))
+        .padding(20.dp), verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("ТВОЯТ ПЪТ НАПРЕД", style = MaterialTheme.typography.labelSmall, color = Color(0xFF60E3D1))
+            Text("Тренирай\nс посока.", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+            Text("Движение. Възстановяване.\nСледваща цел.", style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFFBCD0E0))
+        }
+        Image(painterResource(R.drawable.fitlens_logo), contentDescription = null,
+            modifier = Modifier.size(112.dp).clip(MaterialTheme.shapes.medium))
     }
 }
 

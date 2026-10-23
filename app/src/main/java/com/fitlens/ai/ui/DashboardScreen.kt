@@ -2,6 +2,7 @@ package com.fitlens.ai.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,6 +14,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import com.fitlens.ai.R
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -72,7 +76,8 @@ fun DashboardScreen(
         Column(Modifier.fillMaxSize().padding(padding)) {
             Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Icon(Icons.Default.Favorite, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Image(painterResource(R.drawable.fitlens_logo), contentDescription = null,
+                    modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.small))
                 Text("FitLens AI", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.weight(1f))
                 if (garminConnected) Icon(Icons.Default.CheckCircle, contentDescription = "Garmin е свързан",
@@ -105,7 +110,7 @@ private fun HomeScreen(
     var selectedEventId by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
         .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text("Твоят ден, в баланс.", style = MaterialTheme.typography.headlineMedium)
+        TrailWelcomeCard()
         Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forLanguageTag("bg"))),
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (connected) {
