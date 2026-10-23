@@ -60,6 +60,7 @@ internal fun SportBadge(sport: String) {
 }
 
 internal fun sportIcon(sport: String): ImageVector = when {
+    sport == "trail_running" -> Icons.Default.Terrain
     sport.contains("cycl") || sport.contains("bik") -> Icons.Default.DirectionsBike
     sport.contains("swim") -> Icons.Default.Pool
     sport.contains("walk") || sport.contains("hik") -> Icons.Default.Hiking
@@ -75,6 +76,7 @@ internal fun sportIcon(sport: String): ImageVector = when {
 
 internal fun sportLabel(sport: String): String = when (sport) {
     "running" -> "Бягане"
+    "trail_running" -> "Трейл бягане"
     "cycling" -> "Колоездене"
     "swimming" -> "Плуване"
     "walking" -> "Ходене"

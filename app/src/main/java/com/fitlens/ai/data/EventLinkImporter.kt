@@ -138,7 +138,7 @@ class EventLinkImporter {
                 is JSONArray -> (0 until value.length()).joinToString(" ") { value.optString(it) }
                 else -> ""
             }
-        }.orEmpty() + " " + (event?.optString("name") ?: "")
+        }.orEmpty() + " " + title.orEmpty()
         val pageText = decodeHtml(html.replace(SCRIPT_OR_STYLE_REGEX, " "))
         val properties = event?.let(::collectProperties).orEmpty()
         val distance = metricValue(properties, DISTANCE_LABELS, ::parseDistanceKm)
@@ -206,6 +206,7 @@ class EventLinkImporter {
             listOf("triathlon", "триатлон").any(value::contains) -> "triathlon"
             listOf("swim", "плуван").any(value::contains) -> "swimming"
             listOf("cycl", "bike", "велосип", "колоездач").any(value::contains) -> "cycling"
+            listOf("trail", "трейл", "планинско бягане").any(value::contains) -> "trail_running"
             listOf("run", "race", "маратон", "бяган", "маратонец").any(value::contains) -> "running"
             listOf("trail", "планинск", "mountain").any(value::contains) -> "hiking"
             listOf("walk", "ходен").any(value::contains) -> "walking"

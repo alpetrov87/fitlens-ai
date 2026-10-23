@@ -77,6 +77,8 @@ class MainActivity : ComponentActivity() {
                     reportBusy = model.reportBusy.collectAsStateWithLifecycle().value,
                     shareReport = model.shareReport.collectAsStateWithLifecycle().value,
                     calendar = calendarModel.state.collectAsStateWithLifecycle().value,
+                    catalogue = calendarModel.catalogue.collectAsStateWithLifecycle().value,
+                    onLoadRaceCalendar = calendarModel::loadRaceCalendar,
                     onAddEvent = calendarModel::add,
                     onImportEventLink = calendarModel::importLink,
                     onDeleteEvent = calendarModel::delete,

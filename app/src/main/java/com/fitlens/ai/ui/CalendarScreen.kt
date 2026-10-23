@@ -27,10 +27,12 @@ import java.util.Locale
 @Composable
 internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit) -> Unit,
     onImportLink: (String, String, (EventLinkImport) -> Unit) -> Unit,
-    onDelete: (String) -> Unit, onRetry: () -> Unit) {
+    onDelete: (String) -> Unit, onRetry: () -> Unit,
+    catalogue: RaceCatalogueState = RaceCatalogueState(), onLoadCatalogue: (String) -> Unit = {}) {
     var monthText by rememberSaveable { mutableStateOf(YearMonth.now().toString()) }
     var selected by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
     var showAdd by rememberSaveable { mutableStateOf(false) }
+    var selectedDraft by remember { mutableStateOf<EventDraft?>(null) }
     var deleteEvent by remember { mutableStateOf<CalendarEvent?>(null) }
     val month = YearMonth.parse(monthText)
     val eventDates = state.events.map { it.date }.toSet()
@@ -92,9 +94,12 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
                 }
             }
         }
-        Button(onClick = { showAdd = true }, enabled = !state.loading, modifier = Modifier.fillMaxWidth()) {
+        Button(onClick = { selectedDraft = null; showAdd = true }, enabled = !state.loading, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp)); Text("Добави събитие")
+        }
+        RaceDiscoverySection(catalogue, state.events, state.loading, onLoadCatalogue) { draft ->
+            selectedDraft = draft; showAdd = true
         }
         Text(LocalDate.parse(selected).format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("bg"))),
             style = MaterialTheme.typography.titleLarge)
@@ -110,8 +115,9 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     if (showAdd) EventDialog(selected, state.loading, state.error,
-        onDismiss = { showAdd = false }, onSave = { onAdd(it) { showAdd = false } },
-        onImportLink = { url, imported -> onImportLink(url, selected, imported) })
+        onDismiss = { showAdd = false; selectedDraft = null }, onSave = { draft -> onAdd(draft) {
+            selected = draft.date; monthText = draft.date.take(7); showAdd = false; selectedDraft = null
+        } }, onImportLink = { url, imported -> onImportLink(url, selectedDraft?.date ?: selected, imported) }, initialDraft = selectedDraft)
     deleteEvent?.let { event ->
         AlertDialog(onDismissRequest = { deleteEvent = null }, title = { Text("Изтриване на събитие") },
             text = { Text("Да се изтрие ли „${event.title}“ от календара?") },
@@ -150,17 +156,18 @@ private fun EventCard(event: CalendarEvent, enabled: Boolean, onDelete: () -> Un
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?, onDismiss: () -> Unit,
-    onSave: (EventDraft) -> Unit, onImportLink: (String, (EventLinkImport) -> Unit) -> Unit) {
-    var title by rememberSaveable { mutableStateOf("") }
-    var date by rememberSaveable { mutableStateOf(initialDate) }
-    var time by rememberSaveable { mutableStateOf("") }
-    var location by rememberSaveable { mutableStateOf("") }
-    var sourceUrl by rememberSaveable { mutableStateOf("") }
-    var distanceKm by rememberSaveable { mutableStateOf("") }
-    var cutoffTime by rememberSaveable { mutableStateOf("") }
-    var elevationGainMeters by rememberSaveable { mutableStateOf("") }
+    onSave: (EventDraft) -> Unit, onImportLink: (String, (EventLinkImport) -> Unit) -> Unit,
+    initialDraft: EventDraft? = null) {
+    var title by rememberSaveable { mutableStateOf(initialDraft?.title.orEmpty()) }
+    var date by rememberSaveable { mutableStateOf(initialDraft?.date ?: initialDate) }
+    var time by rememberSaveable { mutableStateOf(initialDraft?.time.orEmpty()) }
+    var location by rememberSaveable { mutableStateOf(initialDraft?.location.orEmpty()) }
+    var sourceUrl by rememberSaveable { mutableStateOf(initialDraft?.sourceUrl.orEmpty()) }
+    var distanceKm by rememberSaveable { mutableStateOf(initialDraft?.distanceKm?.toString().orEmpty()) }
+    var cutoffTime by rememberSaveable { mutableStateOf(initialDraft?.cutoffTime.orEmpty()) }
+    var elevationGainMeters by rememberSaveable { mutableStateOf(initialDraft?.elevationGainMeters?.toString().orEmpty()) }
     var linkStatus by remember { mutableStateOf<String?>(null) }
-    var sport by rememberSaveable { mutableStateOf("running") }
+    var sport by rememberSaveable { mutableStateOf(initialDraft?.sport ?: "running") }
     var sportsOpen by remember { mutableStateOf(false) }
     var dateOpen by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -208,7 +215,7 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
                         Spacer(Modifier.width(8.dp)); Text(sportLabel(sport))
                     }
                     DropdownMenu(expanded = sportsOpen, onDismissRequest = { sportsOpen = false }) {
-                        listOf("running", "cycling", "swimming", "hiking", "walking", "strength_training", "yoga", "other").forEach { key ->
+                        listOf("running", "trail_running", "cycling", "swimming", "hiking", "walking", "strength_training", "yoga", "other").forEach { key ->
                             DropdownMenuItem(text = { Text(sportLabel(key)) }, leadingIcon = { Icon(sportIcon(key), contentDescription = null) },
                                 onClick = { sport = key; sportsOpen = false })
                         }

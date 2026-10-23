@@ -28,6 +28,7 @@ class EventLinkImporterTest {
         assertEquals(42.195, fields.distanceKm!!, 0.001)
         assertEquals(1850, fields.elevationGainMeters)
         assertEquals("8 hours", fields.cutoffTime)
+        assertEquals("trail_running", fields.sport)
     }
 
     @Test fun extractsMetricsFromVisibleBulgarianText() {
@@ -42,5 +43,6 @@ class EventLinkImporterTest {
         assertEquals(21.5, fields.distanceKm!!, 0.001)
         assertEquals(1250, fields.elevationGainMeters)
         assertEquals("5 часа", fields.cutoffTime)
+        assertEquals("trail_running", fields.sport)
     }
 }

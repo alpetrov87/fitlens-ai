@@ -36,6 +36,8 @@ fun DashboardScreen(
     reportBusy: Boolean = false,
     shareReport: String? = null,
     calendar: CalendarState = CalendarState(loading = false),
+    catalogue: RaceCatalogueState = RaceCatalogueState(),
+    onLoadRaceCalendar: (String) -> Unit = {},
     onAddEvent: (EventDraft, () -> Unit) -> Unit = { _, _ -> },
     onImportEventLink: (String, String, (com.fitlens.ai.data.EventLinkImport) -> Unit) -> Unit = { _, _, _ -> },
     onDeleteEvent: (String) -> Unit = {},
@@ -87,7 +89,7 @@ fun DashboardScreen(
             pageState.SaveableStateProvider(page) {
                 when (page) {
                     "runner" -> RunnerProfilesScreen()
-                    "calendar" -> CalendarScreen(calendar, onAddEvent, onImportEventLink, onDeleteEvent, onRetryCalendar)
+                    "calendar" -> CalendarScreen(calendar, onAddEvent, onImportEventLink, onDeleteEvent, onRetryCalendar, catalogue, onLoadRaceCalendar)
                     "settings" -> SettingsScreen(garminConnected, garminBusy, onConnectGarmin, onSyncGarmin,
                         onDisconnectGarmin, onImport, onClearImports, historyBusy, historyCount, onSyncHistory)
                     else -> HomeScreen(state, garminConnected, garminBusy, calendar.events, onSyncGarmin,
