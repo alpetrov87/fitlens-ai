@@ -73,11 +73,11 @@ object DailyMetricsCsv {
             val previous = grouped[date]
             grouped[date] = if (source == CsvImportSource.MYFITNESSPAL && previous != null) {
                 previous.copy(
-                    calories = (previous.calories ?: 0) + (values.calories ?: 0),
+                    calories = addPresent(previous.calories, values.calories),
                     calorieGoal = values.calorieGoal ?: previous.calorieGoal,
-                    proteinGrams = (previous.proteinGrams ?: 0) + (values.proteinGrams ?: 0),
-                    carbsGrams = (previous.carbsGrams ?: 0) + (values.carbsGrams ?: 0),
-                    fatGrams = (previous.fatGrams ?: 0) + (values.fatGrams ?: 0),
+                    proteinGrams = addPresent(previous.proteinGrams, values.proteinGrams),
+                    carbsGrams = addPresent(previous.carbsGrams, values.carbsGrams),
+                    fatGrams = addPresent(previous.fatGrams, values.fatGrams),
                     myFitnessPalData = true,
                 )
             } else {
@@ -145,6 +145,9 @@ object DailyMetricsCsv {
         val cleaned = value.trim().replace("\u00a0", "").replace(" ", "").replace(',', '.')
         return cleaned.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0.0 }
     }
+
+    private fun addPresent(first: Int?, second: Int?): Int? =
+        if (first == null && second == null) null else (first ?: 0) + (second ?: 0)
 
     private fun parseDate(value: String): LocalDate? {
         val datePart = value.trim().substringBefore('T').substringBefore(' ').substringBefore(' ')
