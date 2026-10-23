@@ -61,6 +61,7 @@ fun DashboardScreen(
             NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 listOf(Triple("home", "Начало", Icons.Default.Home),
                     Triple("calendar", "Календар", Icons.Default.DateRange),
+                    Triple("runner", "Бегач", Icons.Default.Person),
                     Triple("settings", "Настройки", Icons.Default.Settings)).forEach { (key, title, icon) ->
                     NavigationBarItem(selected = page == key, onClick = { page = key },
                         icon = { Icon(icon, contentDescription = null) }, label = { Text(title) })
@@ -80,6 +81,7 @@ fun DashboardScreen(
             if (garminBusy) LinearProgressIndicator(Modifier.fillMaxWidth())
             pageState.SaveableStateProvider(page) {
                 when (page) {
+                    "runner" -> RunnerProfilesScreen()
                     "calendar" -> CalendarScreen(calendar, onAddEvent, onImportEventLink, onDeleteEvent, onRetryCalendar)
                     "settings" -> SettingsScreen(garminConnected, garminBusy, onConnectGarmin, onSyncGarmin,
                         onDisconnectGarmin, onImport, onClearImports, historyBusy, historyCount, onSyncHistory)

@@ -24,6 +24,7 @@ sealed interface DashboardState {
 }
 class DashboardViewModel(
     private val repository: CsvImportRepository,
+    private val runnerProfiles: com.fitlens.ai.data.RunnerProfileStore,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<DashboardState>(DashboardState.Loading)
     val state = mutableState.asStateFlow()
@@ -109,7 +110,7 @@ class DashboardViewModel(
                 }
                 mutableHistoryCount.value = history.activities.size
                 require(history.activities.isNotEmpty()) { "Няма Garmin активности за отчета. Синхронизирай историята и опитай отново." }
-                mutableShareReport.value = ChatGptShareReport.build(history.activities, history.recovery, event)
+                mutableShareReport.value = ChatGptShareReport.build(history.activities, history.recovery, event, runnerProfiles.all())
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
@@ -167,11 +168,12 @@ class DashboardViewModel(
     }
     class Factory(
         private val repository: CsvImportRepository,
+        private val runnerProfiles: com.fitlens.ai.data.RunnerProfileStore,
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(DashboardViewModel::class.java))
             @Suppress("UNCHECKED_CAST")
-            return DashboardViewModel(repository) as T
+            return DashboardViewModel(repository, runnerProfiles) as T
         }
     }
 }

@@ -5,6 +5,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ChatGptShareReportTest {
+    @Test fun includesManuallyEnteredRunnerProfilesWithProvenance() {
+        val report = ChatGptShareReport.build(emptyList(), emptyList(), null,
+            listOf(RunnerProfile("ITRA", "https://itra.run/runner/example", "Performance Index: 520", "Trail 42 km: 5:20", "2026-10-23")))
+        assertTrue(report.contains("Performance Index: 520"))
+        assertTrue(report.contains("https://itra.run/runner/example"))
+        assertTrue(report.contains("Trail 42 km: 5:20"))
+        assertTrue(report.contains("ръчно въведени данни"))
+    }
     @Test fun includesAvailableTrainingDataAndEventWithoutCredentials() {
         val report = ChatGptShareReport.build(
             activities = listOf(GarminActivity(42, "Morning Run", "running", "2026-10-22 07:30:00",

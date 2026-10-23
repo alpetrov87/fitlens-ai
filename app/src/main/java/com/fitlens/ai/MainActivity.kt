@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
         val factory = DashboardViewModel.Factory(DefaultHealthRepository(
                 DemoActivitySource(), DemoNutritionSource(), SharedPreferencesImportedMetricsStore(applicationContext),
                 GarminPersonalApi(GarminPersonalKeyStore(applicationContext)),
-            ))
+            ), com.fitlens.ai.data.RunnerProfileStore(applicationContext))
         val calendarFactory = CalendarViewModel.Factory(CalendarEventStore(applicationContext), EventLinkImporter())
         setContent {
             FitLensTheme {
