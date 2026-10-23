@@ -15,6 +15,5 @@ class GarminTokenResponseTest {
     @Test fun rejectsResponsesWithoutJwtExpiration() {
         assertNull(parseGarminAccessToken("header.cGF5bG9hZA.signature"))
         assertNull(parseGarminAccessToken("Garmin token could not be created"))
-        assertNull(parseGarminAccessToken("""{"message":"invalid key"}"""))
     }
 }

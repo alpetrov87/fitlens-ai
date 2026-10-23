@@ -12,40 +12,8 @@ import org.json.JSONObject
 /** Garmin Personal API client for one person's own account. Never logs credentials or responses. */
 data class GarminDayData(val summary: ImportedDailyMetrics, val activities: List<GarminActivity>)
 
-/** Parses Garmin's access token without logging or exposing the response value. */
-internal fun parseGarminAccessToken(body: String): String? {
-    val trimmed = body.trim()
-    if (trimmed.isEmpty()) return null
-    val parsed = runCatching { JSONObject(trimmed) }.getOrNull()
-    if (parsed != null) {
-        fun findToken(json: JSONObject, depth: Int): String? {
-            val acceptedNames = setOf(
-                "access_token", "accesstoken", "token", "bearertoken", "apitoken", "personalapitoken", "tokenvalue",
-            )
-            val keys = json.keys().asSequence().toList()
-            for (key in keys) {
-                val value = json.opt(key)
-                if (key.lowercase() in acceptedNames && value is String && isGarminJwt(value.trim())) return value.trim()
-            }
-            if (depth > 0) {
-                for (key in keys) {
-                    val child = json.optJSONObject(key) ?: continue
-                    findToken(child, depth - 1)?.let { return it }
-                }
-            }
-            return null
-        }
-        return findToken(parsed, 2)
-    }
-    if (trimmed.startsWith('"') && trimmed.endsWith('"')) {
-        runCatching { org.json.JSONTokener(trimmed).nextValue() as? String }.getOrNull()
-            ?.trim()?.takeIf(::isGarminJwt)?.let { return it }
-    }
-    val formToken = Regex("(?:^|&)access_token=([^&]+)").find(trimmed)?.groupValues?.get(1)
-        ?.let { java.net.URLDecoder.decode(it, Charsets.UTF_8.name()) }
-    if (!formToken.isNullOrBlank() && isGarminJwt(formToken)) return formToken
-    return trimmed.takeIf(::isGarminJwt)
-}
+/** Garmin's official client reads the token endpoint's response body as a raw JWT string. */
+internal fun parseGarminAccessToken(body: String): String? = body.trim().takeIf(::isGarminJwt)
 
 /** Matches Garmin's official client: the token response is a JWT whose payload contains exp. */
 private fun isGarminJwt(token: String): Boolean {
@@ -129,9 +97,7 @@ class GarminPersonalApi(
             val body = response.body?.string().orEmpty()
             val token = parseGarminAccessToken(body)
             if (token == null) {
-                val fields = runCatching { JSONObject(body).keys().asSequence().sorted().joinToString(", ") }.getOrNull()
-                val hint = fields?.takeIf { it.isNotBlank() }?.let { " Получени JSON полета: $it." }.orEmpty()
-                throw IllegalStateException("Garmin прие заявката, но отговорът не съдържа разпознат token.$hint Провери актуалната версия на приложението и съобщи тези имена на полетата, без да изпращаш ключа или token.")
+                throw IllegalStateException("Garmin отговори успешно, но не върна JWT с валиден exp claim. Провери версията на приложението; не изпращай API ключа или token.")
             }
             return token
         }
