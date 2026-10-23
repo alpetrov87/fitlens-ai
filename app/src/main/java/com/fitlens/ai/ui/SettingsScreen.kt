@@ -19,11 +19,9 @@ import com.fitlens.ai.data.CsvImportSource
 internal fun SettingsScreen(
     connected: Boolean, busy: Boolean, onConnect: (String) -> Unit, onSync: () -> Unit,
     onDisconnect: () -> Unit, onImport: (CsvImportSource) -> Unit, onClear: () -> Unit,
-    aiConnected: Boolean, historyBusy: Boolean, historyCount: Int,
-    onSaveGeminiKey: (String) -> Unit, onDisconnectGemini: () -> Unit, onSyncHistory: () -> Unit,
+    historyBusy: Boolean, historyCount: Int, onSyncHistory: () -> Unit,
 ) {
     var key by remember { mutableStateOf("") }
-    var geminiKey by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
@@ -59,25 +57,10 @@ internal fun SettingsScreen(
                 Spacer(Modifier.width(8.dp)); Text("Импортирай Garmin CSV")
             }
         }
-        InfoCard("Gemini · AI анализ", Icons.Default.AutoAwesome) {
-            Text(if (aiConnected) "Gemini API ключът е запазен на това устройство." else "Добави Gemini API ключ от Google AI Studio за анализ на тренировките.")
-            if (aiConnected) {
-                OutlinedButton(onClick = onDisconnectGemini, modifier = Modifier.fillMaxWidth()) { Text("Изтрий Gemini ключа") }
-            } else {
-                OutlinedTextField(value = geminiKey, onValueChange = { geminiKey = it }, singleLine = true,
-                    modifier = Modifier.fillMaxWidth(), label = { Text("Gemini API key") },
-                    visualTransformation = PasswordVisualTransformation())
-                Button(onClick = { onSaveGeminiKey(geminiKey); geminiKey = "" },
-                    enabled = geminiKey.isNotBlank(), modifier = Modifier.fillMaxWidth()) { Text("Запази ключа") }
-            }
-            TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://aistudio.google.com/app/apikey"))) }) { Text("Вземи ключ от Google AI Studio") }
-                Text("Вземи API ключ от Google AI Studio и използвай проект с безплатната Gemini API квота. Квотите и достъпните модели може да се променят. За да избегнеш такси, не свързвай платено billing към проекта: FitLens не може да наложи безплатна квота върху ключ, който има включено платено таксуване.",
-                style = MaterialTheme.typography.bodySmall)
-            Text("При безплатния cloud план Google може да обработва prompt-овете и отговорите за подобряване на услугите си според актуалните условия и настройките ти. Не включвай чувствителни данни. FitLens изпраща имената, датите, спортовете, времетраенето, дистанцията, пулса, наличните сън/HRV обобщения и избраното събитие само след потвърждение. Garmin ключът не се изпраща към Google.",
+        InfoCard("ChatGPT анализ", Icons.Default.AutoAwesome) {
+            Text("Не е необходим API ключ. От Начало FitLens подготвя отчет и го отваря чрез Android менюто за споделяне.")
+            Text("Преди споделяне ще видиш целия текст. Отговорът остава в избрания ChatGPT разговор и не се връща автоматично във FitLens.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("При актуализация от предишната OpenAI версия старият API ключ се премахва от устройството.",
-                style = MaterialTheme.typography.bodySmall)
         }
         InfoCard("MyFitnessPal", Icons.Default.Restaurant) {
             Text("Добави хранителни данни от CSV файл. Директна API връзка още не е налична.")

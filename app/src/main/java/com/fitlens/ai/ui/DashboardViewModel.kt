@@ -7,9 +7,8 @@ import com.fitlens.ai.data.Dashboard
 import com.fitlens.ai.data.CsvImportRepository
 import com.fitlens.ai.data.CsvImportSource
 import com.fitlens.ai.data.CalendarEvent
-import com.fitlens.ai.data.GeminiAnalysis
-import com.fitlens.ai.data.GeminiApiKeyStore
 import com.fitlens.ai.data.GarminTrainingHistory
+import com.fitlens.ai.data.ChatGptShareReport
 import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -25,8 +24,6 @@ sealed interface DashboardState {
 }
 class DashboardViewModel(
     private val repository: CsvImportRepository,
-    private val geminiKeyStore: GeminiApiKeyStore,
-    private val geminiAnalysis: GeminiAnalysis,
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<DashboardState>(DashboardState.Loading)
     val state = mutableState.asStateFlow()
@@ -36,16 +33,14 @@ class DashboardViewModel(
     val garminConnected = mutableGarminConnected.asStateFlow()
     private val mutableGarminBusy = MutableStateFlow(false)
     val garminBusy = mutableGarminBusy.asStateFlow()
-    private val mutableAiConnected = MutableStateFlow(geminiKeyStore.hasKey())
-    val aiConnected = mutableAiConnected.asStateFlow()
     private val mutableHistoryBusy = MutableStateFlow(false)
     val historyBusy = mutableHistoryBusy.asStateFlow()
     private val mutableHistoryCount = MutableStateFlow(0)
     val historyCount = mutableHistoryCount.asStateFlow()
-    private val mutableAnalysisBusy = MutableStateFlow(false)
-    val analysisBusy = mutableAnalysisBusy.asStateFlow()
-    private val mutableAnalysis = MutableStateFlow<String?>(null)
-    val analysis = mutableAnalysis.asStateFlow()
+    private val mutableReportBusy = MutableStateFlow(false)
+    val reportBusy = mutableReportBusy.asStateFlow()
+    private val mutableShareReport = MutableStateFlow<String?>(null)
+    val shareReport = mutableShareReport.asStateFlow()
     init { refresh() }
 
     fun importCsv(source: CsvImportSource, csv: String) {
@@ -80,27 +75,6 @@ class DashboardViewModel(
         mutableGarminConnected.value = false
     }
 
-    fun saveGeminiKey(value: String) {
-        try {
-            geminiKeyStore.save(value)
-            mutableAiConnected.value = true
-            mutableImportMessage.value = "Gemini API ключът е запазен криптирано на устройството."
-        } catch (failure: Exception) {
-            mutableImportMessage.value = failure.message ?: "Gemini ключът не може да бъде запазен."
-        }
-    }
-
-    fun disconnectGemini() {
-        try {
-            geminiKeyStore.clear()
-            mutableAiConnected.value = false
-            mutableAnalysis.value = null
-            mutableImportMessage.value = "Gemini ключът е изтрит от устройството."
-        } catch (failure: Exception) {
-            mutableImportMessage.value = failure.message ?: "Gemini ключът не може да бъде изтрит."
-        }
-    }
-
     fun syncTrainingHistory(days: Int = 30) {
         if (mutableHistoryBusy.value || !mutableGarminConnected.value) return
         mutableHistoryBusy.value = true
@@ -108,7 +82,6 @@ class DashboardViewModel(
             try {
                 val result = withContext(Dispatchers.IO) { repository.syncTrainingHistory(days) }
                 mutableHistoryCount.value = result.activities.size
-                mutableAnalysis.value = null
                 mutableImportMessage.value = "Изтеглени са ${result.activities.size} Garmin активности и наличните обобщения за сън/HRV за последните $days дни."
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -118,10 +91,10 @@ class DashboardViewModel(
         }
     }
 
-    fun analyzeTraining(event: CalendarEvent?) {
-        if (mutableAnalysisBusy.value) return
-        mutableAnalysisBusy.value = true
-        mutableAnalysis.value = null
+    fun prepareChatGptReport(event: CalendarEvent?) {
+        if (mutableReportBusy.value) return
+        mutableReportBusy.value = true
+        mutableShareReport.value = null
         mutableHistoryBusy.value = true
         viewModelScope.launch {
             try {
@@ -135,14 +108,17 @@ class DashboardViewModel(
                     )
                 }
                 mutableHistoryCount.value = history.activities.size
-                mutableAnalysis.value = geminiAnalysis.analyze(history.activities, history.recovery, event)
+                require(history.activities.isNotEmpty()) { "Няма Garmin активности за отчета. Синхронизирай историята и опитай отново." }
+                mutableShareReport.value = ChatGptShareReport.build(history.activities, history.recovery, event)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableImportMessage.value = failure.message ?: "AI анализът не успя."
-            } finally { mutableHistoryBusy.value = false; mutableAnalysisBusy.value = false }
+                mutableImportMessage.value = failure.message ?: "Отчетът за ChatGPT не може да бъде подготвен."
+            } finally { mutableHistoryBusy.value = false; mutableReportBusy.value = false }
         }
     }
+
+    fun dismissShareReport() { mutableShareReport.value = null }
 
     private fun runGarminAction(success: String, action: suspend () -> Unit) {
         if (mutableGarminBusy.value) return
@@ -191,13 +167,11 @@ class DashboardViewModel(
     }
     class Factory(
         private val repository: CsvImportRepository,
-        private val geminiKeyStore: GeminiApiKeyStore,
-        private val geminiAnalysis: GeminiAnalysis,
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(DashboardViewModel::class.java))
             @Suppress("UNCHECKED_CAST")
-            return DashboardViewModel(repository, geminiKeyStore, geminiAnalysis) as T
+            return DashboardViewModel(repository) as T
         }
     }
 }

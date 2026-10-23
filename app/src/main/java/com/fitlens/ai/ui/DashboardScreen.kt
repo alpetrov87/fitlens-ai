@@ -27,11 +27,10 @@ fun DashboardScreen(
     importMessage: String?,
     garminConnected: Boolean = false,
     garminBusy: Boolean = false,
-    aiConnected: Boolean = false,
     historyBusy: Boolean = false,
     historyCount: Int = 0,
-    analysisBusy: Boolean = false,
-    analysis: String? = null,
+    reportBusy: Boolean = false,
+    shareReport: String? = null,
     calendar: CalendarState = CalendarState(loading = false),
     onAddEvent: (EventDraft, () -> Unit) -> Unit = { _, _ -> },
     onImportEventLink: (String, String, (com.fitlens.ai.data.EventLinkImport) -> Unit) -> Unit = { _, _, _ -> },
@@ -40,10 +39,10 @@ fun DashboardScreen(
     onConnectGarmin: (String) -> Unit = {},
     onSyncGarmin: () -> Unit = {},
     onDisconnectGarmin: () -> Unit = {},
-    onSaveGeminiKey: (String) -> Unit = {},
-    onDisconnectGemini: () -> Unit = {},
     onSyncHistory: () -> Unit = {},
-    onAnalyzeTraining: (CalendarEvent?) -> Unit = {},
+    onPrepareChatGptReport: (CalendarEvent?) -> Unit = {},
+    onOpenChatGpt: (String) -> Unit = {},
+    onDismissShareReport: () -> Unit = {},
     onRefresh: () -> Unit,
     onImport: (CsvImportSource) -> Unit,
     onClearImports: () -> Unit,
@@ -83,11 +82,10 @@ fun DashboardScreen(
                 when (page) {
                     "calendar" -> CalendarScreen(calendar, onAddEvent, onImportEventLink, onDeleteEvent, onRetryCalendar)
                     "settings" -> SettingsScreen(garminConnected, garminBusy, onConnectGarmin, onSyncGarmin,
-                        onDisconnectGarmin, onImport, onClearImports, aiConnected, historyBusy, historyCount,
-                        onSaveGeminiKey, onDisconnectGemini, onSyncHistory)
+                        onDisconnectGarmin, onImport, onClearImports, historyBusy, historyCount, onSyncHistory)
                     else -> HomeScreen(state, garminConnected, garminBusy, calendar.events, onSyncGarmin,
-                        onRefresh, { page = "settings" }, { page = "calendar" }, aiConnected, historyBusy,
-                        analysisBusy, analysis, onAnalyzeTraining, { page = "settings" })
+                        onRefresh, { page = "settings" }, { page = "calendar" }, historyBusy,
+                        reportBusy, shareReport, onPrepareChatGptReport, onOpenChatGpt, onDismissShareReport)
                 }
             }
         }
@@ -98,10 +96,9 @@ fun DashboardScreen(
 private fun HomeScreen(
     state: DashboardState, connected: Boolean, busy: Boolean, events: List<CalendarEvent>,
     onSync: () -> Unit, onRefresh: () -> Unit, onSettings: () -> Unit, onCalendar: () -> Unit,
-    aiConnected: Boolean, historyBusy: Boolean, analysisBusy: Boolean, analysis: String?,
-    onAnalyze: (CalendarEvent?) -> Unit, onAiSettings: () -> Unit,
+    historyBusy: Boolean, reportBusy: Boolean, shareReport: String?,
+    onPrepareReport: (CalendarEvent?) -> Unit, onOpenChatGpt: (String) -> Unit, onDismissShareReport: () -> Unit,
 ) {
-    var showAiConsent by rememberSaveable { mutableStateOf(false) }
     var eventMenu by remember { mutableStateOf(false) }
     var selectedEventId by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
@@ -186,14 +183,11 @@ private fun HomeScreen(
             }
             TextButton(onClick = onCalendar) { Text("Отвори календара") }
         }
-        InfoCard("AI анализ на тренировките", Icons.Default.AutoAwesome) {
-            Text("Прегледай натоварването през последните 30 дни и обсъди подготовката за състезание.")
-            if (!aiConnected) {
-                Text("Добави Gemini API ключ от Google AI Studio в настройките.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                OutlinedButton(onClick = onAiSettings, modifier = Modifier.fillMaxWidth()) { Text("Отвори настройките") }
-            } else if (!connected) {
+        InfoCard("Анализ с ChatGPT", Icons.Default.AutoAwesome) {
+            Text("Подготви отчет от последните 30 дни и го отвори в ChatGPT. Не е необходим API ключ.")
+            if (!connected) {
                 Text("Свържи Garmin, за да изтеглиш тренировките си.")
-                OutlinedButton(onClick = onAiSettings, modifier = Modifier.fillMaxWidth()) { Text("Настрой Garmin") }
+                OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) { Text("Настрой Garmin") }
             } else {
                 OutlinedButton(onClick = { eventMenu = true }, modifier = Modifier.fillMaxWidth()) {
                     Text(events.firstOrNull { it.id == selectedEventId }?.let { "Състезание: ${it.title}" } ?: "Избери предстоящо събитие (по избор)")
@@ -205,28 +199,33 @@ private fun HomeScreen(
                             onClick = { selectedEventId = event.id; eventMenu = false })
                     }
                 }
-                Button(onClick = { showAiConsent = true }, enabled = !historyBusy && !analysisBusy,
+                Button(onClick = {
+                    val event = events.firstOrNull { it.id == selectedEventId && it.date >= LocalDate.now().toString() }
+                    onPrepareReport(event)
+                }, enabled = !historyBusy && !reportBusy,
                     modifier = Modifier.fillMaxWidth()) {
-                    if (analysisBusy || historyBusy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
-                    else Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp)); Text(when { historyBusy -> "Синхронизиране…"; analysisBusy -> "Подготвям анализа…"; else -> "Изтегли и анализирай 30 дни" })
+                    if (reportBusy || historyBusy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    else Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp)); Text(if (reportBusy || historyBusy) "Подготвям отчета…" else "Подготви отчет за ChatGPT")
                 }
-                Text("Ще бъдат изпратени тренировъчни обобщения към Google Gemini след потвърждение. Не е медицинска оценка.",
+                Text("FitLens първо показва целия отчет. Данните напускат приложението само след като избереш да ги споделиш.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                analysis?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
             }
         }
     }
-    if (showAiConsent) {
-        AlertDialog(onDismissRequest = { showAiConsent = false },
-            title = { Text("Изпращане на данни за AI анализ") },
-            text = { Text("FitLens ще изтегли активностите, наличните обобщения за сън и HRV от Garmin за последните 30 дни и ще изпрати тези показатели към Google Gemini. Ако избереш събитие, ще изпрати и името, датата, спорта и мястото му. Безплатният план може да използва данните според условията на Google. Garmin ключът не се изпраща към Google. Продължаваш ли?") },
-            confirmButton = { TextButton(onClick = {
-                showAiConsent = false
-                val event = events.firstOrNull { it.id == selectedEventId && it.date >= LocalDate.now().toString() }
-                onAnalyze(event)
-            }) { Text("Продължи") } },
-            dismissButton = { TextButton(onClick = { showAiConsent = false }) { Text("Отказ") } })
+    if (shareReport != null) {
+        AlertDialog(onDismissRequest = onDismissShareReport,
+            title = { Text("Преглед на отчета") },
+            text = { Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
+                Text("Точно този текст ще бъде споделен. Garmin ключът и access token-ът не са включени.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.height(12.dp)); Text(shareReport, style = MaterialTheme.typography.bodySmall)
+            } },
+            confirmButton = { TextButton(onClick = { onOpenChatGpt(shareReport); onDismissShareReport() }) {
+                Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp)); Text("Отвори в ChatGPT")
+            } },
+            dismissButton = { TextButton(onClick = onDismissShareReport) { Text("Отказ") } })
     }
 }
 

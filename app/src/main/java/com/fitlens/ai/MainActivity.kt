@@ -2,6 +2,8 @@ package com.fitlens.ai
 
 import android.os.Bundle
 import android.net.Uri
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -28,8 +30,7 @@ import com.fitlens.ai.ui.FitLensTheme
 import com.fitlens.ai.ui.CalendarViewModel
 import com.fitlens.ai.data.CalendarEventStore
 import com.fitlens.ai.data.EventLinkImporter
-import com.fitlens.ai.data.GeminiAnalysis
-import com.fitlens.ai.data.GeminiApiKeyStore
+import com.fitlens.ai.data.LegacyAiCredentialCleaner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -40,14 +41,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val factory = DashboardViewModel.Factory(
-            DefaultHealthRepository(
+        LegacyAiCredentialCleaner.run(applicationContext)
+        val factory = DashboardViewModel.Factory(DefaultHealthRepository(
                 DemoActivitySource(), DemoNutritionSource(), SharedPreferencesImportedMetricsStore(applicationContext),
                 GarminPersonalApi(GarminPersonalKeyStore(applicationContext)),
-            ),
-            GeminiApiKeyStore(applicationContext),
-            GeminiAnalysis(GeminiApiKeyStore(applicationContext)),
-        )
+            ))
         val calendarFactory = CalendarViewModel.Factory(CalendarEventStore(applicationContext), EventLinkImporter())
         setContent {
             FitLensTheme {
@@ -74,11 +72,10 @@ class MainActivity : ComponentActivity() {
                     importMessage = model.importMessage.collectAsStateWithLifecycle().value,
                     garminConnected = model.garminConnected.collectAsStateWithLifecycle().value,
                     garminBusy = model.garminBusy.collectAsStateWithLifecycle().value,
-                    aiConnected = model.aiConnected.collectAsStateWithLifecycle().value,
                     historyBusy = model.historyBusy.collectAsStateWithLifecycle().value,
                     historyCount = model.historyCount.collectAsStateWithLifecycle().value,
-                    analysisBusy = model.analysisBusy.collectAsStateWithLifecycle().value,
-                    analysis = model.analysis.collectAsStateWithLifecycle().value,
+                    reportBusy = model.reportBusy.collectAsStateWithLifecycle().value,
+                    shareReport = model.shareReport.collectAsStateWithLifecycle().value,
                     calendar = calendarModel.state.collectAsStateWithLifecycle().value,
                     onAddEvent = calendarModel::add,
                     onImportEventLink = calendarModel::importLink,
@@ -87,10 +84,10 @@ class MainActivity : ComponentActivity() {
                     onConnectGarmin = model::connectGarmin,
                     onSyncGarmin = model::syncGarmin,
                     onDisconnectGarmin = model::disconnectGarmin,
-                    onSaveGeminiKey = model::saveGeminiKey,
-                    onDisconnectGemini = model::disconnectGemini,
                     onSyncHistory = { model.syncTrainingHistory() },
-                    onAnalyzeTraining = model::analyzeTraining,
+                    onPrepareChatGptReport = model::prepareChatGptReport,
+                    onOpenChatGpt = { openChatGpt(context, it) },
+                    onDismissShareReport = model::dismissShareReport,
                     onRefresh = model::refresh,
                     onImport = { source ->
                         importSource = source
@@ -99,6 +96,19 @@ class MainActivity : ComponentActivity() {
                     onClearImports = model::clearImportedMetrics,
                 )
             }
+        }
+    }
+
+    private fun openChatGpt(context: android.content.Context, report: String) {
+        val share = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "FitLens AI · Garmin отчет")
+            putExtra(Intent.EXTRA_TEXT, report)
+        }
+        try {
+            context.startActivity(Intent(share).setPackage("com.openai.chatgpt"))
+        } catch (_: ActivityNotFoundException) {
+            context.startActivity(Intent.createChooser(share, "Сподели отчета с ChatGPT"))
         }
     }
 
