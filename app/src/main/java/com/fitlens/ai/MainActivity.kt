@@ -25,6 +25,8 @@ import com.fitlens.ai.data.GarminPersonalKeyStore
 import com.fitlens.ai.ui.DashboardScreen
 import com.fitlens.ai.ui.DashboardViewModel
 import com.fitlens.ai.ui.FitLensTheme
+import com.fitlens.ai.ui.CalendarViewModel
+import com.fitlens.ai.data.CalendarEventStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -41,9 +43,11 @@ class MainActivity : ComponentActivity() {
                 GarminPersonalApi(GarminPersonalKeyStore(applicationContext)),
             ),
         )
+        val calendarFactory = CalendarViewModel.Factory(CalendarEventStore(applicationContext))
         setContent {
             FitLensTheme {
                 val model: DashboardViewModel = viewModel(factory = factory)
+                val calendarModel: CalendarViewModel = viewModel(factory = calendarFactory)
                 val context = LocalContext.current
                 val scope = rememberCoroutineScope()
                 var importSource by remember { mutableStateOf(CsvImportSource.GARMIN) }
@@ -64,6 +68,11 @@ class MainActivity : ComponentActivity() {
                     state = model.state.collectAsStateWithLifecycle().value,
                     importMessage = model.importMessage.collectAsStateWithLifecycle().value,
                     garminConnected = model.garminConnected.collectAsStateWithLifecycle().value,
+                    garminBusy = model.garminBusy.collectAsStateWithLifecycle().value,
+                    calendar = calendarModel.state.collectAsStateWithLifecycle().value,
+                    onAddEvent = calendarModel::add,
+                    onDeleteEvent = calendarModel::delete,
+                    onRetryCalendar = calendarModel::retry,
                     onConnectGarmin = model::connectGarmin,
                     onSyncGarmin = model::syncGarmin,
                     onDisconnectGarmin = model::disconnectGarmin,

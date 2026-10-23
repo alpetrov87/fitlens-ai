@@ -25,6 +25,8 @@ class DashboardViewModel(private val repository: CsvImportRepository) : ViewMode
     val importMessage = mutableImportMessage.asStateFlow()
     private val mutableGarminConnected = MutableStateFlow(repository.isGarminConnected())
     val garminConnected = mutableGarminConnected.asStateFlow()
+    private val mutableGarminBusy = MutableStateFlow(false)
+    val garminBusy = mutableGarminBusy.asStateFlow()
     init { refresh() }
 
     fun importCsv(source: CsvImportSource, csv: String) {
@@ -60,6 +62,8 @@ class DashboardViewModel(private val repository: CsvImportRepository) : ViewMode
     }
 
     private fun runGarminAction(success: String, action: suspend () -> Unit) {
+        if (mutableGarminBusy.value) return
+        mutableGarminBusy.value = true
         viewModelScope.launch {
             mutableImportMessage.value = "Свързване с Garmin…"
             try {
@@ -70,6 +74,8 @@ class DashboardViewModel(private val repository: CsvImportRepository) : ViewMode
                 throw cancelled
             } catch (failure: Exception) {
                 mutableImportMessage.value = failure.message ?: "Garmin синхронизацията неуспешна."
+            } finally {
+                mutableGarminBusy.value = false
             }
         }
     }

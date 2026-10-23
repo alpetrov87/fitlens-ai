@@ -1,33 +1,36 @@
 package com.fitlens.ai.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.fitlens.ai.data.*
-
-@Composable
-fun FitLensTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = darkColorScheme(
-        primary = Color(0xFFB5F36C), background = Color(0xFF101614),
-        surface = Color(0xFF1C2621), secondary = Color(0xFF93D5D4),
-    ), content = content)
-}
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun DashboardScreen(
     state: DashboardState,
     importMessage: String?,
     garminConnected: Boolean = false,
+    garminBusy: Boolean = false,
+    calendar: CalendarState = CalendarState(loading = false),
+    onAddEvent: (EventDraft, () -> Unit) -> Unit = { _, _ -> },
+    onDeleteEvent: (String) -> Unit = {},
+    onRetryCalendar: () -> Unit = {},
     onConnectGarmin: (String) -> Unit = {},
     onSyncGarmin: () -> Unit = {},
     onDisconnectGarmin: () -> Unit = {},
@@ -35,151 +38,182 @@ fun DashboardScreen(
     onImport: (CsvImportSource) -> Unit,
     onClearImports: () -> Unit,
 ) {
-    var confirmClear by remember { mutableStateOf(false) }
-    var garminKey by remember { mutableStateOf("") }
-    val context = androidx.compose.ui.platform.LocalContext.current
-    Scaffold { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState())
-            .padding(24.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            Text("FitLens AI", style = MaterialTheme.typography.headlineLarge, color = MaterialTheme.colorScheme.primary)
-            Text("Твоят ден в движение", style = MaterialTheme.typography.titleLarge)
-            Text("Избирай CSV за локален импорт", color = MaterialTheme.colorScheme.secondary)
-            when (state) {
-                DashboardState.Loading -> CircularProgressIndicator()
-                DashboardState.Error -> Text("Данните не могат да бъдат заредени. Опитай отново.")
-                is DashboardState.Ready -> {
-                    val activity = state.dashboard.activity
-                    val nutrition = state.dashboard.nutrition
-                    MetricCard("Активност · ${state.dashboard.activityOrigin.label()}${state.dashboard.activityDate?.let { " · $it" }.orEmpty()}") {
-                        Text("${activity.steps} крачки", style = MaterialTheme.typography.headlineMedium)
-                        Text("${activity.activeMinutes} активни минути • ${activity.distanceKm} km")
-                        LinearProgressIndicator(progress = { (activity.steps / 10000f).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-                        Text("Демо цел: 10 000 крачки")
-                        if (state.dashboard.activityOrigin != MetricOrigin.DEMO) {
-                            Text("Показатели, които липсват в CSV, са примерни.", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    MetricCard("Хранене · ${state.dashboard.nutritionOrigin.label()}${state.dashboard.nutritionDate?.let { " · $it" }.orEmpty()}") {
-                        Text("${nutrition.calories} / ${nutrition.calorieGoal} kcal", style = MaterialTheme.typography.headlineMedium)
-                        if (state.dashboard.nutritionOrigin == MetricOrigin.GARMIN_PERSONAL_API) {
-                            Text("Записан прием на храна от Garmin Connect", style = MaterialTheme.typography.bodySmall)
-                        }
-                        LinearProgressIndicator(progress = { (nutrition.calories.toFloat() / nutrition.calorieGoal.coerceAtLeast(1)).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth())
-                        Text("Протеин ${nutrition.proteinGrams} g • Въглехидрати ${nutrition.carbsGrams} g • Мазнини ${nutrition.fatGrams} g")
-                        if (state.dashboard.nutritionOrigin != MetricOrigin.DEMO) {
-                            Text("Липсващите показатели и целта са примерни.", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    if (state.dashboard.garminActivities.isNotEmpty()) {
-                        MetricCard("Garmin активности днес · ${state.dashboard.garminActivities.size}") {
-                            state.dashboard.garminActivities.forEach { activity ->
-                                HorizontalDivider()
-                                Text(activity.name, style = MaterialTheme.typography.titleSmall)
-                                Text("${activity.activityTypeKey.displaySport()} · ${activity.startTimeLocal.substringAfter(' ', activity.startTimeLocal)}")
-                                val details = buildList {
-                                    activity.durationSeconds?.let { add("${(it / 60).toInt()} мин") }
-                                    activity.distanceMeters?.let { add("${"%.2f".format(it / 1000.0)} km") }
-                                    activity.calories?.let { add("$it kcal") }
-                                    activity.steps?.let { add("$it крачки") }
-                                    activity.averageHeartRate?.let { add("ср. пулс $it") }
-                                    activity.maxHeartRate?.let { add("макс. пулс $it") }
-                                    activity.elevationGainMeters?.let { add("изкачване ${it.toInt()} m") }
-                                }
-                                if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                    MetricCard("Твоят фокус") {
-                        Text("Още малко движение до демо целта. Разходка и балансирана вечеря са добра идея.")
-                        Text("Примерен съвет, без AI анализ или медицински препоръки.", style = MaterialTheme.typography.bodySmall)
-                    }
+    var page by rememberSaveable { mutableStateOf("home") }
+    val snackbar = remember { SnackbarHostState() }
+    val pageState = rememberSaveableStateHolder()
+    LaunchedEffect(importMessage) {
+        importMessage?.let { snackbar.showSnackbar(it, duration = SnackbarDuration.Long) }
+    }
+    BackHandler(enabled = page != "home") { page = "home" }
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbar) },
+        bottomBar = {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+                listOf(Triple("home", "Начало", Icons.Default.Home),
+                    Triple("calendar", "Календар", Icons.Default.DateRange),
+                    Triple("settings", "Настройки", Icons.Default.Settings)).forEach { (key, title, icon) ->
+                    NavigationBarItem(selected = page == key, onClick = { page = key },
+                        icon = { Icon(icon, contentDescription = null) }, label = { Text(title) })
                 }
             }
-            if (state is DashboardState.Ready &&
-                (state.dashboard.activityOrigin != MetricOrigin.DEMO || state.dashboard.nutritionOrigin != MetricOrigin.DEMO)
-            ) {
-                OutlinedButton(onClick = { confirmClear = true }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Изтрий импортираните данни")
+        },
+    ) { padding ->
+        Column(Modifier.fillMaxSize().padding(padding)) {
+            Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.Default.Favorite, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text("FitLens AI", style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.weight(1f))
+                if (garminConnected) Icon(Icons.Default.CheckCircle, contentDescription = "Garmin е свързан",
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            }
+            if (garminBusy) LinearProgressIndicator(Modifier.fillMaxWidth())
+            pageState.SaveableStateProvider(page) {
+                when (page) {
+                    "calendar" -> CalendarScreen(calendar, onAddEvent, onDeleteEvent, onRetryCalendar)
+                    "settings" -> SettingsScreen(garminConnected, garminBusy, onConnectGarmin, onSyncGarmin,
+                        onDisconnectGarmin, onImport, onClearImports)
+                    else -> HomeScreen(state, garminConnected, garminBusy, calendar.events, onSyncGarmin,
+                        onRefresh, { page = "settings" }, { page = "calendar" })
                 }
             }
-            MetricCard("Импорт на данни") {
-                Text("Garmin Connect и MyFitnessPal CSV файлове се обработват на устройството.")
-                Button(onClick = { onImport(CsvImportSource.GARMIN) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Избери Garmin CSV")
-                }
-                OutlinedButton(onClick = { onImport(CsvImportSource.MYFITNESSPAL) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("Избери MyFitnessPal CSV")
-                }
-                if (importMessage != null) Text(importMessage, color = MaterialTheme.colorScheme.secondary)
-                Text("Импортират се само измерванията от CSV. Файлът и акаунт пароли не се изпращат.", style = MaterialTheme.typography.bodySmall)
-            }
-            MetricCard("Garmin Personal API · ${if (garminConnected) "свързан" else "настройка"}") {
-                Text("За лична употреба: създай Personal API key в Garmin Connect Web. Ключът се показва еднократно и трябва да се пази като парола.")
-                TextButton(onClick = {
-                    context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://connect.garmin.com/app/settings/personalApiToken")))
-                }) { Text("Отвори Garmin Connect · Personal API keys") }
-                if (!garminConnected) {
-                    OutlinedTextField(
-                        value = garminKey,
-                        onValueChange = { garminKey = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Garmin Personal API key") },
-                        placeholder = { Text("Постави личния си ключ") },
-                        singleLine = true,
-                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
-                    )
-                    Button(onClick = { onConnectGarmin(garminKey); garminKey = "" }, enabled = garminKey.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
-                        Text("Свържи и синхронизирай")
-                    }
-                } else {
-                    Button(onClick = onSyncGarmin, modifier = Modifier.fillMaxWidth()) { Text("Изтегли данните за днес") }
-                    OutlinedButton(onClick = onDisconnectGarmin, modifier = Modifier.fillMaxWidth()) { Text("Изтрий ключа и Garmin данните") }
-                }
-                Text("Приложението изпраща ключа само към Garmin през HTTPS и го пази криптиран на това устройство. Garmin API key не се изпраща към backend. Personal API е за собствените ти данни и не е достъп за комерсиална multi-user услуга.", style = MaterialTheme.typography.bodySmall)
-            }
-            OutlinedButton(onClick = onRefresh, enabled = state != DashboardState.Loading) { Text("Обнови демо данните") }
         }
     }
-    if (confirmClear) {
-        AlertDialog(
-            onDismissRequest = { confirmClear = false },
-            title = { Text("Изтриване на импортираните данни") },
-            text = { Text("Всички Garmin и MyFitnessPal обобщения ще бъдат изтрити от устройството.") },
-            confirmButton = { TextButton(onClick = { confirmClear = false; onClearImports() }) { Text("Изтрий") } },
-            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text("Отказ") } },
-        )
-    }
 }
-
-private fun MetricOrigin.label(): String = when (this) {
-    MetricOrigin.DEMO -> "демо"
-    MetricOrigin.GARMIN_CSV -> "Garmin CSV"
-    MetricOrigin.GARMIN_PERSONAL_API -> "Garmin Personal API"
-    MetricOrigin.MYFITNESSPAL_CSV -> "MyFitnessPal CSV"
-}
-
-private fun String.displaySport(): String = replace('_', ' ').replaceFirstChar { it.uppercase() }
 
 @Composable
-private fun MetricCard(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-            content()
+private fun HomeScreen(
+    state: DashboardState, connected: Boolean, busy: Boolean, events: List<CalendarEvent>,
+    onSync: () -> Unit, onRefresh: () -> Unit, onSettings: () -> Unit, onCalendar: () -> Unit,
+) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
+        .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
+        Text("Твоят ден, в баланс.", style = MaterialTheme.typography.headlineMedium)
+        Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forLanguageTag("bg"))),
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (connected) {
+            FilledTonalButton(onClick = onSync, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Sync, contentDescription = null, Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp)); Text(if (busy) "Изтегляне…" else "Изтегли данните за днес")
+            }
+        } else {
+            FilledTonalButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Link, contentDescription = null, Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp)); Text("Свържи Garmin в настройките")
+            }
+        }
+        when (state) {
+            DashboardState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
+            DashboardState.Error -> InfoCard("Данните не могат да се заредят", Icons.Default.Info) {
+                TextButton(onClick = onRefresh) { Text("Опитай отново") }
+            }
+            is DashboardState.Ready -> {
+                val data = state.dashboard
+                Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(
+                    MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.secondaryContainer,
+                )), MaterialTheme.shapes.large)) {
+                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Icon(Icons.Default.DirectionsWalk, contentDescription = null)
+                            Text("ДНЕВНО ДВИЖЕНИЕ", style = MaterialTheme.typography.labelLarge)
+                        }
+                        Text("%,d".format(data.activity.steps), style = MaterialTheme.typography.displayMedium)
+                        Text("крачки · ${data.activityOrigin.label()}${data.activityDate?.let { " · $it" }.orEmpty()}",
+                            style = MaterialTheme.typography.bodyMedium)
+                        LinearProgressIndicator(progress = { (data.activity.steps / 10000f).coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth())
+                        Text("Примерна цел: 10 000 крачки", style = MaterialTheme.typography.labelMedium)
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                            StatValue("${data.activity.activeMinutes}", "активни минути")
+                            StatValue("%.1f".format(data.activity.distanceKm), "километра")
+                        }
+                        if (data.activityOrigin != MetricOrigin.DEMO) Text("Липсващите показатели са примерни.",
+                            style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                InfoCard("Хранене", Icons.Default.Restaurant) {
+                    Text("${data.nutrition.calories} kcal", style = MaterialTheme.typography.headlineMedium)
+                    Text("${data.nutritionOrigin.label()}${data.nutritionDate?.let { " · $it" }.orEmpty()}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Цел ${data.nutrition.calorieGoal} kcal")
+                    LinearProgressIndicator(progress = { (data.nutrition.calories.toFloat() / data.nutrition.calorieGoal.coerceAtLeast(1)).coerceIn(0f, 1f) },
+                        modifier = Modifier.fillMaxWidth())
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        StatValue("${data.nutrition.proteinGrams} g", "протеин")
+                        StatValue("${data.nutrition.carbsGrams} g", "въглехидрати")
+                        StatValue("${data.nutrition.fatGrams} g", "мазнини")
+                    }
+                    Text("Липсващите показатели и целта са примерни.", style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (data.garminCaloriesConsumed != null && data.nutritionOrigin != MetricOrigin.GARMIN_PERSONAL_API) {
+                        Text("Записан прием в Garmin: ${data.garminCaloriesConsumed} kcal")
+                    }
+                }
+                Text("Активности днес", style = MaterialTheme.typography.titleLarge)
+                if (data.garminActivities.isEmpty()) {
+                    InfoCard("Денят е пред теб", Icons.Default.DirectionsRun) {
+                        Text(if (connected) "Няма изтеглени активности за днес. Синхронизирай след следващата тренировка."
+                            else "Свържи Garmin, за да виждаш тренировките си тук.")
+                    }
+                }
+                data.garminActivities.forEach { activity -> ActivityCard(activity) }
+            }
+        }
+        val next = events.firstOrNull { it.date >= LocalDate.now().toString() }
+        InfoCard("Следващо събитие", Icons.Default.Event) {
+            if (next == null) Text("Планирай следващата си спортна цел в календара.")
+            else {
+                Text(next.title, style = MaterialTheme.typography.titleLarge)
+                Text("${next.date}${next.time.takeIf(String::isNotBlank)?.let { " · $it" }.orEmpty()} · ${sportLabel(next.sport)}")
+            }
+            TextButton(onClick = onCalendar) { Text("Отвори календара") }
         }
     }
 }
 
-@Preview(showBackground = true)
+@Composable
+private fun StatValue(value: String, label: String) {
+    Column {
+        Text(value, style = MaterialTheme.typography.titleLarge)
+        Text(label, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+@Composable
+private fun ActivityCard(activity: GarminActivity) {
+    var expanded by rememberSaveable(activity.activityId) { mutableStateOf(false) }
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+        Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                SportBadge(activity.activityTypeKey)
+                Column(Modifier.weight(1f)) {
+                    Text(activity.name, style = MaterialTheme.typography.titleMedium)
+                    Text("${sportLabel(activity.activityTypeKey)} · ${activity.startTimeLocal.substringAfter(' ', activity.startTimeLocal)}",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+            Text(buildList {
+                activity.durationSeconds?.let { add("${(it / 60).toInt()} мин") }
+                activity.distanceMeters?.let { add("%.2f km".format(it / 1000)) }
+                activity.calories?.let { add("$it kcal") }
+            }.joinToString("  •  "))
+            TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Скрий подробностите" else "Подробности") }
+            if (expanded) {
+                activity.steps?.let { Text("Крачки: $it") }
+                activity.averageHeartRate?.let { Text("Среден пулс: $it bpm") }
+                activity.maxHeartRate?.let { Text("Максимален пулс: $it bpm") }
+                activity.elevationGainMeters?.let { Text("Изкачване: ${it.toInt()} m") }
+                Text("Garmin ID: ${activity.activityId}", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+    }
+}
+
+@Preview(name = "Начало · светла тема", showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_NO)
+@Preview(name = "Начало · тъмна тема", showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun DashboardPreview() {
-    FitLensTheme {
-        DashboardScreen(
-            DashboardState.Ready(Dashboard(ActivitySummary(7840, 42, 5.6), NutritionSummary(1640, 2200, 112, 185, 51))),
-            importMessage = null,
-            onRefresh = {},
-            onImport = {},
-            onClearImports = {},
-        )
-    }
+    FitLensTheme { DashboardScreen(DashboardState.Ready(Dashboard(ActivitySummary(7840, 42, 5.6),
+        NutritionSummary(1640, 2200, 112, 185, 51))), null, onRefresh = {}, onImport = {}, onClearImports = {}) }
 }
