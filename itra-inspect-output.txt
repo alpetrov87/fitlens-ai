@@ -3,7 +3,7 @@
   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
 HTTP/2 202 
 server: CloudFront
-date: Sat, 24 Oct 2026 11:53:04 GMT
+date: Sat, 24 Oct 2026 11:54:35 GMT
 content-length: 0
 x-amzn-waf-action: challenge
 cache-control: no-store, max-age=0
@@ -13,34 +13,34 @@ access-control-max-age: 86400
 access-control-allow-methods: OPTIONS,GET,POST
 access-control-expose-headers: x-amzn-waf-action
 x-cache: Error from cloudfront
-via: 1.1 2c05225edb39737522cc9637414fe09c.cloudfront.net (CloudFront)
-x-amz-cf-pop: PHX52-P3
-x-amz-cf-id: -kCVlIJlhP2HWKI6Zj354hO7VeAYrschC124vhvA6LzK-FpgTmCthw==
+via: 1.1 42eb5dfcc641e959ebaf60f01fc7d582.cloudfront.net (CloudFront)
+x-amz-cf-pop: HIO52-P4
+x-amz-cf-id: sqJuu6c_t7zKJ11lPX_mwTVYLxehACfOSCX0DtzBgX6MVX6CVSMMKQ==
 
 0 profile.html
-[2304:2328:1024/115307.780433:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2328:1024/115309.428495:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2328:1024/115309.428533:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2328:1024/115309.687198:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2328:1024/115310.069675:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2304:1024/115311.304471:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[2304:2328:1024/115311.304569:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2304:1024/115311.304621:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[2304:2328:1024/115311.304706:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2304:1024/115311.305840:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[2304:2304:1024/115311.336881:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[2304:2328:1024/115311.343720:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2304:1024/115311.638352:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[2304:2304:1024/115311.645666:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[2304:2328:1024/115311.646029:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2304:1024/115311.678396:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[2304:2304:1024/115311.817248:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.UPower was not provided by any .service files
-[2304:2304:1024/115311.821304:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[2304:2328:1024/115311.822407:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2304:1024/115311.945230:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[2304:2328:1024/115311.945324:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
-[2304:2304:1024/115311.986725:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
-[2338:2338:1024/115313.255026:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1204] []Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader flag to opt in to lower security guarantees for trusted content.
+[2542:2566:1024/115439.177534:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2566:1024/115441.251880:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2566:1024/115441.251903:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2566:1024/115441.558758:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2566:1024/115441.970202:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2542:1024/115443.570242:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2542:2566:1024/115443.570328:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2542:1024/115443.570442:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2542:2542:1024/115443.570979:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2542:2566:1024/115443.571612:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2542:1024/115443.603647:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2542:2566:1024/115443.612663:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2542:1024/115443.902780:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2542:2542:1024/115443.912991:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2542:2566:1024/115443.913563:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2542:1024/115443.923895:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2542:2542:1024/115444.083134:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2542:2566:1024/115444.083308:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2542:1024/115444.083339:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.UPower was not provided by any .service files
+[2542:2542:1024/115444.179774:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2542:2566:1024/115444.179857:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2542:2542:1024/115444.224828:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2576:2576:1024/115445.465302:ERROR:gpu/command_buffer/service/gles2_cmd_decoder_passthrough.cc:1204] []Automatic fallback to software WebGL has been deprecated. Please use the --enable-unsafe-swiftshader flag to opt in to lower security guarantees for trusted content.
 VISIBLE TEXT: Error - Something Went Wrong | ITRA ⚠️ Oops! Something Went Wrong We encountered an unexpected error while processing your request. Our team has been notified and is working to fix the issue. We apologise for the inconvenience. Go Back Return to Home Page
 NETWORK URLS:
 https://itra.run
@@ -52,3 +52,251 @@ https://itra.run/images/ITRALogoWhite.jpg
 https://itra.run;
 RENDERED MATCHES:
 HTML FORM/ACTION CANDIDATES:
+PROBE numeric-profile GET https://itra.run/RunnerSpace/7422083
+HTTP/2 202 
+server: CloudFront
+date: Sat, 24 Oct 2026 11:54:46 GMT
+content-length: 2415
+x-amzn-waf-action: challenge
+cache-control: no-store, max-age=0
+content-type: text/html; charset=UTF-8
+access-control-allow-origin: *
+access-control-max-age: 86400
+access-control-allow-methods: OPTIONS,GET,POST
+access-control-expose-headers: x-amzn-waf-action
+x-cache: Error from cloudfront
+via: 1.1 474071c4c0fe7769ce8d0b73ccd104b0.cloudfront.net (CloudFront)
+x-amz-cf-pop: HIO52-P4
+x-amz-cf-id: _SFCCEOSGmn5dl-BcY0SDo2bJiYgsXO3dqBGMu_5sPhnVLMkO9BnkA==
+
+2415 probe-body.txt
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <style>
+        body {
+            font-family: "Arial";
+        }
+    </style>
+    <script type="text/javascript">
+    window.awsWafCookieDomainList = [];
+    window.gokuProps = {
+"key":"AQIDAHjcYu/GjX+QlghicBgQ/7bFaQZ+m5FKCMDnO+vTbNg96AHSL6kvCpE762O7v+G2uSM5AAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMZjwCLEnuocLcZahsAgEQgDtsBc+AmpOFQasGW09vb2EYRnZ25ikWX9rn7m5Om4L1SPlnmEQfLpjM5g9JtNA2iniZPtFANVqxbWEc7Q==",
+          "iv":"D57JYgHxGAAAdi96",
+          "context":"8RlHK5zYSscdOiOOgxDCcx7dwDFoBO6sV6QQ3QbUTQNqlYOvGk2Rl983YC+1makne5Y95UGlXZVFnCzpJcl35n9qBznx4e1+H3ZEfTc7h1ZAwrD9i3GwPD9ZcMXk4rNAbpzzGpwXAwdPeO8bDfQAaRjIvaYeF4BAU8Y//dpI6B1wjAxeeihaVkGUUMlCKhjwYHztLRvYR9Xi+zKkzoPyBRJarqWIdBxsPbmGibFsiSCIabc9VLQrSKGzlShZ5QC8dpVfFWs0gcoCg1YCbUTcLAgYmtj0WqbiyYOJ6T48Y3kKefQPdLcGolLdWHHqTnm5WACmuHxVJoSYaYmVlZC2uLawH7eHxki9UF2ESSAOcYpFzUURIrZGsDvup77fLcq/KWe0To2Qrb4k71oKowXNxIwdbX/cH+R+whQKS26tpq77/LV8SVpbVjdM7jl7K3LRzgbKiVtY50IFdxjTlO43A66ocZl0v4E3yEPzQ+9E9qmVMcP6fJZ3jj6J8DenLQ2N5uwh++Lv4+sVGsnCalusT28RFgN7rStY3hxLZfosHIXSu3AmY2sQUtp7wClbr7mNQJX94hR1VArO3thYZet8I1c8lYJHOq2MJwQgxcHQon9vuY+L7jObbo0dLlBz2sCHSzjfKrESsNxbJdIHqPXhyAj7Z77pIZgRVvCXMk63q1O0lc03Fa/BIgX30N5VFsGrqd1oxWzmhVhLDk5YybnSnqMAa5n8A5l0sV8nwKjSPcDjqn3yP3zkYxM2wB2g2KUj8qxlxynyWRaZlkRI143uooS/T4JUbtQ="
+};
+    </script>
+    <script src="https://5fe100a736cc.c8154d58.us-west-2.token.awswaf.com/5fe100a736cc/98687f959144/5544526aa34e/challenge.js"></script>
+</head>
+<body>
+    <div id="challenge-container"></div>
+    <script type="text/javascript">
+        AwsWafIntegration.saveReferrer();
+        AwsWafIntegration.checkForceRefresh().then((forceRefresh) => {
+            if (forceRefresh) {
+                AwsWafIntegration.forceRefreshToken().then(() => {
+                    window.location.reload(true);
+                });
+            } else {
+                AwsWafIntegration.getToken().then(() => {
+                    window.location.reload(true);
+                });
+            }
+        });
+    </script>
+    <noscript>
+        <h1>JavaScript is disabled</h1>
+        In order to continue, we need to verify that you're not a robot.
+        This requires JavaScript. Enable JavaScript and then reload the page.
+    </noscript>
+</body>
+</html>
+PROBE numeric-results GET https://itra.run/RunnerSpace/RaceResults/7422083
+HTTP/2 202 
+server: CloudFront
+date: Sat, 24 Oct 2026 11:54:46 GMT
+content-length: 2415
+x-amzn-waf-action: challenge
+cache-control: no-store, max-age=0
+content-type: text/html; charset=UTF-8
+access-control-allow-origin: *
+access-control-max-age: 86400
+access-control-allow-methods: OPTIONS,GET,POST
+access-control-expose-headers: x-amzn-waf-action
+x-cache: Error from cloudfront
+via: 1.1 9a4713706b0c5d2719c0ce83795d8ec2.cloudfront.net (CloudFront)
+x-amz-cf-pop: HIO52-P4
+x-amz-cf-id: Zp24HMe91_DqWntRbewXCc_Zbi1mLrakCK6zP6nTVfKItqY0ecN9Rg==
+
+2415 probe-body.txt
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <style>
+        body {
+            font-family: "Arial";
+        }
+    </style>
+    <script type="text/javascript">
+    window.awsWafCookieDomainList = [];
+    window.gokuProps = {
+"key":"AQIDAHjcYu/GjX+QlghicBgQ/7bFaQZ+m5FKCMDnO+vTbNg96AHSL6kvCpE762O7v+G2uSM5AAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMZjwCLEnuocLcZahsAgEQgDtsBc+AmpOFQasGW09vb2EYRnZ25ikWX9rn7m5Om4L1SPlnmEQfLpjM5g9JtNA2iniZPtFANVqxbWEc7Q==",
+          "iv":"D57JQQHz3wAAgXd8",
+          "context":"1LWTvLr5CSh1vOOkwyp77WUbh8ZNLddce6xjZozUa584FmB1KXj1vvBqct52tPfylPbAJ7oZrDpwXLuJ7nr97VJjBoXJ4kj8n36RJ7Xdn04Tao3RMZQkzqD6HkniBljpVrBoygDWadVjjcD48BStjj774JFbA0WSr+GOWOgN+I9UmYV6SYF3q+KLj55nu8QIG9iBzxVPUfGCTvxP2nDB/kIO/9w3BbP74xve/nUkCMD6AdayLg/55BdlAr9KHUZI8uq9vDlFvrgPArr6h4JmO9VKHOYSPGTcENatbxKIqJ/6HI3a9pVKs0hGym5ZaMv0cqIKJ3tusnddYbLUzK54KnBsdFPs8VK3xzXqrSEDzGeLBgwV/FqVMgSg5oDvn/vrm+y3/NuQALWXfF7QO9XGiNbewy4BReud2koiQ5DN6LZdteMqrrqbuJ/gMq1O5/AiJGIU4aE0pENXnIyRk9qwlgr/CbRittJPg/+7wxRoWYMf0mb0tCrLMb0b+LQLo0H16+04I9QJy6F7wvyE7buzgzmyU0YYxanWt0UwBe18A6RR1A2aE2T/9diPYFuwwM6qDtHRm/FJo7/ihm++ryVMJANrEWq7P8pxl+VKKVEBo4SidJ7of7g5AalUKHuu8KI13RubNexjZfFQHkEe6D5tAro8h7G9gwULJURe9Dx1McZ1u+vs5e2fBAWXW0+Aq5PfiVVNpe3qdxlu6WAZ4ZAhzmrfVm/rpfjTtJeIaCb0z1n2ABf8sWcR0a/TKoM08S5sk654vxlmpj7RR9s6YXEozFXD0in5/8E="
+};
+    </script>
+    <script src="https://5fe100a736cc.c8154d58.us-west-2.token.awswaf.com/5fe100a736cc/98687f959144/5544526aa34e/challenge.js"></script>
+</head>
+<body>
+    <div id="challenge-container"></div>
+    <script type="text/javascript">
+        AwsWafIntegration.saveReferrer();
+        AwsWafIntegration.checkForceRefresh().then((forceRefresh) => {
+            if (forceRefresh) {
+                AwsWafIntegration.forceRefreshToken().then(() => {
+                    window.location.reload(true);
+                });
+            } else {
+                AwsWafIntegration.getToken().then(() => {
+                    window.location.reload(true);
+                });
+            }
+        });
+    </script>
+    <noscript>
+        <h1>JavaScript is disabled</h1>
+        In order to continue, we need to verify that you're not a robot.
+        This requires JavaScript. Enable JavaScript and then reload the page.
+    </noscript>
+</body>
+</html>
+PROBE pi-stats POST https://itra.run/api/Runner/RefreshRunnerPiGeneralStats
+HTTP/2 202 
+server: CloudFront
+date: Sat, 24 Oct 2026 11:54:47 GMT
+content-length: 2415
+x-amzn-waf-action: challenge
+cache-control: no-store, max-age=0
+content-type: text/html; charset=UTF-8
+access-control-allow-origin: *
+access-control-max-age: 86400
+access-control-allow-methods: OPTIONS,GET,POST
+access-control-expose-headers: x-amzn-waf-action
+x-cache: Error from cloudfront
+via: 1.1 6a31d7747628574e9fa26dd40efa100a.cloudfront.net (CloudFront)
+x-amz-cf-pop: HIO52-P4
+x-amz-cf-id: 1Fa9Ai4vBm80pRMEy0XJFjykacmY93za5c-6WtIINxRgWALcVXYkXg==
+
+2415 probe-body.txt
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <style>
+        body {
+            font-family: "Arial";
+        }
+    </style>
+    <script type="text/javascript">
+    window.awsWafCookieDomainList = [];
+    window.gokuProps = {
+"key":"AQIDAHjcYu/GjX+QlghicBgQ/7bFaQZ+m5FKCMDnO+vTbNg96AHSL6kvCpE762O7v+G2uSM5AAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMZjwCLEnuocLcZahsAgEQgDtsBc+AmpOFQasGW09vb2EYRnZ25ikWX9rn7m5Om4L1SPlnmEQfLpjM5g9JtNA2iniZPtFANVqxbWEc7Q==",
+          "iv":"D57JZQH0ZQAAf5b0",
+          "context":"sCB3pkwLggEQt+xBeIY8tfIzuGV3z+owE0SP98X015znUO2kvOqMAxZPZorqzzSqZo3JktHxv81CpNn3LLQ/rk/uglajbo6RKZ6hqrrzDKJr2U1VM3eazmdGTXXWbN9mwQy8omvpXKJ2e3VIxRm6it16M5Z+EckPGvLosyBaWiD/VhfMIrTF0fTRIZLx23XmXLuPyG/Es27MAt/Q01U2qU5nLb7uk0zmWxiA57O/Mw48XfzQVzQtphUr3obY2E4jviPsJcfs1/TdKWHXvGlHT7x/UZBM9uYNcGmRaRYOJSKvgXSxKcZFTGtM6nmEoDsFE/eUHYBE64sulsJl8s0OsqGjktvqWbSpd2NCu22ddWl+kK1qatneFvV0y7iDI1yGGsvULGi0oKt30aSeE3WcHLvZ6YaYn8YDserzfbs6qXrf1kmyxjnT3JkkCrhObqPuJ2rl469JRMxdrrb25YkxN1IgjVNoMIUefAvvntO0FXXvEK1ApOstzocsshlysrwonwRJ58nDlX5YdVjsqIJnM2S80vl4H8wXdrJ88TprSsgoNZgxvtDXvsenzYrJsKGpwJ0wtNSiUvKaRX906nYkPRUBEbjYL7FzFxKw5YYxr6EcK2M2BydBlLJlKSefoa0v+v6eh19MYeBtEGftGnV0k2aGjXkw7X1ItTljRDWyeOJteOL+0p+nBNoyyCphS6fE+1lIb9ap9CXeu0EDXC21FGEpE1uj8P2oZ50mEVZJVAdXqGB40CjyDl5DqBK4WpaVkJApGdb8uYfQ70PXbB3O/zVwRloYBkQ="
+};
+    </script>
+    <script src="https://5fe100a736cc.c8154d58.us-west-2.token.awswaf.com/5fe100a736cc/98687f959144/5544526aa34e/challenge.js"></script>
+</head>
+<body>
+    <div id="challenge-container"></div>
+    <script type="text/javascript">
+        AwsWafIntegration.saveReferrer();
+        AwsWafIntegration.checkForceRefresh().then((forceRefresh) => {
+            if (forceRefresh) {
+                AwsWafIntegration.forceRefreshToken().then(() => {
+                    window.location.reload(true);
+                });
+            } else {
+                AwsWafIntegration.getToken().then(() => {
+                    window.location.reload(true);
+                });
+            }
+        });
+    </script>
+    <noscript>
+        <h1>JavaScript is disabled</h1>
+        In order to continue, we need to verify that you're not a robot.
+        This requires JavaScript. Enable JavaScript and then reload the page.
+    </noscript>
+</body>
+</html>
+PROBE runner-rank POST https://itra.run/api/runner/runnerrank
+HTTP/2 202 
+server: CloudFront
+date: Sat, 24 Oct 2026 11:54:47 GMT
+content-length: 2415
+x-amzn-waf-action: challenge
+cache-control: no-store, max-age=0
+content-type: text/html; charset=UTF-8
+access-control-allow-origin: *
+access-control-max-age: 86400
+access-control-allow-methods: OPTIONS,GET,POST
+access-control-expose-headers: x-amzn-waf-action
+x-cache: Error from cloudfront
+via: 1.1 38789cdd14ddea5c4c609cb0e6656396.cloudfront.net (CloudFront)
+x-amz-cf-pop: HIO52-P4
+x-amz-cf-id: eQlBcgBEtvuC04TVHz9BtfyFayWiOEYuIUtZ5g79lceFUvgScpmG9g==
+
+2415 probe-body.txt
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title></title>
+    <style>
+        body {
+            font-family: "Arial";
+        }
+    </style>
+    <script type="text/javascript">
+    window.awsWafCookieDomainList = [];
+    window.gokuProps = {
+"key":"AQIDAHjcYu/GjX+QlghicBgQ/7bFaQZ+m5FKCMDnO+vTbNg96AHSL6kvCpE762O7v+G2uSM5AAAAfjB8BgkqhkiG9w0BBwagbzBtAgEAMGgGCSqGSIb3DQEHATAeBglghkgBZQMEAS4wEQQMZjwCLEnuocLcZahsAgEQgDtsBc+AmpOFQasGW09vb2EYRnZ25ikWX9rn7m5Om4L1SPlnmEQfLpjM5g9JtNA2iniZPtFANVqxbWEc7Q==",
+          "iv":"D57JZAHwtAAAGYb/",
+          "context":"5BpYDll7vZucZxjapBKEqn2gnet1tGIWZlgDhW7m0qeCxmgGdZpuipetzW8oc0hhtPzqpq5rMN4hln5jL1D7wKE5C2cQE3Yl0a1c+cmlDEYYLnYqU467KvHy2D5/vE/IzgPze4KS6wBIi+befMnfHubQlCC2/y1QCltvvIBIXX/PNNs6jJAvhJsYA8rNGZoVjG2OJ3kBCdvHOmM5Jb2oyxthDKG6JUvNyRG0obkwQZVx/HdP08+SowIDoPG13JXeldn11AQIvor6Lj7yNTMWJWDqH8khEuDoyrQ5/wAAu0JKyiS2IjmOzqaNslCVYXgP8X5M2u2nvwaLYgaAy/APoVyqelAvDqy6jXCimUd7evLJ7MQuPO+S5EKAjGdpC4KhZRZ5qukPb06guTAVIp8opZjZqMcRmvHTxII9YZFxyfUE7jWV4HfVksIy+3KE+8RbBZWFRLEmTju0ZC7mZ0K17aMFVuIM1aQ5MzzInqiJmavJhZ2GEd99TTY9YvBCxvet6pQ9Kd7CPypXRP5VOWSPhw+Ioz0Sn72lWEwQB2nlNH7uwfir6wgWNni9EFpCk6fb6FvxwtJSzSyqjNzcLCQ0MdGx+vuucLxZ6zM4UG7k2kzzoWg2ThfHNR7I7au/qBFUDhu6werU6ZpBgnlTI1Cl+dj9OJy3ruP3qLWTPMXlveOX9RSVgsPEPBeDQJ6A3PdICFJPvGEteoIPy453sNOkPNPnaSXjGNgzp9c3+X3zhUHmUL3E6hxblQV8zeyF+8HctKC0hnHgWGtnKQrIvAhkMC7XRonpO1U="
+};
+    </script>
+    <script src="https://5fe100a736cc.c8154d58.us-west-2.token.awswaf.com/5fe100a736cc/98687f959144/5544526aa34e/challenge.js"></script>
+</head>
+<body>
+    <div id="challenge-container"></div>
+    <script type="text/javascript">
+        AwsWafIntegration.saveReferrer();
+        AwsWafIntegration.checkForceRefresh().then((forceRefresh) => {
+            if (forceRefresh) {
+                AwsWafIntegration.forceRefreshToken().then(() => {
+                    window.location.reload(true);
+                });
+            } else {
+                AwsWafIntegration.getToken().then(() => {
+                    window.location.reload(true);
+                });
+            }
+        });
+    </script>
+    <noscript>
+        <h1>JavaScript is disabled</h1>
+        In order to continue, we need to verify that you're not a robot.
+        This requires JavaScript. Enable JavaScript and then reload the page.
+    </noscript>
+</body>
+</html>
