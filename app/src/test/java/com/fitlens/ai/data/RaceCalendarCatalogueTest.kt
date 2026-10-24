@@ -13,7 +13,7 @@ class RaceCalendarCatalogueTest {
           {"id":5,"name":"City road run","nameId":"city-road","country":"България","city":"София","terrain":2,
            "distances":[{"id":9,"distance":10,"startDate":"2026-12-01","type":1}]}
         ]}""")
-        val events = RaceCalendarCatalogue().parseApi(response)
+        val events = RaceCalendarCatalogue().parseApi(response).sortedBy { it.date }
         assertEquals(2, events.size)
         assertEquals("mountain_biking", events[0].sport)
         assertEquals("2026-10-31", events[0].date)

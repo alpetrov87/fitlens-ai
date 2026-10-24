@@ -48,7 +48,7 @@ class RaceCalendarCatalogue {
             page++
         } while (page <= pageCount)
         require(all.isNotEmpty()) { "В момента не са публикувани предстоящи трейл или MTB състезания." }
-        all.distinctBy { listOf(it.title.lowercase(), it.date, it.time, it.sport, it.distanceKm, it.sourceUrl) }
+        return all.distinctBy { listOf(it.title.lowercase(), it.date, it.time, it.sport, it.distanceKm, it.sourceUrl) }
             .sortedWith(compareBy(EventDraft::date, EventDraft::time, EventDraft::title))
     }
 
