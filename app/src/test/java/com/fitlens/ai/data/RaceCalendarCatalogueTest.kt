@@ -4,6 +4,25 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RaceCalendarCatalogueTest {
+    @Test fun expandsTrailAndMtbDistancesAndSkipsRoadEvents() {
+        val response = org.json.JSONObject("""{"results":[
+          {"id":1290,"name":"ZARA ULTRA Bike & Run","nameId":"zara-trail-run-2026","country":"България","city":"Стара Загора",
+           "terrain":5,"tags":"Trail run, Хоби MTB, XCM","distances":[
+             {"id":1,"name":"Trail run","distance":21,"startDate":"2026-11-01","startTime":"09:10:00","elevationGain":800,"type":1},
+             {"id":2,"name":"Хоби MTB","distance":30,"startDate":"2026-10-31","startTime":"09:00:00","elevationGain":1200,"type":2}]},
+          {"id":5,"name":"City road run","nameId":"city-road","country":"България","city":"София","terrain":2,
+           "distances":[{"id":9,"distance":10,"startDate":"2026-12-01","type":1}]}
+        ]}""")
+        val events = RaceCalendarCatalogue().parseApi(response)
+        assertEquals(2, events.size)
+        assertEquals("mountain_biking", events[0].sport)
+        assertEquals("2026-10-31", events[0].date)
+        assertEquals(30.0, events[0].distanceKm!!, 0.01)
+        assertEquals("trail_running", events[1].sport)
+        assertEquals(800, events[1].elevationGainMeters)
+        assertEquals("https://racecalendar.bg/run-race/zara-trail-run-2026", events[1].sourceUrl)
+    }
+
     @Test fun extractsMultipleStructuredEventsWithDetailsAndLinks() {
         val html = """<script type="application/ld+json">{"@graph":[
             {"@type":"SportsEvent","name":"Mountain Trail 21 km","startDate":"2027-05-09T08:30:00+03:00",

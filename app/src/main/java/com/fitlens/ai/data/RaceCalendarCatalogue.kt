@@ -9,10 +9,12 @@ import org.json.JSONObject
 import org.json.JSONTokener
 import org.jsoup.Jsoup
 import java.time.LocalDate
+import java.util.Locale
 
-/** Public racecalendar.bg catalogue. Entries are drafts until the user reviews and saves. */
+/** Public Bulgarian trail and MTB catalogue. Entries are drafts until the user reviews and saves. */
 class RaceCalendarCatalogue {
     suspend fun load(url: String = HOME): List<EventDraft> = withContext(Dispatchers.IO) {
+        if (url == HOME) return@withContext loadApi()
         val page = url.trim().toHttpUrlOrNull()
         require(page != null && page.isHttps && page.username.isEmpty() && page.password.isEmpty() &&
             (page.host == DOMAIN || page.host.endsWith(".$DOMAIN")) && url.length <= 500) {
@@ -24,6 +26,86 @@ class RaceCalendarCatalogue {
         }
         events
     }
+
+    private fun loadApi(): List<EventDraft> {
+        val from = LocalDate.now()
+        val to = from.plusYears(2)
+        val all = mutableListOf<EventDraft>()
+        var page = 1
+        var pageCount: Int
+        do {
+            val url = API_BASE.toHttpUrl().newBuilder()
+                .addQueryParameter("fromDate", from.toString())
+                .addQueryParameter("toDate", to.toString())
+                .addQueryParameter("page", page.toString())
+                .addQueryParameter("pageSize", PAGE_SIZE.toString())
+                .addQueryParameter("distanceType", "3")
+                .build()
+            val response = EventLinkImporter().download(url, API_DOMAIN, allowJson = true)
+            val root = JSONObject(response)
+            all += parseApi(root)
+            pageCount = root.optInt("pageCount", 1).coerceIn(1, MAX_PAGES)
+            page++
+        } while (page <= pageCount)
+        require(all.isNotEmpty()) { "В момента не са публикувани предстоящи трейл или MTB състезания." }
+        all.distinctBy { listOf(it.title.lowercase(), it.date, it.time, it.sport, it.distanceKm, it.sourceUrl) }
+            .sortedWith(compareBy(EventDraft::date, EventDraft::time, EventDraft::title))
+    }
+
+    /** Parses the documented data returned to racecalendar.bg's public calendar page. */
+    internal fun parseApi(root: JSONObject): List<EventDraft> = buildList {
+        val races = root.optJSONArray("results") ?: JSONArray()
+        for (raceIndex in 0 until races.length()) {
+            val race = races.optJSONObject(raceIndex) ?: continue
+            val raceName = race.optString("name").trim().takeIf(String::isNotBlank) ?: continue
+            val nameId = race.optString("nameId").trim()
+            val sourceUrl = if (nameId.isNotBlank()) "${HOME}run-race/$nameId" else HOME
+            val city = race.optString("city").trim()
+            val country = race.optString("country").trim()
+            val location = listOfNotNull(city.takeIf(String::isNotBlank),
+                country.takeIf { it.isNotBlank() && !it.equals("България", true) }).joinToString(", ").take(200)
+            val terrain = race.optInt("terrain", 0)
+            val raceText = listOf(raceName, race.optString("tags")).joinToString(" ")
+            val distances = race.optJSONArray("distances") ?: JSONArray()
+            for (distanceIndex in 0 until distances.length()) {
+                val distance = distances.optJSONObject(distanceIndex) ?: continue
+                val routeName = distance.optString("name").trim()
+                val type = distance.optInt("type", 0)
+                val combinedText = "$raceText $routeName"
+                val sport = when {
+                    type == 1 && isTrail(terrain, combinedText) -> "trail_running"
+                    type == 2 && isMtb(terrain, combinedText) -> "mountain_biking"
+                    else -> continue
+                }
+                val date = distance.optString("startDate").takeIf(String::isNotBlank)
+                    ?: race.optString("startDate").takeIf(String::isNotBlank) ?: continue
+                if (runCatching { LocalDate.parse(date) }.isFailure) continue
+                val km = distance.optDouble("distance").takeUnless(Double::isNaN)?.takeIf { it in 0.01..2_000.0 }
+                val routeLabel = buildList {
+                    routeName.takeIf { it.isNotBlank() && !it.equals(raceName, true) }?.let(::add)
+                    km?.let { add("${formatDistance(it)} km") }
+                }.distinct().joinToString(" · ")
+                val title = if (routeLabel.isBlank() || distances.length() == 1) raceName else "$raceName · $routeLabel"
+                val elevation = distance.optInt("elevationGain", -1).takeIf { it in 0..100_000 }
+                val time = distance.optString("startTime").take(5).takeIf { it.matches(Regex("\\d{2}:\\d{2}")) }.orEmpty()
+                val draft = EventDraft(title.take(120), date, time, sport, location, sourceUrl, km,
+                    elevationGainMeters = elevation)
+                if (runCatching { draft.validate() }.isSuccess) add(draft)
+            }
+        }
+    }
+
+    private fun isTrail(terrain: Int, text: String): Boolean = terrain and TRAIL_TERRAIN != 0 ||
+        listOf("trail", "трейл", "планинско бягане", "ultra").any(text.lowercase(Locale.ROOT)::contains)
+
+    private fun isMtb(terrain: Int, text: String): Boolean {
+        val normalized = text.lowercase(Locale.ROOT)
+        return terrain and TRAIL_TERRAIN != 0 || listOf("mtb", "мтб", "xcm", "xcc", "xco", "xc ",
+            "downhill", "dh ", "enduro", "планинско колоездене").any(normalized::contains)
+    }
+
+    private fun formatDistance(value: Double): String = if (value % 1.0 == 0.0) value.toInt().toString()
+        else String.format(Locale.ROOT, "%.2f", value).trimEnd('0').trimEnd('.')
 
     internal fun parse(html: String, pageUrl: String = HOME): List<EventDraft> {
         val doc = Jsoup.parse(html, pageUrl)
@@ -97,5 +179,10 @@ class RaceCalendarCatalogue {
     companion object {
         const val HOME = "https://racecalendar.bg/"
         private const val DOMAIN = "racecalendar.bg"
+        private const val API_DOMAIN = "api.racecalendar.bg"
+        private const val API_BASE = "https://api.racecalendar.bg/v1/api/race/search"
+        private const val PAGE_SIZE = 100
+        private const val MAX_PAGES = 10
+        private const val TRAIL_TERRAIN = 1
     }
 }

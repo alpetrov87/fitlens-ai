@@ -17,17 +17,21 @@ import java.time.LocalDate
 @Composable
 internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<CalendarEvent>, busy: Boolean,
     onLoad: (String) -> Unit, onSelect: (EventDraft) -> Unit) {
-    var url by rememberSaveable { mutableStateOf(RaceCalendarCatalogue.HOME) }
     var query by rememberSaveable { mutableStateOf("") }
     var expanded by rememberSaveable { mutableStateOf(false) }
     var includePast by rememberSaveable { mutableStateOf(false) }
+    var sportFilter by rememberSaveable { mutableStateOf("all") }
     val context = LocalContext.current
-    InfoCard("Открий състезание", Icons.Default.Explore) {
-        Text("Избери състезание от racecalendar.bg и го добави към личните си цели.")
-        OutlinedTextField(url, { url = it.take(500) }, label = { Text("Страница от racecalendar.bg") },
-            singleLine = true, enabled = !state.loading, modifier = Modifier.fillMaxWidth())
-        Button(onClick = { onLoad(url) }, enabled = !state.loading, modifier = Modifier.fillMaxWidth()) {
-            Text(if (state.loading) "Чета състезанията…" else "Зареди състезания")
+    LaunchedEffect(state.loaded, state.loading, state.error) {
+        if (!state.loaded && !state.loading && state.error == null) onLoad(RaceCalendarCatalogue.HOME)
+    }
+    InfoCard("Трейл и MTB в България", Icons.Default.Explore) {
+        Text("Разгледай публикуваните дистанции и добави тази, за която си записан, към личния календар.")
+        Button(onClick = { onLoad(RaceCalendarCatalogue.HOME) }, enabled = !state.loading,
+            modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Default.Refresh, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(if (state.loading) "Обновявам календара…" else if (state.loaded) "Обнови календара" else "Зареди календара")
         }
         if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
@@ -36,11 +40,19 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
         }) { Text("Отвори racecalendar.bg") }
         if (state.loaded) {
             OutlinedTextField(query, { query = it }, label = { Text("Търси по име или място") }, modifier = Modifier.fillMaxWidth())
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                FilterChip(selected = sportFilter == "all", onClick = { sportFilter = "all" }, label = { Text("Всички") })
+                FilterChip(selected = sportFilter == "trail_running", onClick = { sportFilter = "trail_running" },
+                    label = { Text("Трейл") }, leadingIcon = { Icon(sportIcon("trail_running"), null, Modifier.size(18.dp)) })
+                FilterChip(selected = sportFilter == "mountain_biking", onClick = { sportFilter = "mountain_biking" },
+                    label = { Text("MTB") }, leadingIcon = { Icon(sportIcon("mountain_biking"), null, Modifier.size(18.dp)) })
+            }
             Row {
                 Checkbox(checked = includePast, onCheckedChange = { includePast = it })
                 Text("Включи минали състезания", modifier = Modifier.padding(top = 12.dp))
             }
             val entries = state.entries.filter { (includePast || it.date >= LocalDate.now().toString()) &&
+                (sportFilter == "all" || it.sport == sportFilter) &&
                 (it.title.contains(query, true) || it.location.contains(query, true)) }
             Text("Намерени: ${entries.size}", style = MaterialTheme.typography.labelLarge)
             if (entries.isEmpty()) Text("Няма състезания за избраните филтри. Опитай друга страница от сайта.")
@@ -57,7 +69,7 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
             }
             if (entries.size > 10) TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Покажи по-малко" else "Покажи всички") }
         }
-        Text("Добавянето е след преглед. При непълни данни копирай линк от сайта в „Добави събитие → Попълни от линка“.",
+        Text("Източник: racecalendar.bg. Добавянето е след преглед; FitLens не приема, че си записан само защото състезанието е в каталога.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

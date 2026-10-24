@@ -215,7 +215,7 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
                         Spacer(Modifier.width(8.dp)); Text(sportLabel(sport))
                     }
                     DropdownMenu(expanded = sportsOpen, onDismissRequest = { sportsOpen = false }) {
-                        listOf("running", "trail_running", "cycling", "swimming", "hiking", "walking", "strength_training", "yoga", "other").forEach { key ->
+                        listOf("running", "trail_running", "mountain_biking", "cycling", "swimming", "hiking", "walking", "strength_training", "yoga", "other").forEach { key ->
                             DropdownMenuItem(text = { Text(sportLabel(key)) }, leadingIcon = { Icon(sportIcon(key), contentDescription = null) },
                                 onClick = { sport = key; sportsOpen = false })
                         }
