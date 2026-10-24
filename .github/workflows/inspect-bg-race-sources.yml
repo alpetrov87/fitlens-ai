@@ -1,0 +1,47 @@
+name: Inspect Bulgarian race sources
+
+on:
+  push:
+    paths:
+      - .github/workflows/inspect-bg-race-sources.yml
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Inspect public sources
+        shell: bash
+        run: |
+          set -u
+          mkdir -p research
+          urls=(
+            "https://racecalendar.bg/"
+            "https://bgmtb.com/"
+            "https://bgmtb.com/calendar"
+            "https://bgcf.bg/"
+            "https://itra.run/Races/RaceCalendar"
+          )
+          for url in "${urls[@]}"; do
+            slug=$(printf '%s' "$url" | sha256sum | cut -c1-12)
+            curl -L --max-time 45 -A 'Mozilla/5.0' -sS -D "research/$slug.headers" -o "research/$slug.html" "$url" || true
+            printf '%s\n' "$url" > "research/$slug.url"
+          done
+          searches=(
+            "календар трейл състезания България 2026"
+            "календар MTB състезания България 2026"
+            "site:bgmtb.com календар състезания"
+            "site:bgcf.bg календар MTB"
+            "ITRA race calendar Bulgaria"
+          )
+          n=0
+          for query in "${searches[@]}"; do
+            n=$((n+1))
+            encoded=$(python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$query")
+            curl -L --max-time 45 -A 'Mozilla/5.0' -sS "https://r.jina.ai/http://www.google.com/search?q=$encoded" -o "research/search-$n.txt" || true
+            printf '%s\n' "$query" > "research/search-$n.query"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bg-race-source-inspection
+          path: research
+          retention-days: 1
