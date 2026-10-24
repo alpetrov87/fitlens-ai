@@ -46,6 +46,30 @@ jobs:
           for value in sorted(set(re.findall(r'["\']([^"\']*(?:RunnerSpace|RaceResults|api|result|index)[^"\']*)["\']', page, re.I))):
             if len(value)<1000: print(value)
           PY
+          probe() {
+            label="$1"; method="$2"; endpoint="$3"; data="${4:-}"
+            echo "PROBE $label $method $endpoint"
+            if [[ "$method" == POST ]]; then
+              curl --location --compressed --silent --show-error --request POST \
+                --user-agent 'Mozilla/5.0 (Android 14) AppleWebKit/537.36 Chrome/131 Mobile Safari/537.36' \
+                --header 'Accept: application/json,text/html;q=0.8' --header 'X-Requested-With: XMLHttpRequest' \
+                --header 'Content-Type: application/x-www-form-urlencoded; charset=UTF-8' \
+                --data "$data" --dump-header probe-headers.txt --output probe-body.txt "$endpoint" || true
+            else
+              curl --location --compressed --silent --show-error \
+                --user-agent 'Mozilla/5.0 (Android 14) AppleWebKit/537.36 Chrome/131 Mobile Safari/537.36' \
+                --header 'Accept: application/json,text/html;q=0.8' --header 'X-Requested-With: XMLHttpRequest' \
+                --dump-header probe-headers.txt --output probe-body.txt "$endpoint" || true
+            fi
+            sed -n '1,30p' probe-headers.txt
+            wc -c probe-body.txt
+            head -c 100000 probe-body.txt
+            echo
+          }
+          probe numeric-profile GET 'https://itra.run/RunnerSpace/7422083'
+          probe numeric-results GET 'https://itra.run/RunnerSpace/RaceResults/7422083'
+          probe pi-stats POST 'https://itra.run/api/Runner/RefreshRunnerPiGeneralStats' 'runnerId=7422083'
+          probe runner-rank POST 'https://itra.run/api/runner/runnerrank' 'start=1&count=20&search=Aleksandar%20Petrov'
       - name: Publish temporary result
         shell: bash
         run: |
