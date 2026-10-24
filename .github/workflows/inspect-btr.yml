@@ -64,6 +64,44 @@ jobs:
                   found.extend(m.group(0) for m in list(re.finditer(pattern, data, re.I))[:30])
               for value in found[:60]: print(value[:500])
           PY
+      - name: Render profile and inspect public network requests
+        shell: bash
+        run: |
+          set -euo pipefail
+          exec >> btr-inspect-output.txt 2>&1
+          url='https://www.my-btr.com/runners/019e8190-3121-7052-9561-037b2ac2d68c'
+          browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser)"
+          echo "BROWSER: $browser"
+          "$browser" --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --virtual-time-budget=20000 --log-net-log=netlog.json --net-log-capture-mode=Default \
+            --dump-dom "$url" > rendered.html
+          python3 - <<'PY'
+          import html, json, re
+          from pathlib import Path
+          page = Path('rendered.html').read_text(errors='replace')
+          text = html.unescape(re.sub(r'<script.*?</script>|<style.*?</style>|<[^>]+>', ' ', page, flags=re.I|re.S))
+          text = re.sub(r'\s+', ' ', text).strip()
+          print('RENDERED SIZE:', len(page))
+          print('VISIBLE TEXT:', text[:30000])
+          print('NETWORK URLS:')
+          raw = Path('netlog.json').read_text(errors='replace')
+          urls = sorted(set(re.findall(r'https?://[^"\\ ]+', raw)))
+          for value in urls:
+              value = value.replace(r'\u0026', '&')
+              if 'my-btr.com' in value or any(key in value.lower() for key in ('runner','rank','result','standing')):
+                  print(value[:1000])
+          print('MAIN BUNDLE STRING CANDIDATES:')
+          main = next(Path('.').glob('bundle-*.js'))
+          # Find every quoted string from all downloaded first-party bundles, then keep likely data routes/keys.
+          candidates=set()
+          for path in Path('.').glob('bundle-*.js'):
+              data=path.read_text(errors='replace')
+              for quote, value in re.findall(r'(["\'])(.*?)(?<!\\)\1', data):
+                  low=value.lower()
+                  if len(value) < 500 and any(k in low for k in ('runner','ranking','standing','overall','position','place','result','score','api')):
+                      candidates.add(value)
+          for value in sorted(candidates): print(value)
+          PY
       - name: Publish temporary inspection result
         shell: bash
         run: |
