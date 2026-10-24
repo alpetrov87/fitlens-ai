@@ -1,8 +1,8 @@
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  5090  100  5090    0     0   6707      0 --:--:-- --:--:-- --:--:--  6706
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100  5090  100  5090    0     0   5038      0  0:00:01  0:00:01 --:--:--  5039
 HTTP/1.1 200 OK
-Date: Sat, 24 Oct 2026 11:26:47 GMT
+Date: Sat, 24 Oct 2026 11:28:02 GMT
 Server: Apache/2.4.63 (Ubuntu)
 Last-Modified: Sat, 24 Oct 2026 09:58:14 GMT
 ETag: "6ede-65e9322a4d4a9-gzip"
@@ -170,3 +170,288 @@ irection:inherit;position:absolute;overflow:hidden;padding:0;margin:0;inset:0;wi
 argin:0;-webkit-overflow-scrolling:touch}.simplebar-content-wrapper{direction:inherit;box-sizing:border-box!important;position:relative;display:block;height:100%;width:auto;max-width:100%;max-height:100%;overflow:auto;scrollbar-width:none;-ms-overflow-style:none}.simplebar-content-wrapper::-webkit-scrollbar,.simplebar-hide-scrollbar::-webkit-scrollbar{display:none
 ;width:0;height:0}.simplebar-content:before,.simplebar-content:after{content:" ";display:table}.simplebar-placeholder{max-height:100%;max-width:100%;width:100%;pointer-events:none}.simplebar-height-auto-observer-wrapper{box-sizing:inherit!important;height:100%;width:100%;max-width:1px;position:relative;float:left;max-height:1px;overflow:hidden;z-ind
 ;padding:0;margin:0;pointer-events:none;flex-grow:inherit;flex-shrink:0;flex-basis:0}.simplebar-height-auto-observer{box-sizing:inherit;display:block;opacity:0;position:absolute;top:0;left:0;height:1000%;width:1000%;min-height:1px;min-width:1px;overflow:hidden;pointer-events:none;z-index:-1}.simplebar-track{z-index:1;position:absolute;right:0;bottom:0;pointer-events:none;overflow:hidden}[data-simplebar].s
+BROWSER: /usr/bin/google-chrome
+[2094:2118:1024/112825.202388:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2118:1024/112825.222003:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2118:1024/112825.222019:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2118:1024/112825.507717:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2118:1024/112825.899919:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2094:1024/112827.510396:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2094:2118:1024/112827.510471:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2094:1024/112827.510475:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2094:2118:1024/112827.510505:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2094:1024/112827.510860:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2094:2094:1024/112827.559916:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2094:2118:1024/112827.571191:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2094:1024/112827.860020:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2094:2094:1024/112827.869474:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2094:2118:1024/112827.869514:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2094:1024/112827.880349:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2094:2094:1024/112828.066968:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.Properties.GetAll: object_path= /org/freedesktop/UPower/devices/DisplayDevice: org.freedesktop.DBus.Error.ServiceUnknown: The name org.freedesktop.UPower was not provided by any .service files
+[2094:2094:1024/112828.067597:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2094:2118:1024/112828.067675:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2094:1024/112828.168055:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2094:2118:1024/112828.168178:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Could not parse server address: Unknown address type (examples of valid types are "tcp" and on UNIX "unix")
+[2094:2094:1024/112828.215276:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[2094:2120:1024/112831.081894:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT
+RENDERED SIZE: 166792
+VISIBLE TEXT: Aleksandar Petrov — Bulgarian Trail Rating × БГ Трейл Рейтинг Начало Списание Месецът в BTR Класации Състезания Моят пейсър Организатори Калкулатори За проекта Свържи се с нас Отстъпки Подкрепи BTR Календар Вход / Регистрация Aleksandar Petrov Възрастова група 35-39 Bulgaria Докладвай RUNNER.CURRENT_RATING 409 RUNNER.GLOBAL_PLACE ( RUNNER.MEN ) #4989 /13040 RUNNER.PLACE_STATEMENT_MEN RUNNER.TABS.ANALYSIS RUNNER.TABS.RESULTS RUNNER.INDIVIDUAL_RATINGS.EYEBROW RUNNER.INDIVIDUAL_RATINGS.TITLE RUNNER.INDIVIDUAL_RATINGS.SUBTITLE RUNNER.INDIVIDUAL_RATINGS.LOCKED_BADGE RUNNER.INDIVIDUAL_RATINGS.TYPES.OVERALL ••• RUNNER.INDIVIDUAL_RATINGS.TYPES.Half ••• RUNNER.INDIVIDUAL_RATINGS.TYPES.50K ••• RUNNER.INDIVIDUAL_RATINGS.TYPES.100M ••• RUNNER.INDIVIDUAL_RATINGS.LOCKED_TITLE RUNNER.INDIVIDUAL_RATINGS.LOCKED_TEXT RUNNER.INDIVIDUAL_RATINGS.LOCKED_ACTION RUNNER.YOUR_LEVEL Постижение Процент Код Описание Ниво >500 10.3% DDDD Любител 1 Любител 1 >450 16.8% DDD Любител 2 Любител 2 >400 22.5% DD Любител 3 Любител 3 >0 40.8% E Начинаещ Начинаещ RUNNER.DISTRIBUTION_TITLE RUNNER.DISTRIBUTION_SUBTITLE RUNNER.DISTRIBUTION_AXIS_Y RUNNER.DISTRIBUTION_AVERAGE RUNNER.DISTRIBUTION_AVERAGE Aleksandar Petrov 409 Любител 3 Създадено с ❤️ от iRun • Източници на данни и поверителност • Общи условия • Условия за рекламодатели • Рейтинг — как работи
+NETWORK URLS:
+https://api.my-btr.com
+https://api.my-btr.com/api/advertising/serve/runner.detail.after_rating_summary?device=mobile&locale=bg
+https://api.my-btr.com/api/rankings/distribution
+https://api.my-btr.com/api/rankings/distribution/detailed
+https://api.my-btr.com/api/runner/019e8190-3121-7052-9561-037b2ac2d68c
+https://api.my-btr.com/api/runner/019e8190-3121-7052-9561-037b2ac2d68c/results?page=1&itemsPerPage=10
+https://ep2.adtrafficquality.google/sodar/sodar2/255/runner.html
+https://googleads.g.doubleclick.net/pagead/ads?client=ca-pub-2683552753767493&output=html&adk=1812271804&adf=3025194257&abgtt=6&lmt=1792835894&plat=1%3A8%2C2%3A8%2C3%3A2162688%2C4%3A2162688%2C9%3A32776%2C16%3A8388608%2C17%3A32%2C24%3A32%2C25%3A32%2C30%3A1048576%2C32%3A32%2C41%3A32%2C42%3A32%2C43%3A32%2C44%3A32&format=0x0&url=https%3A%2F%2Fwww.my-btr.com%2Frunners%2F019e8190-3121-7052-9561-037b2ac2d68c&pra=5&aiof=14&asro=0&aimartd=4&aieuf=1&aicrs=1&uach=WyJMaW51eCIsIiIsIng4NiIsIiIsIjE1NS4wLjgwNTkuMzkiLG51bGwsMCxudWxsLCI2NCIsW1siR29vZ2xlIENocm9tZSIsIjE1NS4wLjgwNTkuMzkiXSxbIkNocm9taXVtIiwiMTU1LjAuODA1OS4zOSJdLFsiTm90KEE6QnJhbmQiLCIyNC4wLjAuMCJdXSwwXQ..&dt=1792841309673&bpp=63&bdt=157&idt=70&shv=r20261020&mjsv=m202610200101&ptt=9&saldr=aa&abxe=1&cookie_enabled=1&eoidce=1&nras=1&correlator=307276546448&frm=20&pv=2&u_tz=0&u_his=2&u_h=600&u_w=800&u_ah=600&u_aw=800&u_cd=24&u_sd=1&dmc=16&adx=-12245933&ady=-12245933&biw=780&bih=493&scr_x=0&scr_y=0&eid=95400480%2C95404665%2C95404824%2C95405491%2C
+https://my-btr.com
+https://my-btr.com;
+https://www.google-analytics.com/g/collect?v=2&tid=G-WFBCXD3LKP&gtm=45je6am0h2v882303466za200zd882303466xf1&_p=1792841309524&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&cid=235412978.1792841310&frm=0&ngs=1&pscdl=noapi&rcb=15&sr=800x600&uaa=x86&uab=64&uafvl=Google%2520Chrome%3B155.0.8059.39%7CChromium%3B155.0.8059.39%7CNot(A%253ABrand%3B24.0.0.0&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=en-us&_s=2&tag_exp=115938465~115938469~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&dl=https%3A%2F%2Fwww.my-btr.com%2Frunners%2F019e8190-3121-7052-9561-037b2ac2d68c&dr=&sid=1792841309&sct=1&seg=0&dt=BTR&en=runner_page&_ee=1&ep.event_category=View&ep.event_label=runner_page&ep.value=Runner%3A%20Aleksandar%20Petrov%3B%20ID%3A%20019e8190-3121-7052-9561-037b2ac2d68c&_et=3085&tfd=8995
+https://www.google-analytics.com/g/collect?v=2&tid=G-WFBCXD3LKP&gtm=45je6am0h2v882303466za200zd882303466xf1&_p=1792841309524&gcd=13l3l3l3l1l1&npa=0&dma=0&_eu=AAAAAAQ&cid=235412978.1792841310&frm=0&ngs=1&pscdl=noapi&rcb=15&sr=800x600&uaa=x86&uab=64&uafvl=Google%2520Chrome%3B155.0.8059.39%7CChromium%3B155.0.8059.39%7CNot(A%253ABrand%3B24.0.0.0&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=en-us&_s=3&tag_exp=115938465~115938469~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&dl=https%3A%2F%2Fwww.my-btr.com%2Frunners%2F019e8190-3121-7052-9561-037b2ac2d68c&dr=&sid=1792841309&sct=1&seg=1&dt=Aleksandar%20Petrov%20%E2%80%94%20Bulgarian%20Trail%20Rating&en=user_engagement&_et=19970&tfd=23965
+https://www.google-analytics.com/g/collect?v=2&tid=G-WFBCXD3LKP&gtm=45je6am0h2v882303466za208zd882303466xf1&_p=1792841309524&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=235412978.1792841310&frm=0&ngs=1&pscdl=noapi&rcb=15&sr=800x600&uaa=x86&uab=64&uafvl=Google%2520Chrome%3B155.0.8059.39%7CChromium%3B155.0.8059.39%7CNot(A%253ABrand%3B24.0.0.0&uam=&uamb=0&uap=Linux&uapv=&uaw=0&ul=en-us&_s=1&tag_exp=115938465~115938469~118897920~118897930~120213116~120385423~120469145~120469153~121246026~121246034&dl=https%3A%2F%2Fwww.my-btr.com%2Frunners%2F019e8190-3121-7052-9561-037b2ac2d68c&dr=&sid=1792841309&sct=1&seg=0&dt=BTR&en=page_view&_fv=1&_nsi=1&_ss=1&_ee=1&tfd=912
+https://www.my-btr.com
+https://www.my-btr.com/
+https://www.my-btr.com/assets/fonts/AcariSans/instance_ttf/AcariSans-Bold.ttf
+https://www.my-btr.com/assets/fonts/AcariSans/instance_ttf/AcariSans-Medium.ttf
+https://www.my-btr.com/assets/fonts/AcariSans/instance_ttf/AcariSans-Regular.ttf
+https://www.my-btr.com/assets/fonts/AcariSans/instance_ttf/AcariSans-SemiBold.ttf
+https://www.my-btr.com/assets/i18n/bg/account.json?v=mvmbfe42
+https://www.my-btr.com/assets/i18n/bg/advertising-public.json?v=mvmbfe42
+https://www.my-btr.com/assets/i18n/bg/core.json?v=mvmbfe42
+https://www.my-btr.com/assets/i18n/bg/discounts.json?v=mvmbfe42
+https://www.my-btr.com/assets/i18n/bg/races.json?v=mvmbfe42
+https://www.my-btr.com/assets/i18n/bg/runners.json?v=mvmbfe42
+https://www.my-btr.com/assets/icons/btr-icon-192.png
+https://www.my-btr.com/assets/images/figures/male.jpg
+https://www.my-btr.com/assets/images/logo.png
+https://www.my-btr.com/assets/images/partners/race_calendar.png
+https://www.my-btr.com/assets/images/strava_compatable.png
+https://www.my-btr.com/assets/volt/assets/img/brand/dark.svg
+https://www.my-btr.com/assets/volt/assets/img/brand/light.svg
+https://www.my-btr.com/assets/volt/assets/img/flags/bulgaria.svg
+https://www.my-btr.com/assets/volt/assets/img/flags/united-kingdom.svg
+https://www.my-btr.com/chunk-2SBB7LGD.js
+https://www.my-btr.com/chunk-3E2EUTIW.js
+https://www.my-btr.com/chunk-4QWGH23I.js
+https://www.my-btr.com/chunk-5VQXMV6W.js
+https://www.my-btr.com/chunk-6L6Q6SEU.js
+https://www.my-btr.com/chunk-7DK3HI2Z.js
+https://www.my-btr.com/chunk-7O57ECHU.js
+https://www.my-btr.com/chunk-7PJ7J5XR.js
+https://www.my-btr.com/chunk-7U4X7GL5.js
+https://www.my-btr.com/chunk-7VTVVWK7.js
+https://www.my-btr.com/chunk-7ZJ6N74C.js
+https://www.my-btr.com/chunk-A23V3SEH.js
+https://www.my-btr.com/chunk-AJITTQZC.js
+https://www.my-btr.com/chunk-B5RMJ5UG.js
+https://www.my-btr.com/chunk-BBUYFMFA.js
+https://www.my-btr.com/chunk-BEPHTPA4.js
+https://www.my-btr.com/chunk-ERT7K76M.js
+https://www.my-btr.com/chunk-EVF5FZLA.js
+https://www.my-btr.com/chunk-F6SUGVG5.js
+https://www.my-btr.com/chunk-FGZ5BSVI.js
+https://www.my-btr.com/chunk-G5F52TI4.js
+https://www.my-btr.com/chunk-G7SEN2UP.js
+https://www.my-btr.com/chunk-GA5EBH7U.js
+https://www.my-btr.com/chunk-GAL4ENT6.js
+https://www.my-btr.com/chunk-I2WDGYWD.js
+https://www.my-btr.com/chunk-IOC3OKEL.js
+https://www.my-btr.com/chunk-KVWZ6F3L.js
+https://www.my-btr.com/chunk-LEB5N2RB.js
+https://www.my-btr.com/chunk-NW2GH4EZ.js
+https://www.my-btr.com/chunk-O37BEI4M.js
+https://www.my-btr.com/chunk-OBWGD533.js
+https://www.my-btr.com/chunk-OCKKZUMQ.js
+https://www.my-btr.com/chunk-OXWFHRE5.js
+https://www.my-btr.com/chunk-QZXLBHTA.js
+https://www.my-btr.com/chunk-R5D52G6V.js
+https://www.my-btr.com/chunk-RR2CAURD.js
+https://www.my-btr.com/chunk-SDMPZOCW.js
+https://www.my-btr.com/chunk-TZYBLF6S.js
+https://www.my-btr.com/chunk-VBB57N3W.js
+https://www.my-btr.com/chunk-WMOKGXAB.js
+https://www.my-btr.com/chunk-WOG5EH3C.js
+https://www.my-btr.com/chunk-XHEXAHKH.js
+https://www.my-btr.com/chunk-YTMDRTDP.js
+https://www.my-btr.com/chunk-YWWGAWW3.js
+https://www.my-btr.com/chunk-Z2TYFXKB.js
+https://www.my-btr.com/favicon.ico
+https://www.my-btr.com/main-6AY4FIK5.js
+https://www.my-btr.com/manifest.webmanifest
+https://www.my-btr.com/polyfills-5CFQRCPP.js
+https://www.my-btr.com/runners/019e8190-3121-7052-9561-037b2ac2d68c
+https://www.my-btr.com/scripts-DSR7X3CC.js
+https://www.my-btr.com/styles-VKKXMOQ5.css
+MAIN BUNDLE STRING CANDIDATES:
+", score: 
+${se.labels.placeholder}
+&&(O=O({date:Y,allDay:!!b.allDayDate,allSegs:b.allSegs.map(ee),hiddenSegs:b.hiddenSegs.map(ee),jsEvent:l,view:E.viewApi})),O&&O!==
+&&(fe.clickEvent=c)}ae._completeHide(fe)}}static getParentFromElement(c){return F(c)||c.parentNode}static dataApiKeydownHandler(c){if(/input|textarea/i.test(c.target.tagName)?c.key===
+&&E.calendarApi.zoomTo(Y,O):i.setState({isPopoverOpen:!0})},i.handlePopoverClose=function(){i.setState({isPopoverOpen:!1})},i}return _(r,o),r.prototype.render=function(){var i=this,l=this.props;return Ne(gr.Consumer,null,(function(h){var b=h.viewApi,E=h.options,O=h.calendarApi,Y=E.moreLinkText,ee=l.moreCnt,ne=Es(l),me={num:ee,shortText:
+'),Le=Le.replace(/#/g,
+))))}var la=function(o){return Ne(gr.Consumer,null,(function(r){var i=r.options,l={isAxis:o.isAxis,date:r.dateEnv.toDate(o.date),view:r.viewApi};return Ne(er,{hookProps:l,classNames:i.nowIndicatorClassNames,content:i.nowIndicatorContent,didMount:i.nowIndicatorDidMount,willUnmount:i.nowIndicatorWillUnmount},o.children)}))},tc=W({day:
+)),l.receivingContext=xe,l.validMutation=ke,l.mutatedRelevantEvents=Ie)}},l.handlePointerUp=function(){l.isDragging||l.cleanup()},l.handleDragEnd=function(O){if(l.isDragging){var Y=l.component.context,ee=Y.viewApi,ne=l,me=ne.receivingContext,xe=ne.validMutation,ke=l.eventRange.def,Ie=l.eventRange.instance,Xe=new ni(Y,ke,Ie),tt=l.relevantEvents,Ze=l.mutatedRelevantEvents,at=l.hitDragging.finalHit;if(l.clearDrag(),Y.emitter.trigger(
+)),me?N():e(),E||(Y.setMirrorNeedsRevert(!ne),l.receivingContext=ee,l.droppableEvent=ne)},this.handleDragEnd=function(b){var E=l,O=E.receivingContext,Y=E.droppableEvent;if(l.clearDrag(),O&&Y){var ee=l.hitDragging.finalHit,ne=ee.context.viewApi,me=l.dragMeta;if(O.emitter.trigger(
+));Ta()},h.el=i,h.renderRunner=new ta(h.handleRenderRequest),new za({optionOverrides:l,calendarApi:h,onAction:h.handleAction,onData:h.handleData}),h}return _(r,o),Object.defineProperty(r.prototype,
+));for(var Qe=!1,St=0;St<_e.length;St+=1){var xt=_e[St],Ve=mt.search(xt),Ye={};Ve.isMatch?(Ye[xt]=Ve.score,Lt=!0,Qe=!0,nt.push(Ve.score)):(Ye[xt]=1,this.options.matchAllTokens||nt.push(1)),this._log(
+));if(T.style.position=
+),Zn(i,{position:
+),d[A])).replace(/\\(.)/g,
+),f[he])).replace(new RegExp(s[0],
+),function(U){var oe=U.trim();Z.innerHTML=oe;for(var X=Z.children[0];Z.firstChild;)Z.removeChild(Z.firstChild);return X});B.strToEl=ie,B.calcWidthOfInput=function(U,oe){var X=U.value||U.placeholder,G=U.offsetWidth;if(X){var T=ie(
+),i(),this.renderRunner.resume(
+),s[A])).replace(new RegExp(d[0],
+),this.isVisible=r,this.updateElPosition()):this.isVisible&&(this.mirrorEl&&(this.mirrorEl.style.display=
+),u[he])).replace(new RegExp(f[0],
+).replace(/[a-z]+/gi,
+).replace(lt,ft)};var ut=ye,Lt=C;(function(){var m,k,W,q,D,c,p,x,H,ae,fe=Lt,De=z.expando,ce=0,je=0,ht=Nn(),yt=Nn(),Dt=Nn(),Ut=Nn(),Gt=function(Oe,Je){return Oe===Je&&(D=!0),0},Cn=
+);var Te=A.globals.series[s][d]<=0,y=A.config.plotOptions.bar.dataLabels.position;A.config.plotOptions.bar.dataLabels.orientation===
+)[0]}_getPlacement(){const c=this._element.parentNode;if(c.classList.contains(
+){for(z=0;z<pe.length;z++)for(we[z]=we[z]||{},Me=0;Me<se.length;Me++)!ve.skipColumn.includes(se[Me].originalCellIndex)&&this.columns(se[Me].originalCellIndex).visible()&&(we[z][se[Me].textContent]=pe[z].cells[Me].textContent);le=JSON.stringify(we,ve.replacer,ve.space),ve.download&&(le=`data:application/json;charset=utf-8,${le}`)}return ve.download&&(ve.filename=ve.filename||
+)},itemComparer:function(C,P){return C===P},fuseOptions:{includeScore:!0},callbackOnInit:null,callbackOnCreateTemplates:null,classNames:F};B.DEFAULT_CONFIG=S,B.EVENTS={showDropdown:
+)},r.prototype._handleNavLinkClick=function(i,l){var h=this.props,b=h.dateEnv,E=h.options,O=h.calendarApi,Y=l.getAttribute(
+)},r.prototype.pauseRendering=function(){this.renderRunner.pause(
+)},r.prototype.resumeRendering=function(){this.renderRunner.resume(
++A);var M=a?e.getUTCDate():e.getDate();t=(t=(t=(t=t.replace(/(^|[^\\])dddd+/g,
++I);var he=(a?e.getUTCDay():e.getDay())+1;return t=(t=(t=(t=(t=t.replace(new RegExp(u[0],
++K);var te=a?e.getUTCMinutes():e.getMinutes();t=(t=t.replace(/(^|[^\\])mm+/g,
++M);var j=a?e.getUTCHours():e.getHours(),K=j>12?j-12:j===0?12:j;t=(t=(t=(t=t.replace(/(^|[^\\])HH+/g,
++Q);var de=a?e.getUTCMilliseconds():e.getMilliseconds();t=t.replace(/(^|[^\\])fff+/g,
++Te)).replace(/(^|[^\\])t/g,
++be)).replace(/(^|[^\\])T/g,
++be.charAt(0));var Te=be.toLowerCase();t=(t=t.replace(/(^|[^\\])tt+/g,
++d[0])).replace(/(^|[^\\])MM/g,
++de)).replace(/(^|[^\\])TT+/g,
++f[0])).replace(/(^|[^\\])dd/g,
++j)).replace(/(^|[^\\])hh+/g,
++rt;return rt}var w=a?e.getUTCFullYear():e.getFullYear();t=(t=(t=t.replace(/(^|[^\\])yyyy+/g,
++s[0])).replace(/(^|[^\\])MMM/g,
++te);var Q=a?e.getUTCSeconds():e.getSeconds();t=(t=t.replace(/(^|[^\\])ss+/g,
++u[0])).replace(/(^|[^\\])ddd/g,
++v(A))).replace(/(^|[^\\])M/g,
++v(J)}t=t.replace(/(^|[^\\])K/g,
++v(K))).replace(/(^|[^\\])h/g,
++v(M))).replace(/(^|[^\\])d/g,
++v(Q))).replace(/(^|[^\\])s/g,
++v(de,3)),de=Math.round(de/10),t=t.replace(/(^|[^\\])ff/g,
++v(j))).replace(/(^|[^\\])H/g,
++v(te))).replace(/(^|[^\\])m/g,
++w)).replace(/(^|[^\\])yy/g,
++w);var A=(a?e.getUTCMonth():e.getMonth())+1;t=(t=(t=(t=t.replace(/(^|[^\\])MMMM+/g,
++w.toString().substr(2,2))).replace(/(^|[^\\])y/g,
++xe.error.message,errors:xe.error.errors,xhr:ke}):r({rawEvents:(Ie=xe.items,Xe=me.timeZone,Ie.map((function(tt){return(function(Ze,at){var It=Ze.htmlLink||null;return It&&at&&(It=(function(wt,Ft){return wt.replace(/(\?.*?)?(#|$)/,(function(bn,An,En){return(An?An+
+,K)),new ye(this.ctx).setSelectionFilter($e,t,s),w.add($e);var rt=new lt(this).handleBarDataLabels({x:A,y:M,y1:j,y2:K,i:d,j:s,series:te,realIndex:t,barHeight:Q,barWidth:de,barYPosition:be,renderedPath:$e,visibleSeries:y});return rt!==null&&Te.add(rt),w.add(Te),w}},{key:
+,M=t.y2;if(Math.abs(t.y1-t.y2)<u&&(u=Math.abs(t.y1-t.y2)),n[a][s]!==void 0||n[a][s]!==null){var j=n[a][s]<0;j&&(u*=-1),M+=u,A=d.quadraticCurve(t.barXPosition,M-u,t.barXPosition+(j?-1*u:u),M-u)+d.line(t.barXPosition+t.barWidth-t.strokeWidth-(j?-1*u:u),M-u)+d.quadraticCurve(t.barXPosition+t.barWidth-t.strokeWidth,M-u,t.barXPosition+t.barWidth-t.strokeWidth,M)}return{pathWithRadius:A,y2:M}}},{key:
+,U,oe,X,G;U=Math.abs(Z).toFixed(P.options.decimalPlaces),U+=
+,delay:0,html:!1,selector:!1,placement:
+,duration:{weeks:1}}}}),Jc=(function(o){function r(){return o!==null&&o.apply(this,arguments)||this}return _(r,o),r.prototype.render=function(){var i=this.props,l=i.dayDate,h=i.todayRange,b=this.context,E=b.theme,O=b.dateEnv,Y=b.options,ee=b.viewApi,ne=Zr(l,h),me=Y.listDayFormat?O.format(l,Y.listDayFormat):
+,fallbackPlacements:
+,fillSeriesColor:!0},legend:{position:
+,g(g({},Li),{draggedEl:O.subjectEl,view:at.context.viewApi}))}}else Y.emitter.trigger(
+,g(g({},Xe),{el:l.draggingSegEl,startDelta:l.validMutation.startDelta||hn(0),endDelta:l.validMutation.endDelta||hn(0),jsEvent:O.origEvent,view:Y.viewApi})),Y.emitter.trigger(
+,g(g({},so(at.dateSpan,me)),{draggedEl:O.subjectEl,jsEvent:O.origEvent,view:at.context.viewApi})),me.emitter.trigger(
+,height:6,offsetX:0,offsetY:0},tickAmount:void 0,tickPlacement:
+,history.replaceState({smoothScroll:JSON.stringify(we),anchor:Me||R.pageYOffset},document.title,Me||R.location.href)}})(U),T.animateScroll(pe,oe))}},ye=function(V){if(history.state!==null&&history.state.smoothScroll&&history.state.smoothScroll===JSON.stringify(U)){var se=history.state.anchor;typeof se==
+,it.dataApiKeydownHandler),_e.on(document,
+,min:void 0,max:void 0,range:void 0,floating:!1,position:
+,noResults:
+,noResultsText:
+,null,i.slatMetas.map((function(E,O){var Y={time:E.time,date:l.dateEnv.toDate(E.date),view:l.viewApi},ee=[
+,offset:[0,0],container:!1,fallbackPlacements:[
+,opacityFrom:1,opacityTo:1,stops:[70,98,100]}},legend:{show:!1,position:
+,paste:!0,searchEnabled:!0,searchChoices:!0,searchFloor:1,searchResultLimit:4,searchFields:[
+,placeholder:
+,placement:
+,position:
+,r()}))},o.prototype.cleanup=function(){this.mirrorEl&&(dn(this.mirrorEl),this.mirrorEl=null),this.sourceEl=null},o.prototype.updateElPosition=function(){this.sourceEl&&this.isVisible&&Zn(this.getMirrorEl(),{left:this.sourceElRect.left+this.deltaX,top:this.sourceElRect.top+this.deltaY})},o.prototype.getMirrorEl=function(){var r=this.sourceElRect,i=this.mirrorEl;return i||((i=this.mirrorEl=this.sourceEl.cloneNode(!0)).classList.add(
+,radius:2,size:8}},tooltip:{shared:!1,intersect:!0},xaxis:{tooltip:{enabled:!1},tickPlacement:
+,resetScrollPosition:!0,shouldSort:!0,shouldSortItems:!1,sortFn:g.sortByAlpha,placeholder:!0,placeholderValue:null,searchPlaceholderValue:null,prependValue:null,appendValue:null,renderSelectedChoices:
+,style:{height:h}}))},i.renderTableRowAxis=function(l){var h=i.context,b=h.options,E=h.viewApi,O={text:b.allDayText,view:E};return Ne(er,{hookProps:O,classNames:b.allDayClassNames,content:b.allDayContent,defaultContent:Bc,didMount:b.allDayDidMount,willUnmount:b.allDayWillUnmount},(function(Y,ee,ne,me){return Ne(
+,style:{marginTop:i.moreMarginTop}},Ne(_c,{allDayDate:E,singlePlacements:i.singlePlacements,moreCnt:i.moreCnt,alignmentElRef:h,alignGridTop:!i.showDayNumber,extraDateSpan:i.extraDateSpan,dateProfile:i.dateProfile,eventSelection:i.eventSelection,eventDrag:i.eventDrag,eventResize:i.eventResize,todayRange:i.todayRange}))),Ne(
+,this.defaults={startVal:0,decimalPlaces:0,duration:2,useEasing:!0,useGrouping:!0,smartEasingThreshold:999,smartEasingAmount:333,separator:
+,this.handleWindowResize),this.resizeRunner.clear();for(var i=0,l=this.calendarInteractions;i<l.length;i++)l[i].destroy();this.props.emitter.trigger(
+,v=t.x2;if(Math.abs(t.x1-t.x2)<u&&(u=Math.abs(t.x1-t.x2)),n[a][s]!==void 0||n[a][s]!==null){var w=this.barCtx.isReversed?n[a][s]>0:n[a][s]<0;w&&(u*=-1),v-=u,f=d.quadraticCurve(v+u,t.barYPosition,v+u,t.barYPosition+(w?-1*u:u))+d.line(v+u,t.barYPosition+t.barHeight-t.strokeWidth-(w?-1*u:u))+d.quadraticCurve(v+u,t.barYPosition+t.barHeight-t.strokeWidth,v,t.barYPosition+t.barHeight-t.strokeWidth)}return{pathWithRadius:f,x2:v}}var A=
+,value:function(e){return Date.parse(e.replace(/-/g,
+,value:function(e){var t=Date.parse(e);if(!isNaN(t))return this.getTimeStamp(e);var n=Date.parse(e.replace(/-/g,
+,value:function(e){var t=e.barYPosition,n=e.barHeight,a=e.x1,s=e.x2,d=e.strokeWidth,u=e.series,f=e.realIndex,v=e.i,w=e.j,A=e.w,M=new V(this.barCtx.ctx);(d=Array.isArray(d)?d[f]:d)||(d=0);var j={barHeight:n,strokeWidth:d,barYPosition:t,x2:s,x1:a},K=this.getRoundedBars(A,j,u,v,w),te=M.move(a,t),Q=M.move(a,t);A.globals.previousPaths.length>0&&(Q=this.barCtx.getPreviousPath(f,w,!1));var de=t,be=t+n,Te=M.line(a,be-d);return te=te+M.line(K.x2,de)+K.pathWithRadius+M.line(K.x2,be-d)+Te+Te+
+,value:function(e){var t=this.w,n=e.x,a=e.i,s=e.j,d=e.bcy,u=e.barHeight,f=e.barWidth,v=e.textRects,w=e.dataLabelsX,A=e.strokeWidth,M=e.barDataLabelsConfig,j=e.offX,K=e.offY,te=t.globals.gridHeight/t.globals.dataPoints;f=Math.abs(f);var Q=d-(this.barCtx.isTimelineBar?0:te)+u/2+v.height/2+K-3,de=this.barCtx.series[a][s]<0,be=n;switch(this.barCtx.isReversed&&(be=n+f-(de?2*f:0),n=t.globals.gridWidth-f),M.position){case
+,value:function(n){var a=n.indexes,s=n.y,d=n.y1,u=n.y2,f=n.yDivision,v=n.barHeight,w=n.barYPosition,A=n.zeroW,M=this.w,j=A+d/this.invertedYRatio,K=A+u/this.invertedYRatio,te=Math.abs(K-j),Q=this.barHelpers.getBarpaths({barYPosition:w,barHeight:v,x1:j,x2:K,strokeWidth:this.strokeWidth,series:this.seriesRangeEnd,i:a.realIndex,realIndex:a.realIndex,j:a.j,w:M});return M.globals.isXNumeric||(s+=f),{pathTo:Q.pathTo,pathFrom:Q.pathFrom,barWidth:te,x:K,y:s}}},{key:
+,{el:b,event:new ni(E.context,Y.eventRange.def,Y.eventRange.instance),jsEvent:h,view:O.viewApi}),ne&&!h.defaultPrevented&&(window.location.href=ne)}},l.destroy=ui(i.el,
+,{el:l.draggingSegEl,event:me,jsEvent:O.origEvent,view:Y.viewApi}),l.validMutation){var Ie=new ni(Y,ke.defs[ee.defId],ne?ke.instances[ne.instanceId]:null);Y.dispatch({type:
+,{get:function(){return this.currentData.viewApi},enumerable:!1,configurable:!0}),r.prototype.render=function(){var i=this.isRendering;i?this.customContentRenderId+=1:this.isRendering=!0,this.renderRunner.request(),i&&this.updateSize()},r.prototype.destroy=function(){this.isRendering&&(this.isRendering=!1,this.renderRunner.request())},r.prototype.updateSize=function(){o.prototype.updateSize.call(this),Ta()},r.prototype.batchRendering=function(i){this.renderRunner.pause(
+,{view:i.props.viewApi})})),i.handleWindowResize=function(l){var h=i.props.options;h.handleWindowResize&&l.target===window&&i.resizeRunner.request(h.windowResizeDelay)},i}return _(r,o),r.prototype.render=function(){var i,l=this.props,h=l.toolbarConfig,b=l.options,E=this.buildToolbarProps(l.viewSpec,l.dateProfile,l.dateProfileGenerator,l.currentDate,Di(l.options.now,l.dateEnv),l.viewTitle),O=!1,Y=
+./chunk-4FZAPICG.js
+./src/bitap/bitap_score.js
+/auth/link-runner-profile
+/rankings
+/runners
+:b.height!=null?O=!0:b.contentHeight!=null?Y=b.contentHeight:i=Math.max(b.aspectRatio,.5);var ee=this.buildViewContext(l.viewSpec,l.viewApi,l.options,l.dateProfileGenerator,l.dateEnv,l.theme,l.pluginHooks,l.dispatch,l.getCurrentData,l.emitter,l.calendarApi,this.registerInteractiveComponent,this.unregisterInteractiveComponent);return Ne(gr.Provider,{value:ee},h.headerToolbar&&Ne(ts,g({ref:this.headerRef,extraClassName:
+:de});this.ctx.series.addCollapsedClassToSeries(be,de),e[u].length>0&&(this.visibleI=this.visibleI+1);var Te=0,y=0;this.yRatio.length>1&&(this.yaxisIndex=de),this.isReversed=n.config.yaxis[this.yaxisIndex]&&n.config.yaxis[this.yaxisIndex].reversed;var I=this.barHelpers.initialPositions();K=I.y,Te=I.barHeight,w=I.yDivision,M=I.zeroW,j=I.x,y=I.barWidth,v=I.xDivision,A=I.zeroH,this.horizontal||Q.push(j+y/2);for(var J=a.group({class:
+:o.isoTimeStr});var l=i.dateEnv,h=i.options,b=i.viewApi,E=h.slotLabelFormat==null?Nc:Array.isArray(h.slotLabelFormat)?W(h.slotLabelFormat[0]):W(h.slotLabelFormat),O={level:0,time:o.time,date:l.toDate(o.date),view:b,text:l.format(o.date,E)};return Ne(er,{hookProps:O,classNames:h.slotLabelClassNames,content:h.slotLabelContent,defaultContent:zc,didMount:h.slotLabelDidMount,willUnmount:h.slotLabelWillUnmount},(function(Y,ee,ne,me){return Ne(
+:te});n[f].length>0&&(this.visibleI=this.visibleI+1);var de=0,be=0;this.yRatio.length>1&&(this.yaxisIndex=te);var Te=this.barHelpers.initialPositions();j=Te.y,A=Te.zeroW,M=Te.x,be=Te.barWidth,v=Te.xDivision,w=Te.zeroH;for(var y=d.group({class:
+;function os(o){return o.text}var ss=(function(o){function r(){return o!==null&&o.apply(this,arguments)||this}return _(r,o),r.prototype.render=function(){var i=this.context,l=i.dateEnv,h=i.options,b=i.theme,E=i.viewApi,O=this.props,Y=O.date,ee=O.dateProfile,ne=Zr(Y,O.todayRange,null,ee),me=[as].concat(Hr(ne,b)),xe=l.format(Y,O.dayHeaderFormat),ke=h.navLinks&&!ne.isDisabled&&O.colCnt>1?{
+;t=(t=(t=t.replace(/(^|[^\\])f/g,
+;u-=j/2;var de=n.globals.gridWidth/n.globals.dataPoints;t=n.globals.isXNumeric?u-f/2+K:u-de+f/2+K,Q&&(t=t+w.height/2-j/2-2);var be=this.barCtx.series[a][s]<0,Te=d;switch(this.barCtx.isReversed&&(Te=d-v+(be?2*v:0),d-=v),M.position){case
+?ee():ee,me=(function(xe,ke,Ie,Xe){var tt,Ze,at;return Xe.canComputeOffset?(Ze=Xe.formatIso(xe.start),at=Xe.formatIso(xe.end)):(Ze=Q(xe.start,-1).toISOString(),at=Q(xe.end,1).toISOString()),tt=g(g({},Ie||{}),{key:ke,timeMin:Ze,timeMax:at,singleEvents:!0,maxResults:9999}),Xe.timeZone!==
+?l.call(i.calendarApi,r):typeof l!=
+?p=>c(p,this._element):c}_getPopperConfig(){const c={placement:this._getPlacement(),modifiers:[{name:
+?pe:document.documentElement)&&(V.preventDefault(),(function(we){if(history.replaceState&&we.updateURL&&!history.state){var Me=R.location.hash;Me=Me||
+APP.RANKINGS
+APP.RUNNERS
+Legend position not supported
+NOTIFICATIONS.PROMPT.BENEFIT_RESULTS
+Score average:
+The "position" parameter is not valid, defaulting to "center"
+Token score average:
+X-API-Version
+Zone.js has detected that ZoneAwarePromise `(window|global).Promise` has been overwritten.\nMost likely cause is that a Promise polyfill has been loaded after Zone.js (Polyfilling Promise api is not necessary when zone.js is loaded. If you must load one, do so before loading zone.js.)
+[result="
+]',it.dataApiKeydownHandler),_e.on(document,
+],position:
+]},tooltip:{followCursor:!0,marker:{show:!1},x:{show:!1}},legend:{position:
+_computeScore
+_generatePlaceholderValue
+_selectPlaceholderChoice
+`+ut.target.result+'
+`+ut.target.result+`
+`.concat(ie.placeholder,`
+apiVersion
+auth/link-runner-profile
+chart-app-ranking
+click.markdown.data-api
+data-button-to-replace
+data-popper-placement
+getCurrentPosition
+getXAxisTicksPositions
+initialPositions
+no-results
+opacity:0;position:absolute;left:-100%;top:-100%;overflow:hidden
+option[placeholder]
+placeholder
+placeholderChoice
+placeholderOption
+position
+position-
+position-absolute
+position-relative
+position:absolute;left:-11111px;border-collapse:separate
+position:absolute;left:-11111px;width:60px;margin-top:1px;padding:0;border:0
+position:relative;display:block;box-sizing:border-box;overflow:scroll;margin:auto;border:1px;padding:1px;width:60%;top:1%
+rankings
+replaceWith
+result
+runner
+runner-management
+runners
+search-results
+setPosition
+setYAxisXPosition
+shiftGraphPosition
+simplebar-placeholder
+watchPosition
+}),l.isDragging&&(Y.calendarApi.unselect(O),Y.emitter.trigger(
+},ee.length>0?i.renderSegList(ee,O):i.renderEmptyMessage()))}))},r.prototype.renderEmptyMessage=function(){var i=this.context,l=i.options,h=i.viewApi,b={text:l.noEventsText,view:h};return Ne(er,{hookProps:b,classNames:l.noEventsClassNames,content:l.noEventsContent,defaultContent:au,didMount:l.noEventsDidMount,willUnmount:l.noEventsWillUnmount},(function(E,O,Y,ee){return Ne(
+},plotOptions:{bar:{borderRadius:0,dataLabels:{position:
+}},crosshairs:{show:!0,width:1,position:
+}},plotOptions:{bar:{dataLabels:{position:
