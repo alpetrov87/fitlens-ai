@@ -54,7 +54,7 @@ class EventLinkImporter {
         )
     }
 
-    internal fun download(start: HttpUrl, allowedDomain: String? = null): String {
+    internal fun download(start: HttpUrl, allowedDomain: String? = null, allowJson: Boolean = false): String {
         var current = start
         repeat(MAX_REDIRECTS + 1) { redirectCount ->
             require(allowedDomain == null || current.host == allowedDomain || current.host.endsWith(".$allowedDomain")) {
@@ -73,8 +73,9 @@ class EventLinkImporter {
                 }
             }
             val safeClient = client.newBuilder().dns(safeDns).build()
-            val request = Request.Builder().url(current).header("Accept", "text/html,application/xhtml+xml")
-                .header("User-Agent", "FitLensAI/0.6 (event link import)").get().build()
+            val accept = if (allowJson) "application/json,text/html;q=0.5" else "text/html,application/xhtml+xml"
+            val request = Request.Builder().url(current).header("Accept", accept)
+                .header("User-Agent", "FitLensAI/0.12 (public data import)").get().build()
             safeClient.newCall(request).execute().use { response ->
                 if (response.code in REDIRECT_CODES) {
                     require(redirectCount < MAX_REDIRECTS) { "Страницата препраща през прекалено много адреси." }
@@ -85,8 +86,9 @@ class EventLinkImporter {
                 }
                 if (!response.isSuccessful) throw IllegalStateException("Страницата не се отвори (HTTP ${response.code}).")
                 val type = response.header("Content-Type").orEmpty().lowercase(Locale.ROOT)
-                require(type.isBlank() || type.contains("text/html") || type.contains("application/xhtml+xml")) {
-                    "Линкът трябва да води към уеб страница, не към файл."
+                require(type.isBlank() || type.contains("text/html") || type.contains("application/xhtml+xml") ||
+                    (allowJson && type.contains("application/json"))) {
+                    if (allowJson) "Профилът върна неподдържан формат." else "Линкът трябва да води към уеб страница, не към файл."
                 }
                 val body = response.body ?: error("Страницата е празна.")
                 require((body.contentLength() < 0L || body.contentLength() <= MAX_PAGE_BYTES)) { "Страницата е прекалено голяма за импорт." }

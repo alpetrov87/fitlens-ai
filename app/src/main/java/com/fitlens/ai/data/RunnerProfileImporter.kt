@@ -19,8 +19,17 @@ class RunnerProfileImporter {
         require(page.isHttps && page.username.isEmpty() && page.password.isEmpty() && url.length <= 500 &&
             (page.host == domain || page.host.endsWith(".$domain"))) { "Използвай HTTPS профилен линк от $domain." }
         val downloader = EventLinkImporter()
-        val profileHtml = downloader.download(page, domain)
-        var extracted = parse(provider, profileHtml)
+        val btrId = if (provider == "BTR") BTR_PROFILE_PATH.matchEntire(page.encodedPath)?.groupValues?.get(1) else null
+        var extracted = if (btrId != null) {
+            val apiBase = "https://api.my-btr.com/api/runner/$btrId"
+            val profileJson = downloader.download(apiBase.toHttpUrl(), domain, allowJson = true)
+            val resultsJson = runCatching {
+                downloader.download("$apiBase/results?page=1&itemsPerPage=30".toHttpUrl(), domain, allowJson = true)
+            }.getOrNull()
+            parseBtrApi(profileJson, resultsJson)
+        } else {
+            parse(provider, downloader.download(page, domain))
+        }
         // The public ITRA example uses a separate race-results page for the same runner id.
         if (provider == "ITRA" && extracted.results == null) {
             val id = Regex("/RunnerSpace/(?:(?:About|RaceResults)/)?(\\d+)(?:/|$)", RegexOption.IGNORE_CASE).find(page.encodedPath)?.groupValues?.get(1)
@@ -35,6 +44,48 @@ class RunnerProfileImporter {
             "Не намерих публични показатели или резултати. Страницата може да изисква вход, JavaScript или различен профилен линк. Запазените стойности не са променени."
         }
         extracted.copy(message = "Намерени: ${listOfNotNull(extracted.score?.let { "показател" }, extracted.results?.let { "резултати" }).joinToString(", ")}. Провери и запази. Липсващите полета не се променят.")
+    }
+
+    internal fun parseBtrApi(profileJson: String, resultsJson: String?): RunnerProfileImport {
+        val root = JSONObject(profileJson)
+        val profile = root.optJSONObject("data") ?: root
+        val rating = profile.optIntOrNull("rating")
+        val place = profile.optIntOrNull("place")
+        val total = profile.optIntOrNull("total")
+        val group = when (profile.optString("gender").lowercase()) {
+            "male", "m" -> "мъже"
+            "female", "f" -> "жени"
+            else -> null
+        }
+        val scoreParts = buildList {
+            rating?.let { add("BTR рейтинг: $it") }
+            place?.let {
+                val denominator = total?.let { count -> " / $count" }.orEmpty()
+                val suffix = group?.let { value -> " ($value)" }.orEmpty()
+                add("Място: $it$denominator$suffix")
+            }
+        }
+        val rows = mutableListOf<String>()
+        resultsJson?.let { json ->
+            val resultRoot = runCatching { JSONObject(json) }.getOrNull()
+            val data = resultRoot?.optJSONObject("data")
+            val items = data?.optJSONArray("data") ?: resultRoot?.optJSONArray("data")
+            if (items != null) for (index in 0 until minOf(items.length(), 30)) {
+                val item = items.optJSONObject(index) ?: continue
+                val title = listOf(item.optString("race_name"), item.optString("distance_name"))
+                    .filter(String::isNotBlank).joinToString(" · ")
+                if (title.isBlank()) continue
+                val details = listOfNotNull(
+                    item.optString("place").takeIf(String::isNotBlank)?.let { "място $it" },
+                    item.optString("time").takeIf(String::isNotBlank),
+                    item.optIntOrNull("rating")?.let { "рейтинг $it" },
+                )
+                val prefix = item.optString("date").takeIf(String::isNotBlank)?.let { "$it · " }.orEmpty()
+                rows += "$prefix$title${details.takeIf(List<String>::isNotEmpty)?.joinToString(" | ", prefix = " | ").orEmpty()}"
+            }
+        }
+        return RunnerProfileImport(scoreParts.joinToString(" · ").takeIf(String::isNotBlank),
+            rows.distinct().joinToString("\n").take(4000).takeIf(String::isNotBlank), "")
     }
 
     internal fun parse(provider: String, html: String): RunnerProfileImport {
@@ -93,5 +144,11 @@ class RunnerProfileImporter {
         }
         val resultText = rows.distinct().joinToString("\n").take(4000).takeIf(String::isNotBlank)
         return RunnerProfileImport(score, resultText, "")
+    }
+
+    private fun JSONObject.optIntOrNull(key: String): Int? = opt(key)?.toString()?.toIntOrNull()
+
+    private companion object {
+        val BTR_PROFILE_PATH = Regex("^/runners/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/?$")
     }
 }

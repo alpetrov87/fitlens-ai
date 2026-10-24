@@ -16,12 +16,33 @@ class RunnerProfileImporterTest {
     }
 
     @Test fun readsBtrLabelAndResultsTable() {
-        // Representative fixture: live BTR markup remains unverified in this environment.
         val html = """<p>BTR рейтинг: 610</p><table><thead><tr><th>Състезание</th><th>Дата</th><th>Време</th></tr></thead>
             <tbody><tr><td>Mountain 30</td><td>2026-10-01</td><td>3:15:00</td></tr></tbody></table>"""
         val result = RunnerProfileImporter().parse("BTR", html)
         assertEquals("BTR: 610", result.score)
         assertTrue(result.results!!.contains("Mountain 30"))
+    }
+
+    @Test fun readsCurrentPublicBtrApiRatingPlaceAndResults() {
+        val profile = """{"data":{"full_name":"Runner","gender":"male","rating":409,"place":4989,"total":13040}}"""
+        val results = """{"data":{"data":[
+            {"date":"2026-06-06","race_name":"Salomon Vitosha Trail","distance_name":"Трасе 27км","place":"98","time":"4:43:17","rating":380},
+            {"date":"2026-05-30","race_name":"Thracian Ultra","distance_name":"Discovery Race 12K","place":"19","time":"1:38:28","rating":438}
+        ],"total":2}}"""
+        val result = RunnerProfileImporter().parseBtrApi(profile, results)
+
+        assertEquals("BTR рейтинг: 409 · Място: 4989 / 13040 (мъже)", result.score)
+        assertEquals(2, result.results!!.lineSequence().count())
+        assertTrue(result.results!!.contains("Salomon Vitosha Trail · Трасе 27км | място 98 | 4:43:17 | рейтинг 380"))
+        assertTrue(result.results!!.contains("Thracian Ultra"))
+    }
+
+    @Test fun keepsBtrPlaceWhenResultsEndpointIsUnavailable() {
+        val result = RunnerProfileImporter().parseBtrApi(
+            """{"data":{"gender":"female","rating":500,"place":120,"total":4500}}""", null)
+
+        assertEquals("BTR рейтинг: 500 · Място: 120 / 4500 (жени)", result.score)
+        assertNull(result.results)
     }
 
     @Test fun readsStructuredBtrProfileState() {
