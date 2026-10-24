@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.fitlens.ai.data.RunnerProfileLiveImportTest" tests="2" skipped="0" failures="2" errors="0" timestamp="2026-10-24T12:21:51" hostname="runnervmtai0g" time="1.501">
+  <properties/>
+  <testcase name="importsCurrentItraProfileThroughProductionClient" classname="com.fitlens.ai.data.RunnerProfileLiveImportTest" time="0.637">
+    <failure message="java.io.EOFException" type="java.io.EOFException">java.io.EOFException
+	at okio.RealBufferedSource.require(RealBufferedSource.kt:202)
+	at okio.RealBufferedSource.readByteArray(RealBufferedSource.kt:242)
+	at com.fitlens.ai.data.EventLinkImporter.download$app_debug(EventLinkImporter.kt:95)
+	at com.fitlens.ai.data.EventLinkImporter.download$app_debug$default(EventLinkImporter.kt:57)
+	at com.fitlens.ai.data.RunnerProfileImporter$import$2.invokeSuspend(RunnerProfileImporter.kt:31)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:46)
+	at com.fitlens.ai.data.RunnerProfileLiveImportTest$importsCurrentItraProfileThroughProductionClient$1.invokeSuspend(RunnerProfileLiveImportTest.kt:20)
+Caused by: java.io.EOFException
+	at okio.RealBufferedSource.require(RealBufferedSource.kt:202)
+	at okio.RealBufferedSource.readByteArray(RealBufferedSource.kt:242)
+	at com.fitlens.ai.data.EventLinkImporter.download$app_debug(EventLinkImporter.kt:95)
+	at com.fitlens.ai.data.EventLinkImporter.download$app_debug$default(EventLinkImporter.kt:57)
+	at com.fitlens.ai.data.RunnerProfileImporter$import$2.invokeSuspend(RunnerProfileImporter.kt:31)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:115)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:103)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:584)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:793)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:697)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:684)
+</failure>
+  </testcase>
+  <testcase name="importsCurrentBtrProfileThroughProductionClient" classname="com.fitlens.ai.data.RunnerProfileLiveImportTest" time="0.864">
+    <failure message="java.io.EOFException" type="java.io.EOFException">java.io.EOFException
+	at okio.RealBufferedSource.require(RealBufferedSource.kt:202)
+	at okio.RealBufferedSource.readByteArray(RealBufferedSource.kt:242)
+	at com.fitlens.ai.data.EventLinkImporter.download$app_debug(EventLinkImporter.kt:95)
+	at com.fitlens.ai.data.RunnerProfileImporter$import$2.invokeSuspend(RunnerProfileImporter.kt:25)
+	at _COROUTINE._BOUNDARY._(CoroutineDebugging.kt:46)
+	at com.fitlens.ai.data.RunnerProfileLiveImportTest$importsCurrentBtrProfileThroughProductionClient$1.invokeSuspend(RunnerProfileLiveImportTest.kt:12)
+Caused by: java.io.EOFException
+	at okio.RealBufferedSource.require(RealBufferedSource.kt:202)
+	at okio.RealBufferedSource.readByteArray(RealBufferedSource.kt:242)
+	at com.fitlens.ai.data.EventLinkImporter.download$app_debug(EventLinkImporter.kt:95)
+	at com.fitlens.ai.data.RunnerProfileImporter$import$2.invokeSuspend(RunnerProfileImporter.kt:25)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:33)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:108)
+	at kotlinx.coroutines.internal.LimitedDispatcher$Worker.run(LimitedDispatcher.kt:115)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:103)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:584)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:793)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:697)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:684)
+</failure>
+  </testcase>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
