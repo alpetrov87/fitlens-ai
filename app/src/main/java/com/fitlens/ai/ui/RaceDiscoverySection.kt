@@ -57,14 +57,22 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
             Text("Намерени: ${entries.size}", style = MaterialTheme.typography.labelLarge)
             if (entries.isEmpty()) Text("Няма състезания за избраните филтри. Опитай друга страница от сайта.")
             entries.take(if (expanded) 200 else 10).forEach { draft ->
-                HorizontalDivider()
+                Card(shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Icon(sportIcon(draft.sport), null, tint = MaterialTheme.colorScheme.primary)
+                    Text(draft.date, style = MaterialTheme.typography.labelLarge)
+                }
                 Text(draft.title, style = MaterialTheme.typography.titleMedium)
                 Text("${draft.date} · ${sportLabel(draft.sport)}", style = MaterialTheme.typography.bodySmall)
                 if (draft.location.isNotBlank()) Text(draft.location, style = MaterialTheme.typography.bodySmall)
                 draft.distanceKm?.let { Text("$it km", style = MaterialTheme.typography.bodySmall) }
                 val added = saved.any { it.title == draft.title && it.date == draft.date && it.time == draft.time && it.distanceKm == draft.distanceKm }
                 OutlinedButton(onClick = { onSelect(draft) }, enabled = !busy && !added) {
-                    Text(if (added) "В твоя календар" else "Прегледай и добави")
+                    Text(if (added) "В твоя календар" else "Участвам · добави")
+                }
+                }
                 }
             }
             if (entries.size > 10) TextButton(onClick = { expanded = !expanded }) { Text(if (expanded) "Покажи по-малко" else "Покажи всички") }

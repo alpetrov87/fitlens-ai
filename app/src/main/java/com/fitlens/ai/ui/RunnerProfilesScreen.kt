@@ -3,6 +3,11 @@ package com.fitlens.ai.ui
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -43,7 +48,6 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
     var source by rememberSaveable { mutableStateOf(initial.source) }
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
-    var expanded by rememberSaveable { mutableStateOf(false) }
 
     fun save(profile: RunnerProfile) {
         store.save(profile)
@@ -82,19 +86,22 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
             val indicators = saved.score.split(" · ").filter(String::isNotBlank)
             Text(indicators.firstOrNull() ?: "Няма извлечен показател", style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary)
-            indicators.drop(1).forEach { indicator -> Text(indicator, style = MaterialTheme.typography.bodyLarge) }
+            if (initial.provider == "ITRA") EnduranceCards(saved.score)
+            indicators.drop(1).filterNot { it.startsWith("ITRA ") }.forEach { indicator -> Text(indicator, style = MaterialTheme.typography.bodyLarge) }
             if (saved.updated.isNotBlank()) Text("Последен запис: ${saved.updated}", style = MaterialTheme.typography.labelMedium)
             Text(saved.source, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val raceRows = saved.results.lineSequence().filter(String::isNotBlank).toList()
             Text("Състезателни резултати · ${raceRows.size}", style = MaterialTheme.typography.titleMedium)
             if (raceRows.isEmpty()) Text("Няма налични резултати. Обнови профила или добави данни чрез „Редактирай“.")
-            raceRows.take(if (expanded) raceRows.size else 3).forEach { result ->
-                Surface(color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f), shape = MaterialTheme.shapes.small) {
-                    Text(result, modifier = Modifier.fillMaxWidth().padding(12.dp), style = MaterialTheme.typography.bodyMedium)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(raceRows) { result ->
+                    Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(24.dp)) {
+                        Column(Modifier.width(260.dp).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Icon(Icons.Default.EmojiEvents, null, tint = MaterialTheme.colorScheme.primary)
+                            Text(result, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
                 }
-            }
-            if (raceRows.size > 3) TextButton(onClick = { expanded = !expanded }) {
-                Text(if (expanded) "Покажи по-малко" else "Всички резултати (${raceRows.size})")
             }
             Button(onClick = { refresh() }, enabled = !busy && saved.url.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
                 Text(if (busy) "Обновяване…" else "Обнови от профила")
@@ -122,5 +129,25 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
                 .onFailure { message = "Няма приложение за отваряне на линка." }
         }) { Text("Отвори ${initial.provider} профила") }
         message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+    }
+}
+
+@Composable
+private fun EnduranceCards(score: String) {
+    val colors = listOf(Color(0xFF777C76), Color(0xFF88CA32), Color(0xFFCBC600),
+        Color(0xFF54C5E5), Color(0xFFAC6CAD), Color(0xFFDF7126), Color(0xFFB92E28))
+    Text("Endurance Points", style = MaterialTheme.typography.titleLarge)
+    Text("Плъзни за всички категории →", style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant)
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        items((0..6).toList()) { point ->
+            val count = Regex("ITRA $point: (\\d+)").find(score)?.groupValues?.get(1) ?: "0"
+            Surface(shape = RoundedCornerShape(22.dp), color = colors[point]) {
+                Column(Modifier.width(132.dp).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text("ITRA $point", style = MaterialTheme.typography.titleLarge, color = Color.Black)
+                    Text("×$count", style = MaterialTheme.typography.headlineLarge, color = Color.Black)
+                }
+            }
+        }
     }
 }

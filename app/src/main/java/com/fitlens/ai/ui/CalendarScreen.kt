@@ -34,6 +34,7 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
     var showAdd by rememberSaveable { mutableStateOf(false) }
     var selectedDraft by remember { mutableStateOf<EventDraft?>(null) }
     var deleteEvent by remember { mutableStateOf<CalendarEvent?>(null) }
+    var discover by rememberSaveable { mutableStateOf(false) }
     val month = YearMonth.parse(monthText)
     val eventDates = state.events.map { it.date }.toSet()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
@@ -45,6 +46,15 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
             Text(error)
             TextButton(onClick = onRetry, enabled = !state.loading) { Text("Опитай отново") }
         } }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            FilterChip(selected = !discover, onClick = { discover = false }, label = { Text("Моите участия") })
+            FilterChip(selected = discover, onClick = { discover = true }, label = { Text("Открий състезание") })
+        }
+        if (discover) RaceDiscoverySection(catalogue, state.events, state.loading, onLoadCatalogue) { draft ->
+            selectedDraft = draft; showAdd = true
+        }
+        if (!discover) {
+        TextButton(onClick = { selected = LocalDate.now().toString(); monthText = YearMonth.now().toString() }) { Text("Към днес") }
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
@@ -98,9 +108,6 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp)); Text("Добави събитие")
         }
-        RaceDiscoverySection(catalogue, state.events, state.loading, onLoadCatalogue) { draft ->
-            selectedDraft = draft; showAdd = true
-        }
         Text(LocalDate.parse(selected).format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("bg"))),
             style = MaterialTheme.typography.titleLarge)
         val dayEvents = state.events.filter { it.date == selected }
@@ -110,6 +117,7 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
         if (upcoming.isNotEmpty()) {
             Text("Предстоящи участия", style = MaterialTheme.typography.titleLarge)
             upcoming.forEach { event -> EventCard(event, !state.loading) { deleteEvent = event } }
+        }
         }
         Text("Събитията са лични и се пазят на устройството. Garmin Personal API все още няма endpoint за бъдещ календар.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
