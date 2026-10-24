@@ -4,16 +4,18 @@ on:
     branches: ['feature/fitlens-android-mvp']
     paths: ['.github/workflows/inspect-btr.yml']
 permissions:
-  contents: read
+  contents: write
 jobs:
   inspect:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v5
       - name: Inspect public profile response
         shell: bash
         run: |
           set -euo pipefail
+          exec > >(tee btr-inspect-output.txt) 2>&1
           url='https://www.my-btr.com/runners/019e8190-3121-7052-9561-037b2ac2d68c'
           curl --fail --location --compressed --user-agent 'Mozilla/5.0 (Android 14) AppleWebKit/537.36 Chrome/131 Mobile Safari/537.36' \
             --dump-header headers.txt --output profile.html "$url"
@@ -41,6 +43,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          exec >> btr-inspect-output.txt 2>&1
           python3 - <<'PY'
           import re, subprocess, urllib.parse
           from pathlib import Path
@@ -61,3 +64,12 @@ jobs:
                   found.extend(m.group(0) for m in list(re.finditer(pattern, data, re.I))[:30])
               for value in found[:60]: print(value[:500])
           PY
+      - name: Publish temporary inspection result
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add btr-inspect-output.txt
+          git commit -m 'Record temporary BTR inspection output'
+          git push
