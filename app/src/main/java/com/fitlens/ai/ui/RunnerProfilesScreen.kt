@@ -24,6 +24,8 @@ internal fun RunnerProfilesScreen() {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text("Моят профил на бегач", style = MaterialTheme.typography.headlineMedium)
         Text("Показатели и състезателна история от BTR и ITRA. Запазените данни се включват в отчета за ChatGPT.")
+        Text("При ITRA WAF блокиране публичният профилен линк се прочита чрез Jina Reader. Не се изпращат ключове или лични Garmin данни.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         store.all().forEach { profile -> key(profile.provider) { RunnerProviderCard(profile, store) } }
     }
 }
@@ -75,8 +77,10 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
     InfoCard(initial.provider, Icons.Default.Person) {
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (!editing) {
-            Text(saved.score.ifBlank { "Няма извлечен показател" }, style = MaterialTheme.typography.headlineSmall,
+            val indicators = saved.score.split(" · ").filter(String::isNotBlank)
+            Text(indicators.firstOrNull() ?: "Няма извлечен показател", style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary)
+            indicators.drop(1).forEach { indicator -> Text(indicator, style = MaterialTheme.typography.bodyLarge) }
             if (saved.updated.isNotBlank()) Text("Последен запис: ${saved.updated}", style = MaterialTheme.typography.labelMedium)
             Text(saved.source, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val raceRows = saved.results.lineSequence().filter(String::isNotBlank).toList()

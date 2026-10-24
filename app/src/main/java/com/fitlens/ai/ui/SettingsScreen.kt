@@ -52,6 +52,8 @@ internal fun SettingsScreen(
                 Uri.parse("https://connect.garmin.com/app/settings/personalApiToken"))) }) { Text("Създай ключ в Garmin Connect") }
             Text("Личният ключ се пази криптиран на това устройство и се изпраща само към Garmin през HTTPS.",
                 style = MaterialTheme.typography.bodySmall)
+            if (connected) Text("Данните се обновяват при отваряне на приложението и във фонова задача приблизително на всеки 4 часа при налична мрежа. Android може да отложи задачата, за да пести батерия.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedButton(onClick = { onImport(CsvImportSource.GARMIN) }, enabled = !busy) {
                 Icon(Icons.Default.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp)); Text("Импортирай Garmin CSV")

@@ -16,14 +16,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.fitlens.ai.data.CsvImportSource
 import com.fitlens.ai.data.DefaultHealthRepository
-import com.fitlens.ai.data.DemoActivitySource
-import com.fitlens.ai.data.DemoNutritionSource
+import com.fitlens.ai.data.EmptyActivitySource
+import com.fitlens.ai.data.EmptyNutritionSource
 import com.fitlens.ai.data.SharedPreferencesImportedMetricsStore
 import com.fitlens.ai.data.GarminPersonalApi
 import com.fitlens.ai.data.GarminPersonalKeyStore
+import com.fitlens.ai.data.GarminSyncScheduler
 import com.fitlens.ai.ui.DashboardScreen
 import com.fitlens.ai.ui.DashboardViewModel
 import com.fitlens.ai.ui.FitLensTheme
@@ -42,15 +44,22 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         LegacyAiCredentialCleaner.run(applicationContext)
+        GarminSyncScheduler.reconcile(applicationContext)
         val factory = DashboardViewModel.Factory(DefaultHealthRepository(
-                DemoActivitySource(), DemoNutritionSource(), SharedPreferencesImportedMetricsStore(applicationContext),
+                EmptyActivitySource(), EmptyNutritionSource(), SharedPreferencesImportedMetricsStore(applicationContext),
                 GarminPersonalApi(GarminPersonalKeyStore(applicationContext)),
-            ), com.fitlens.ai.data.RunnerProfileStore(applicationContext))
+            ), com.fitlens.ai.data.RunnerProfileStore(applicationContext),
+            onGarminConnectionChanged = { connected -> GarminSyncScheduler.setEnabled(applicationContext, connected) })
         val calendarFactory = CalendarViewModel.Factory(CalendarEventStore(applicationContext), EventLinkImporter())
         setContent {
             FitLensTheme {
                 val model: DashboardViewModel = viewModel(factory = factory)
                 val calendarModel: CalendarViewModel = viewModel(factory = calendarFactory)
+                LifecycleResumeEffect(model) {
+                    model.refresh()
+                    model.syncGarminIfNeeded()
+                    onPauseOrDispose { }
+                }
                 val context = LocalContext.current
                 val scope = rememberCoroutineScope()
                 var importSource by remember { mutableStateOf(CsvImportSource.GARMIN) }

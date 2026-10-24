@@ -15,6 +15,52 @@ class RunnerProfileImporterTest {
         assertTrue(result.results!!.contains("5:20:00"))
     }
 
+    @Test fun readsCurrentItraReaderIndexPointCountsAndResults() {
+        val content = """
+            ##### Finished Races
+            #### 5
+            ![ITRA](https://itra.run/assets/images/itra_logo_white.svg)
+            0
+            #### x0
+            ![ITRA](https://itra.run/assets/images/itra_logo_white.svg)
+            1
+            #### x4
+            ![ITRA](https://itra.run/assets/images/itra_logo_white.svg)
+            2
+            #### x1
+            ![ITRA](https://itra.run/assets/images/itra_logo_white.svg)
+            3
+            #### x0
+            ![ITRA](https://itra.run/assets/images/itra_logo_white.svg)
+            4
+            #### x0
+            ![ITRA](https://itra.run/assets/images/itra_logo_white.svg)
+            5
+            #### x0
+            ![ITRA](https://itra.run/assets/images/itra_logo_white.svg)
+            6
+            #### x0
+            ![calendar](https://itra.run/assets/images/calendar-icon.svg) 2026-10-04
+            Category
+            Half Marathon
+            Distance/M+
+            27 km /1898 m+
+            ![ITRA](https://itra.run/assets/images/itra_logo_white.svg)
+            2
+            Gender Ranking
+            182
+            Race Time
+            7:33:47
+        """.trimIndent()
+        val json = org.json.JSONObject().put("data", org.json.JSONObject()
+            .put("description", "Runner has an ITRA Performance Index is 324.").put("content", content)).toString()
+
+        val result = RunnerProfileImporter().parseItraReader(json)
+
+        assertEquals("Performance Index: 324 · Завършени: 5 · ITRA 1: 4 · ITRA 2: 1 · ITRA 3: 0 · ITRA 4: 0 · ITRA 5: 0 · ITRA 6: 0", result.score)
+        assertEquals("2026-10-04 · Half Marathon · 27 km /1898 m+ | ITRA 2 | място 182 | 7:33:47", result.results)
+    }
+
     @Test fun readsBtrLabelAndResultsTable() {
         val html = """<p>BTR рейтинг: 610</p><table><thead><tr><th>Състезание</th><th>Дата</th><th>Време</th></tr></thead>
             <tbody><tr><td>Mountain 30</td><td>2026-10-01</td><td>3:15:00</td></tr></tbody></table>"""

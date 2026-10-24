@@ -40,6 +40,19 @@ class RunnerProfileImporter {
                 if (result?.results != null) extracted = extracted.copy(results = result.results)
             }
         }
+        // ITRA protects the public page with an AWS WAF JavaScript challenge. If the direct HTML is empty,
+        // ask Jina Reader for a text rendering of this already-public profile URL.
+        if (provider == "ITRA" && (extracted.score == null || extracted.results == null)) {
+            val readerUrl = "https://r.jina.ai/https://${page.host}${page.encodedPath}".toHttpUrl()
+            val reader = runCatching {
+                parseItraReader(downloader.download(readerUrl, "r.jina.ai", allowJson = true))
+            }.getOrNull()
+            if (reader != null) extracted = RunnerProfileImport(
+                score = extracted.score ?: reader.score,
+                results = extracted.results ?: reader.results,
+                message = "",
+            )
+        }
         require(extracted.score != null || extracted.results != null) {
             "Не намерих публични показатели или резултати. Страницата може да изисква вход, JavaScript или различен профилен линк. Запазените стойности не са променени."
         }
@@ -87,6 +100,48 @@ class RunnerProfileImporter {
         return RunnerProfileImport(scoreParts.joinToString(" · ").takeIf(String::isNotBlank),
             rows.distinct().joinToString("\n").take(4000).takeIf(String::isNotBlank), "")
     }
+
+    internal fun parseItraReader(readerJson: String): RunnerProfileImport {
+        val root = JSONObject(readerJson)
+        val data = root.optJSONObject("data") ?: root
+        val content = data.optString("content")
+        val description = data.optString("description") + " " + data.optJSONObject("metadata")?.optString("description").orEmpty()
+        val index = Regex("Performance Index(?:\\s+is)?\\s+(\\d{1,4})", RegexOption.IGNORE_CASE)
+            .find(description)?.groupValues?.get(1)
+        val finished = Regex("Finished Races\\s*#{0,6}\\s*(\\d+)", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+            .find(content)?.groupValues?.get(1)
+        val pointCounts = ITRA_POINT_COUNT.findAll(content).associate { match ->
+            match.groupValues[1].toInt() to match.groupValues[2].toInt()
+        }
+        val score = buildList {
+            index?.let { add("Performance Index: $it") }
+            finished?.let { add("Завършени: $it") }
+            (1..6).forEach { point -> pointCounts[point]?.let { add("ITRA $point: $it") } }
+        }.joinToString(" · ").take(120).takeIf(String::isNotBlank)
+
+        val rows = mutableListOf<String>()
+        val dates = ITRA_RESULT_DATE.findAll(content).toList()
+        dates.forEachIndexed { indexOfDate, match ->
+            val end = dates.getOrNull(indexOfDate + 1)?.range?.first ?: content.length
+            val block = content.substring(match.range.last + 1, end)
+            val category = markdownField(block, "Category")
+            val distance = Regex("(?:Distance|Dist)/M\\+\\s*\\n+\\s*([^\\n]+)", RegexOption.IGNORE_CASE)
+                .find(block)?.groupValues?.get(1)?.trim()
+            val points = Regex("itra_logo_white\\.svg\\)\\s*\\n+\\s*([0-6])\\s*\\n+\\s*Gender Ranking", RegexOption.IGNORE_CASE)
+                .find(block)?.groupValues?.get(1)
+            val rank = markdownField(block, "Gender Ranking")
+            val time = markdownField(block, "Race Time")
+            val title = listOfNotNull(category, distance).joinToString(" · ").ifBlank { "ITRA състезание" }
+            val details = listOfNotNull(points?.let { "ITRA $it" }, rank?.let { "място $it" }, time)
+            val detailText = details.takeIf(List<String>::isNotEmpty)?.joinToString(" | ", prefix = " | ").orEmpty()
+            rows += "${match.groupValues[1]} · $title$detailText"
+        }
+        return RunnerProfileImport(score, rows.distinct().joinToString("\n").take(4000).takeIf(String::isNotBlank), "")
+    }
+
+    private fun markdownField(block: String, label: String): String? =
+        Regex("${Regex.escape(label)}\\s*\\n+\\s*([^\\n]+)", RegexOption.IGNORE_CASE)
+            .find(block)?.groupValues?.get(1)?.trim()?.takeIf { it.isNotBlank() && it != "DNF" }
 
     internal fun parse(provider: String, html: String): RunnerProfileImport {
         val doc = Jsoup.parse(html)
@@ -150,5 +205,8 @@ class RunnerProfileImporter {
 
     private companion object {
         val BTR_PROFILE_PATH = Regex("^/runners/([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})/?$")
+        val ITRA_POINT_COUNT = Regex("itra_logo_white\\.svg\\)\\s*([0-6])\\s*#{1,6}\\s*x(\\d+)",
+            setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+        val ITRA_RESULT_DATE = Regex("calendar-icon\\.svg\\)\\s*(\\d{4}-\\d{2}-\\d{2})", RegexOption.IGNORE_CASE)
     }
 }

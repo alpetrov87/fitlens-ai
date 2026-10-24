@@ -7,7 +7,7 @@ import org.json.JSONObject
 /** Only parsed daily measurements are stored locally; source CSV files and account credentials are not. */
 class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsStore {
     private val preferences = context.getSharedPreferences("fitlens_imports", Context.MODE_PRIVATE)
-    private val lock = Any()
+    private val lock = GLOBAL_LOCK
 
     override fun latestGarmin(): ImportedDailyMetrics? = synchronized(lock) {
         readRows().filter { it.garminData || it.garminPersonalApiData }.maxByOrNull(ImportedDailyMetrics::date)
@@ -186,6 +186,7 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
     )
 
     private companion object {
+        val GLOBAL_LOCK = Any()
         const val KEY_DAILY = "daily_metrics_v1"
         const val KEY_GARMIN_ACTIVITIES = "garmin_activities_v1"
         const val KEY_GARMIN_RECOVERY = "garmin_recovery_v1"

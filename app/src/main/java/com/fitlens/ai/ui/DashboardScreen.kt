@@ -147,15 +147,10 @@ private fun HomeScreen(
                         Text("%,d".format(data.activity.steps), style = MaterialTheme.typography.displayMedium)
                         Text("крачки · ${data.activityOrigin.label()}${data.activityDate?.let { " · $it" }.orEmpty()}",
                             style = MaterialTheme.typography.bodyMedium)
-                        LinearProgressIndicator(progress = { (data.activity.steps / 10000f).coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth())
-                        Text("Примерна цел: 10 000 крачки", style = MaterialTheme.typography.labelMedium)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                             StatValue("${data.activity.activeMinutes}", "активни минути")
                             StatValue("%.1f".format(data.activity.distanceKm), "километра")
                         }
-                        if (data.activityOrigin != MetricOrigin.DEMO) Text("Липсващите показатели са примерни.",
-                            style = MaterialTheme.typography.bodySmall)
                     }
                 }
                 InfoCard("Хранене", Icons.Default.Restaurant) {
@@ -170,8 +165,6 @@ private fun HomeScreen(
                         StatValue("${data.nutrition.carbsGrams} g", "въглехидрати")
                         StatValue("${data.nutrition.fatGrams} g", "мазнини")
                     }
-                    Text("Липсващите показатели и целта са примерни.", style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (data.garminCaloriesConsumed != null && data.nutritionOrigin != MetricOrigin.GARMIN_PERSONAL_API) {
                         Text("Записан прием в Garmin: ${data.garminCaloriesConsumed} kcal")
                     }
@@ -285,6 +278,6 @@ private fun ActivityCard(activity: GarminActivity) {
 @Preview(name = "Начало · тъмна тема", showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun DashboardPreview() {
-    FitLensTheme { DashboardScreen(DashboardState.Ready(Dashboard(ActivitySummary(7840, 42, 5.6),
-        NutritionSummary(1640, 2200, 112, 185, 51))), null, onRefresh = {}, onImport = {}, onClearImports = {}) }
+    FitLensTheme { DashboardScreen(DashboardState.Ready(Dashboard(ActivitySummary(0, 0, 0.0),
+        NutritionSummary(0, 0, 0, 0, 0))), null, onRefresh = {}, onImport = {}, onClearImports = {}) }
 }

@@ -63,7 +63,7 @@ internal fun sportLabel(sport: String): String = when (sport) {
 }
 
 internal fun MetricOrigin.label(): String = when (this) {
-    MetricOrigin.DEMO -> "Примерни данни"
+    MetricOrigin.NONE -> "Няма данни"
     MetricOrigin.GARMIN_CSV -> "Garmin CSV"
     MetricOrigin.GARMIN_PERSONAL_API -> "Garmin"
     MetricOrigin.MYFITNESSPAL_CSV -> "MyFitnessPal CSV"

@@ -14,16 +14,20 @@ class HealthRepositoryTest {
         )
         assertEquals(Dashboard(activity, nutrition), repository.dashboard())
     }
-    @Test fun demoDataHasExpectedValues() = runBlocking {
-        val dashboard = DefaultHealthRepository(DemoActivitySource(), DemoNutritionSource()).dashboard()
-        assertEquals(7840, dashboard.activity.steps)
-        assertEquals(1640, dashboard.nutrition.calories)
-        assertEquals(2200, dashboard.nutrition.calorieGoal)
+    @Test fun missingDataIsDisplayedAsZero() = runBlocking {
+        val dashboard = DefaultHealthRepository(EmptyActivitySource(), EmptyNutritionSource()).dashboard()
+        assertEquals(0, dashboard.activity.steps)
+        assertEquals(0, dashboard.activity.activeMinutes)
+        assertEquals(0.0, dashboard.activity.distanceKm, 0.0)
+        assertEquals(0, dashboard.nutrition.calories)
+        assertEquals(0, dashboard.nutrition.calorieGoal)
+        assertEquals(MetricOrigin.NONE, dashboard.activityOrigin)
+        assertEquals(MetricOrigin.NONE, dashboard.nutritionOrigin)
     }
-    @Test fun providerFailureIsNotReplacedByDemoData() = runBlocking {
+    @Test fun providerFailureIsNotReplacedByZeroData() = runBlocking {
         val repository = DefaultHealthRepository(
             object : ActivitySource { override suspend fun activity(): ActivitySummary = error("Unavailable") },
-            DemoNutritionSource(),
+            EmptyNutritionSource(),
         )
         try {
             repository.dashboard()

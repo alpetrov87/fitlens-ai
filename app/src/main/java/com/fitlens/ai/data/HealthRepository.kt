@@ -3,12 +3,12 @@ package com.fitlens.ai.data
 /** Provider-neutral models. Dates and OAuth/token storage belong in production adapters. */
 data class ActivitySummary(val steps: Int, val activeMinutes: Int, val distanceKm: Double)
 data class NutritionSummary(val calories: Int, val calorieGoal: Int, val proteinGrams: Int, val carbsGrams: Int, val fatGrams: Int)
-enum class MetricOrigin { DEMO, GARMIN_CSV, GARMIN_PERSONAL_API, MYFITNESSPAL_CSV }
+enum class MetricOrigin { NONE, GARMIN_CSV, GARMIN_PERSONAL_API, MYFITNESSPAL_CSV }
 data class Dashboard(
     val activity: ActivitySummary,
     val nutrition: NutritionSummary,
-    val activityOrigin: MetricOrigin = MetricOrigin.DEMO,
-    val nutritionOrigin: MetricOrigin = MetricOrigin.DEMO,
+    val activityOrigin: MetricOrigin = MetricOrigin.NONE,
+    val nutritionOrigin: MetricOrigin = MetricOrigin.NONE,
     val activityDate: String? = null,
     val nutritionDate: String? = null,
     val garminActivities: List<GarminActivity> = emptyList(),
@@ -116,12 +116,12 @@ class DefaultHealthRepository(
             activityOrigin = when {
                 latestGarmin?.garminPersonalApiData == true -> MetricOrigin.GARMIN_PERSONAL_API
                 latestGarmin != null -> MetricOrigin.GARMIN_CSV
-                else -> MetricOrigin.DEMO
+                else -> MetricOrigin.NONE
             },
             nutritionOrigin = when {
                 latestNutrition != null -> MetricOrigin.MYFITNESSPAL_CSV
                 latestGarmin?.garminCaloriesConsumed != null -> MetricOrigin.GARMIN_PERSONAL_API
-                else -> MetricOrigin.DEMO
+                else -> MetricOrigin.NONE
             },
             activityDate = latestGarmin?.date,
             nutritionDate = latestNutrition?.date ?: latestGarmin?.date?.takeIf { latestGarmin.garminCaloriesConsumed != null },
@@ -182,9 +182,9 @@ class DefaultHealthRepository(
     override fun garminRecoveryBetween(startDate: String, endDate: String): List<GarminRecoveryDay> =
         imported?.recoveryBetween(startDate, endDate).orEmpty()
 }
-class DemoActivitySource : ActivitySource {
-    override suspend fun activity() = ActivitySummary(7840, 42, 5.6)
+class EmptyActivitySource : ActivitySource {
+    override suspend fun activity() = ActivitySummary(0, 0, 0.0)
 }
-class DemoNutritionSource : NutritionSource {
-    override suspend fun nutrition() = NutritionSummary(1640, 2200, 112, 185, 51)
+class EmptyNutritionSource : NutritionSource {
+    override suspend fun nutrition() = NutritionSummary(0, 0, 0, 0, 0)
 }

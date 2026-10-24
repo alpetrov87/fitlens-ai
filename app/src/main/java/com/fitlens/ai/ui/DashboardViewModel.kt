@@ -25,6 +25,7 @@ sealed interface DashboardState {
 class DashboardViewModel(
     private val repository: CsvImportRepository,
     private val runnerProfiles: com.fitlens.ai.data.RunnerProfileStore,
+    private val onGarminConnectionChanged: (Boolean) -> Unit = {},
 ) : ViewModel() {
     private val mutableState = MutableStateFlow<DashboardState>(DashboardState.Loading)
     val state = mutableState.asStateFlow()
@@ -42,7 +43,30 @@ class DashboardViewModel(
     val reportBusy = mutableReportBusy.asStateFlow()
     private val mutableShareReport = MutableStateFlow<String?>(null)
     val shareReport = mutableShareReport.asStateFlow()
-    init { refresh() }
+    private var lastForegroundSyncMillis = 0L
+    init {
+        if (mutableGarminConnected.value) syncGarminIfNeeded() else refresh()
+    }
+
+    fun syncGarminIfNeeded() {
+        if (!mutableGarminConnected.value || mutableGarminBusy.value) return
+        val now = System.currentTimeMillis()
+        if (now - lastForegroundSyncMillis < FOREGROUND_SYNC_INTERVAL_MILLIS) return
+        lastForegroundSyncMillis = now
+        mutableGarminBusy.value = true
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) { repository.syncGarmin() }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (failure: Exception) {
+                mutableImportMessage.value = "Автоматичната Garmin синхронизация не успя: ${failure.message ?: "опитай отново по-късно."}"
+            } finally {
+                mutableGarminBusy.value = false
+                refresh()
+            }
+        }
+    }
 
     fun importCsv(source: CsvImportSource, csv: String) {
         viewModelScope.launch {
@@ -67,6 +91,7 @@ class DashboardViewModel(
     fun connectGarmin(apiKey: String) = runGarminAction("Garmin е свързан и днешните данни са синхронизирани.") {
         repository.connectGarmin(apiKey)
         mutableGarminConnected.value = true
+        onGarminConnectionChanged(true)
     }
 
     fun syncGarmin() = runGarminAction("Данните от Garmin са обновени.") { repository.syncGarmin() }
@@ -74,6 +99,7 @@ class DashboardViewModel(
     fun disconnectGarmin() = runGarminAction("Garmin ключът и синхронизираните Garmin данни са изтрити от устройството.") {
         repository.disconnectGarmin()
         mutableGarminConnected.value = false
+        onGarminConnectionChanged(false)
     }
 
     fun syncTrainingHistory(days: Int = 30) {
@@ -169,11 +195,16 @@ class DashboardViewModel(
     class Factory(
         private val repository: CsvImportRepository,
         private val runnerProfiles: com.fitlens.ai.data.RunnerProfileStore,
+        private val onGarminConnectionChanged: (Boolean) -> Unit = {},
     ) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(DashboardViewModel::class.java))
             @Suppress("UNCHECKED_CAST")
-            return DashboardViewModel(repository, runnerProfiles) as T
+            return DashboardViewModel(repository, runnerProfiles, onGarminConnectionChanged) as T
         }
+    }
+
+    private companion object {
+        const val FOREGROUND_SYNC_INTERVAL_MILLIS = 30 * 60 * 1000L
     }
 }
