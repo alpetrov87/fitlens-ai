@@ -102,6 +102,16 @@ jobs:
                       candidates.add(value)
           for value in sorted(candidates): print(value)
           PY
+          echo 'PUBLIC RUNNER API:'
+          curl --fail --location --compressed --silent --show-error \
+            'https://api.my-btr.com/api/runner/019e8190-3121-7052-9561-037b2ac2d68c' -o runner.json
+          head -c 50000 runner.json
+          echo
+          echo 'PUBLIC RESULTS API:'
+          curl --fail --location --compressed --silent --show-error \
+            'https://api.my-btr.com/api/runner/019e8190-3121-7052-9561-037b2ac2d68c/results?page=1&itemsPerPage=30' -o results.json
+          head -c 100000 results.json
+          echo
       - name: Publish temporary inspection result
         shell: bash
         run: |
