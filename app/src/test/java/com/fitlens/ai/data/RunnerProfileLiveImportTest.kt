@@ -2,11 +2,13 @@ package com.fitlens.ai.data
 
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 /** Temporary end-to-end verification against the user's two public profiles. */
 class RunnerProfileLiveImportTest {
     @Test fun importsCurrentBtrProfileThroughProductionClient() = runBlocking {
+        assumeTrue(System.getenv("FITLENS_LIVE_TESTS") == "true")
         val result = RunnerProfileImporter().import(
             "BTR", "https://www.my-btr.com/runners/019e8190-3121-7052-9561-037b2ac2d68c")
         assertTrue(result.score.orEmpty(), result.score.orEmpty().contains("409"))
@@ -14,6 +16,7 @@ class RunnerProfileLiveImportTest {
     }
 
     @Test fun importsCurrentItraProfileThroughProductionClient() = runBlocking {
+        assumeTrue(System.getenv("FITLENS_LIVE_TESTS") == "true")
         val result = RunnerProfileImporter().import(
             "ITRA", "https://itra.run/RunnerSpace/petrov.aleksandar.7422083")
         assertTrue(result.score.orEmpty(), result.score.orEmpty().contains("324"))
