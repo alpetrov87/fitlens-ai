@@ -80,7 +80,10 @@ fun DashboardScreen(
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Image(painterResource(R.drawable.fitlens_logo), contentDescription = null,
                     modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.small))
-                Text("FitLens AI", style = MaterialTheme.typography.titleLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("FitLens", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
+                    Text("AI", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.secondary)
+                }
                 Spacer(Modifier.weight(1f))
                 if (garminConnected) Icon(Icons.Default.CheckCircle, contentDescription = "Garmin е свързан",
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
@@ -112,7 +115,7 @@ private fun HomeScreen(
     var selectedEventId by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
         .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        TrailWelcomeCard()
+        Text("Твоят ден", style = MaterialTheme.typography.headlineMedium)
         Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forLanguageTag("bg"))),
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (connected) {
@@ -134,7 +137,7 @@ private fun HomeScreen(
             is DashboardState.Ready -> {
                 val data = state.dashboard
                 Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(
-                    MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.secondaryContainer,
+                    MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surface,
                 )), MaterialTheme.shapes.large)) {
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -212,8 +215,10 @@ private fun HomeScreen(
                     val event = events.firstOrNull { it.id == selectedEventId && it.date >= LocalDate.now().toString() }
                     onPrepareReport(event)
                 }, enabled = !historyBusy && !reportBusy,
-                    modifier = Modifier.fillMaxWidth()) {
-                    if (reportBusy || historyBusy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp)
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary), modifier = Modifier.fillMaxWidth()) {
+                    if (reportBusy || historyBusy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onSecondary)
                     else Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp)); Text(if (reportBusy || historyBusy) "Подготвям отчета…" else "Подготви отчет за ChatGPT")
                 }
