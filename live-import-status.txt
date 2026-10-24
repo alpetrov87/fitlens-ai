@@ -1,1 +1,1 @@
-gradle_exit=1
+gradle_exit=0
