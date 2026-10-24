@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.fitlens.ai.data.RunnerProfileLiveImportTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-10-24T12:25:16" hostname="runnervm8k3b6" time="3.36">
-  <properties/>
-  <testcase name="importsCurrentItraProfileThroughProductionClient" classname="com.fitlens.ai.data.RunnerProfileLiveImportTest" time="1.032"/>
-  <testcase name="importsCurrentBtrProfileThroughProductionClient" classname="com.fitlens.ai.data.RunnerProfileLiveImportTest" time="2.327"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
