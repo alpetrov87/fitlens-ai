@@ -70,6 +70,10 @@ jobs:
           probe numeric-results GET 'https://itra.run/RunnerSpace/RaceResults/7422083'
           probe pi-stats POST 'https://itra.run/api/Runner/RefreshRunnerPiGeneralStats' 'runnerId=7422083'
           probe runner-rank POST 'https://itra.run/api/runner/runnerrank' 'start=1&count=20&search=Aleksandar%20Petrov'
+          probe jina-reader GET 'https://r.jina.ai/https://itra.run/RunnerSpace/petrov.aleksandar.7422083'
+          probe google-translate GET 'https://itra-run.translate.goog/RunnerSpace/petrov.aleksandar.7422083?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en'
+          probe google-search GET 'https://www.google.com/search?q=%22Aleksandar+Petrov%22+%22ITRA%22+7422083'
+          probe bing-search GET 'https://www.bing.com/search?q=%22Aleksandar+Petrov%22+%22ITRA%22+7422083'
       - name: Publish temporary result
         shell: bash
         run: |
