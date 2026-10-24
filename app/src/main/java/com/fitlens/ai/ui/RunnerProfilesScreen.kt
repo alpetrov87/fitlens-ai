@@ -63,13 +63,15 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
                     results = imported.results ?: previousResults, source = newSource)
                 if (editing) {
                     score = updated.score; results = updated.results; source = updated.source
-                    message = imported.message
+                    save(updated)
+                    editing = false
+                    message = "${initial.provider} профилът е прочетен, запазен и показан."
                 } else {
                     save(updated)
                     message = "Профилът е обновен. Липсващите полета са запазени от предишното обновяване."
                 }
             } catch (cancelled: CancellationException) { throw cancelled
-            } catch (failure: Exception) { message = failure.message ?: "Обновяването не успя."
+            } catch (failure: Exception) { message = "${initial.provider}: ${failure.message ?: "Обновяването не успя."}"
             } finally { busy = false }
         }
     }
@@ -103,7 +105,7 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
         } else {
             OutlinedTextField(url, { url = it.take(500); source = "Ръчно въведени данни" }, enabled = !busy,
                 label = { Text("Линк към личния профил") }, modifier = Modifier.fillMaxWidth())
-            OutlinedButton(onClick = { refresh() }, enabled = !busy && url.isNotBlank()) { Text("Прочети профила") }
+            OutlinedButton(onClick = { refresh() }, enabled = !busy && url.isNotBlank()) { Text("Прочети, запази и покажи") }
             OutlinedTextField(score, { score = it.take(120); source = "Ръчно въведени или коригирани данни" }, enabled = !busy,
                 label = { Text("Показател и стойност") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(results, { results = it.take(4000); source = "Ръчно въведени или коригирани данни" }, enabled = !busy,

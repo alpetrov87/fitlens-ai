@@ -6,7 +6,9 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.HttpUrl
 import okhttp3.Dns
+import okhttp3.ResponseBody
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okio.Buffer
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -92,12 +94,22 @@ class EventLinkImporter {
                 }
                 val body = response.body ?: error("Страницата е празна.")
                 require((body.contentLength() < 0L || body.contentLength() <= MAX_PAGE_BYTES)) { "Страницата е прекалено голяма за импорт." }
-                val bytes = body.source().readByteArray(MAX_PAGE_BYTES + 1L)
-                require(bytes.size <= MAX_PAGE_BYTES) { "Страницата е прекалено голяма за импорт." }
-                return bytes.toString(Charsets.UTF_8)
+                return readBoundedBody(body)
             }
         }
         error("Страницата на събитието не може да бъде отворена.")
+    }
+
+    internal fun readBoundedBody(body: ResponseBody): String {
+        val source = body.source()
+        val buffer = Buffer()
+        while (buffer.size <= MAX_PAGE_BYTES) {
+            val remaining = MAX_PAGE_BYTES + 1L - buffer.size
+            val read = source.read(buffer, minOf(8_192L, remaining))
+            if (read == -1L) break
+        }
+        require(buffer.size <= MAX_PAGE_BYTES) { "Страницата е прекалено голяма за импорт." }
+        return buffer.readString(Charsets.UTF_8)
     }
 
     private fun rejectPrivateHost(host: String) {

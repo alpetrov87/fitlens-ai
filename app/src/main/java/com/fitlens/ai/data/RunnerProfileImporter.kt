@@ -19,6 +19,7 @@ class RunnerProfileImporter {
         require(page.isHttps && page.username.isEmpty() && page.password.isEmpty() && url.length <= 500 &&
             (page.host == domain || page.host.endsWith(".$domain"))) { "Използвай HTTPS профилен линк от $domain." }
         val downloader = EventLinkImporter()
+        var fallbackFailure: Throwable? = null
         val btrId = if (provider == "BTR") BTR_PROFILE_PATH.matchEntire(page.encodedPath)?.groupValues?.get(1) else null
         var extracted = if (btrId != null) {
             val apiBase = "https://api.my-btr.com/api/runner/$btrId"
@@ -46,7 +47,7 @@ class RunnerProfileImporter {
             val readerUrl = "https://r.jina.ai/https://${page.host}${page.encodedPath}".toHttpUrl()
             val reader = runCatching {
                 parseItraReader(downloader.download(readerUrl, "r.jina.ai", allowJson = true))
-            }.getOrNull()
+            }.onFailure { fallbackFailure = it }.getOrNull()
             if (reader != null) extracted = RunnerProfileImport(
                 score = extracted.score ?: reader.score,
                 results = extracted.results ?: reader.results,
@@ -54,7 +55,8 @@ class RunnerProfileImporter {
             )
         }
         require(extracted.score != null || extracted.results != null) {
-            "Не намерих публични показатели или резултати. Страницата може да изисква вход, JavaScript или различен профилен линк. Запазените стойности не са променени."
+            val detail = fallbackFailure?.message?.takeIf(String::isNotBlank)?.let { " Причина: $it" }.orEmpty()
+            "Не намерих публични показатели или резултати.$detail Запазените стойности не са променени."
         }
         extracted.copy(message = "Намерени: ${listOfNotNull(extracted.score?.let { "показател" }, extracted.results?.let { "резултати" }).joinToString(", ")}. Провери и запази. Липсващите полета не се променят.")
     }

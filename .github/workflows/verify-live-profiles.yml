@@ -1,4 +1,5 @@
 name: Verify live runner profiles
+# Re-run after changes to the production downloader.
 on:
   push:
     branches: ['feature/fitlens-android-mvp']

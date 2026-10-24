@@ -2,8 +2,16 @@ package com.fitlens.ai.data
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.ResponseBody.Companion.toResponseBody
 
 class EventLinkImporterTest {
+    @Test fun readsNormalResponseWithoutRequiringMaximumByteCount() {
+        val body = "{\"data\":\"short response\"}".toResponseBody("application/json".toMediaType())
+
+        assertEquals("{\"data\":\"short response\"}", EventLinkImporter().readBoundedBody(body))
+    }
+
     @Test fun extractsExtendedMetricsFromStructuredEventData() {
         val html = """
             <html><head><script type="application/ld+json">
