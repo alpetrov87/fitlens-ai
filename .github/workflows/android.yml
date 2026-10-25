@@ -1,0 +1,72 @@
+name: Android debug APK
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install pinned Android command-line tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk_root="$RUNNER_TEMP/fitlens-android-sdk"
+          curl --fail --location --retry 3 https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -o "$RUNNER_TEMP/android-tools.zip"
+          echo "d313adb7aedccf6cf0cfca51ec180f0059f5f8f8  $RUNNER_TEMP/android-tools.zip" | sha1sum --check
+          mkdir -p "$sdk_root/cmdline-tools"
+          unzip -q "$RUNNER_TEMP/android-tools.zip" -d "$sdk_root/cmdline-tools"
+          mv "$sdk_root/cmdline-tools/cmdline-tools" "$sdk_root/cmdline-tools/latest"
+          echo "ANDROID_HOME=$sdk_root" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$sdk_root" >> "$GITHUB_ENV"
+          echo "$sdk_root/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+      - name: Install Android SDK
+        shell: bash
+        run: |
+          # Feed enough license answers without a broken-pipe failure from yes.
+          sdkmanager --licenses <<< "$(printf 'y\n%.0s' {1..100})"
+          sdkmanager 'platforms;android-35' 'build-tools;34.0.0' 'platform-tools'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Configure APK version and optional persistent signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.FITLENS_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.FITLENS_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.FITLENS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.FITLENS_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "FITLENS_VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            test -n "$STORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
+            signing_path="$RUNNER_TEMP/fitlens-signing.jks"
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$signing_path"
+            chmod 600 "$signing_path"
+            echo "FITLENS_KEYSTORE_PATH=$signing_path" >> "$GITHUB_ENV"
+            echo "FITLENS_KEYSTORE_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "FITLENS_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "FITLENS_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Persistent signing is not configured. This APK may require uninstalling an older debug build."
+          fi
+      - name: Build, test and lint
+        run: ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: fitlens-ai-debug-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

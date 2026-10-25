@@ -1,0 +1,7 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- A simplified bear face stays legible when the launcher applies a single theme color. -->
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="M35,44C24,44 25,26 37,29C42,29 45,34 43,38C50,35 58,35 65,38C63,34 67,29 72,29C84,27 86,45 75,47C80,57 77,70 68,77C61,83 46,82 38,76C28,70 26,54 35,44Z M41,53A3,3 0,1 0,47,53A3,3 0,1 0,41,53Z M61,53A3,3 0,1 0,67,53A3,3 0,1 0,61,53Z M48,62Q54,58 60,62Q59,68 54,69Q49,68 48,62Z" />
+</vector>
