@@ -13,6 +13,7 @@ data class Dashboard(
     val nutritionDate: String? = null,
     val garminActivities: List<GarminActivity> = emptyList(),
     val garminCaloriesConsumed: Int? = null,
+    val recovery: GarminRecoveryDay? = null,
 )
 
 enum class CsvImportSource { GARMIN, MYFITNESSPAL }
@@ -98,9 +99,12 @@ class DefaultHealthRepository(
         val nutrition = nutrition.nutrition()
         val latestGarmin = imported?.latestGarmin()
         val latestNutrition = imported?.latestMyFitnessPal()
+        val today = java.time.LocalDate.now().toString()
+        val recovery = imported?.recoveryBetween(today, today)?.firstOrNull()
         val todaysActivities = imported?.activitiesForDate(java.time.LocalDate.now().toString()).orEmpty()
-        if (latestGarmin == null && latestNutrition == null) return Dashboard(activity, nutrition, garminActivities = todaysActivities)
+        if (latestGarmin == null && latestNutrition == null) return Dashboard(activity, nutrition, garminActivities = todaysActivities, recovery = recovery)
         return Dashboard(
+            recovery = recovery,
             activity = ActivitySummary(
                 steps = latestGarmin?.steps ?: activity.steps,
                 activeMinutes = latestGarmin?.activeMinutes ?: activity.activeMinutes,

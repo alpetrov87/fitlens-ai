@@ -67,7 +67,7 @@ fun DashboardScreen(
             NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 listOf(Triple("home", "Начало", Icons.Default.Home),
                     Triple("calendar", "Календар", Icons.Default.DateRange),
-                    Triple("runner", "Бегач", Icons.Default.Person),
+                    Triple("runner", "Моят прогрес", Icons.Default.Insights),
                     Triple("settings", "Настройки", Icons.Default.Settings)).forEach { (key, title, icon) ->
                     NavigationBarItem(selected = page == key, onClick = { page = key },
                         icon = { Icon(icon, contentDescription = null) }, label = { Text(title) })
@@ -142,15 +142,31 @@ private fun HomeScreen(
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(Icons.Default.DirectionsWalk, contentDescription = null)
-                            Text("ДНЕВНО ДВИЖЕНИЕ", style = MaterialTheme.typography.labelLarge)
+                            Text("ДВИЖЕНИЕ И ВЪЗСТАНОВЯВАНЕ", style = MaterialTheme.typography.labelLarge)
                         }
-                        Text("%,d".format(data.activity.steps), style = MaterialTheme.typography.displayMedium)
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                            Surface(shape = androidx.compose.foundation.shape.CircleShape,
+                                color = MaterialTheme.colorScheme.primaryContainer) {
+                                Icon(Icons.Default.DirectionsWalk, null, tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(24.dp).size(36.dp))
+                            }
+                            Text("%,d".format(data.activity.steps), style = MaterialTheme.typography.displayMedium)
+                        }
                         Text("крачки · ${data.activityOrigin.label()}${data.activityDate?.let { " · $it" }.orEmpty()}",
                             style = MaterialTheme.typography.bodyMedium)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                             StatValue("${data.activity.activeMinutes}", "активни минути")
                             StatValue("%.1f".format(data.activity.distanceKm), "километра")
                         }
+                        HorizontalDivider()
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                            val sleep = data.recovery?.sleepMinutes
+                            StatValue(sleep?.let { "${it / 60} ч ${it % 60} мин" } ?: "—", "сън")
+                            StatValue(data.recovery?.hrvLastNightMs?.let { "$it ms" } ?: "—", "HRV")
+                        }
+                        if (data.recovery == null) Text("Няма изтеглени данни за сън и HRV за днес.",
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
                     }
                 }
                 InfoCard("Хранене", Icons.Default.Restaurant) {

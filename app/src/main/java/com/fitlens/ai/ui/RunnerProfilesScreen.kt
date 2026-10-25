@@ -27,7 +27,7 @@ internal fun RunnerProfilesScreen() {
     val context = LocalContext.current
     val store = remember { RunnerProfileStore(context) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Моят профил на бегач", style = MaterialTheme.typography.headlineMedium)
+        Text("Моят прогрес", style = MaterialTheme.typography.headlineMedium)
         Text("Показатели и състезателна история от BTR и ITRA. Запазените данни се включват в отчета за ChatGPT.")
         Text("При ITRA WAF блокиране публичният профилен линк се прочита чрез Jina Reader. Не се изпращат ключове или лични Garmin данни.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -137,16 +137,25 @@ private fun EnduranceCards(score: String) {
     val colors = listOf(Color(0xFF777C76), Color(0xFF88CA32), Color(0xFFCBC600),
         Color(0xFF54C5E5), Color(0xFFAC6CAD), Color(0xFFDF7126), Color(0xFFB92E28))
     Text("Endurance Points", style = MaterialTheme.typography.titleLarge)
-    Text("Плъзни за всички категории →", style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant)
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        items((0..6).toList()) { point ->
-            val count = Regex("ITRA $point: (\\d+)").find(score)?.groupValues?.get(1) ?: "0"
-            Surface(shape = RoundedCornerShape(22.dp), color = colors[point]) {
-                Column(Modifier.width(132.dp).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("ITRA $point", style = MaterialTheme.typography.titleLarge, color = Color.Black)
-                    Text("×$count", style = MaterialTheme.typography.headlineLarge, color = Color.Black)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        (0..6).toList().chunked(2).forEach { points ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                points.forEach { point ->
+                    val count = Regex("ITRA $point: (\\d+)").find(score)?.groupValues?.get(1) ?: "0"
+                    Surface(modifier = Modifier.weight(1f), shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                        Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Surface(shape = RoundedCornerShape(10.dp), color = colors[point], modifier = Modifier.weight(1f)) {
+                                Text("ITRA $point", modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
+                                    style = MaterialTheme.typography.labelLarge, color = Color.Black)
+                            }
+                            Text("×$count", style = MaterialTheme.typography.titleLarge)
+                        }
+                    }
                 }
+                if (points.size == 1) Spacer(Modifier.weight(1f))
             }
         }
     }
