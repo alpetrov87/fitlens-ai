@@ -24,6 +24,9 @@ internal fun SettingsScreen(
     var key by remember { mutableStateOf("") }
     var confirm by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val projectStore = remember { com.fitlens.ai.data.ChatGptProjectStore(context) }
+    var projectUrl by remember { mutableStateOf(projectStore.load()) }
+    var projectMessage by remember { mutableStateOf<String?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
         .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
         Text("Настройки", style = MaterialTheme.typography.headlineMedium)
@@ -60,6 +63,23 @@ internal fun SettingsScreen(
             }
         }
         InfoCard("ChatGPT анализ", Icons.Default.AutoAwesome) {
+            OutlinedTextField(projectUrl, { projectUrl = it.take(500); projectMessage = null },
+                label = { Text("Линк към моя ChatGPT проект") }, placeholder = { Text("https://chatgpt.com/g/g-p-…/project") },
+                singleLine = true, modifier = Modifier.fillMaxWidth())
+            Row {
+                TextButton(onClick = {
+                    runCatching { projectStore.save(projectUrl) }.onSuccess { projectMessage = "Проектът е запазен." }
+                        .onFailure { projectMessage = it.message }
+                }) { Text("Запази проекта") }
+                TextButton(onClick = {
+                    runCatching { projectStore.save(""); projectUrl = "" }.onSuccess { projectMessage = "Линкът е премахнат." }
+                        .onFailure { projectMessage = it.message }
+                }) { Text("Премахни") }
+            }
+            projectMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+            Text("Създай проект в ChatGPT и копирай адреса му от браузъра. При анализ FitLens копира отчета и отваря проекта. Постави текста в нов или съществуващ разговор и го изпрати сам.",
+                style = MaterialTheme.typography.bodySmall)
+
             Text("Не е необходим API ключ. От Начало FitLens подготвя отчет и го отваря чрез Android менюто за споделяне.")
             Text("Преди споделяне ще видиш целия текст. Отговорът остава в избрания ChatGPT разговор и не се връща автоматично във FitLens.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -237,16 +237,32 @@ private fun HomeScreen(
         }
     }
     if (shareReport != null) {
+        val projectContext = androidx.compose.ui.platform.LocalContext.current
+        val projectUrl = ChatGptProjectStore(projectContext).load()
+        var projectError by remember(shareReport) { mutableStateOf<String?>(null) }
         AlertDialog(onDismissRequest = onDismissShareReport,
             title = { Text("Преглед на отчета") },
             text = { Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
                 Text("Точно този текст ще бъде споделен. Garmin ключът и access token-ът не са включени.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (projectUrl.isNotBlank()) {
+                    FilledTonalButton(onClick = {
+                        try {
+                            val clipboard = projectContext.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            clipboard.setPrimaryClip(android.content.ClipData.newPlainText("FitLens отчет", shareReport))
+                            projectContext.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(projectUrl)))
+                            android.widget.Toast.makeText(projectContext, "Отчетът е копиран. Постави го в разговор в проекта.", android.widget.Toast.LENGTH_LONG).show()
+                            onDismissShareReport()
+                        } catch (_: Exception) { projectError = "Отчетът не можа да бъде копиран или проектът да бъде отворен. Опитай отново или използвай нов чат." }
+                    }, modifier = Modifier.fillMaxWidth()) { Text("Копирай отчета и отвори моя проект") }
+                    Text("Постави текста в избрания разговор и го изпрати.", style = MaterialTheme.typography.bodySmall)
+                }
+                projectError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 Spacer(Modifier.height(12.dp)); Text(shareReport, style = MaterialTheme.typography.bodySmall)
             } },
             confirmButton = { TextButton(onClick = { onOpenChatGpt(shareReport); onDismissShareReport() }) {
                 Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp)); Text("Отвори в ChatGPT")
+                Spacer(Modifier.width(6.dp)); Text("Нов чат / споделяне")
             } },
             dismissButton = { TextButton(onClick = onDismissShareReport) { Text("Отказ") } })
     }
