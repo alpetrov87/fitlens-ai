@@ -34,7 +34,7 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
     LaunchedEffect(state.loaded, state.loading, state.error) {
         if (!state.loaded && !state.loading && state.error == null) onLoad(RaceCalendarCatalogue.HOME)
     }
-    InfoCard("Открий състезание", Icons.Default.Explore) {
+    InfoCard(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.ui_048), Icons.Default.Explore) {
         Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_030))
         OutlinedButton(onClick = { onLoad(RaceCalendarCatalogue.HOME) }, enabled = !state.loading) {
             Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_031))
@@ -43,7 +43,7 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         OutlinedTextField(query, { query = it }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_032)) }, modifier = Modifier.fillMaxWidth())
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("all" to "Всички", "trail_running" to "Трейл", "mountain_biking" to "MTB").forEach { (key, label) ->
+            listOf("all" to com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_129), "trail_running" to com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_130), "mountain_biking" to "MTB").forEach { (key, label) ->
                 FilterChip(selected = sport == key, onClick = { sport = key }, label = { Text(label) })
             }
         }
@@ -59,12 +59,12 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
         val month = YearMonth.parse(monthText)
         if (calendar) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                IconButton(onClick = { monthText = month.minusMonths(1).toString(); day = "" }) { Icon(Icons.Default.ChevronLeft, "Предишен месец") }
-                Text(month.format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.forLanguageTag("bg"))), style = MaterialTheme.typography.titleMedium)
-                IconButton(onClick = { monthText = month.plusMonths(1).toString(); day = "" }) { Icon(Icons.Default.ChevronRight, "Следващ месец") }
+                IconButton(onClick = { monthText = month.minusMonths(1).toString(); day = "" }) { Icon(Icons.Default.ChevronLeft, com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_131)) }
+                Text(month.format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault())), style = MaterialTheme.typography.titleMedium)
+                IconButton(onClick = { monthText = month.plusMonths(1).toString(); day = "" }) { Icon(Icons.Default.ChevronRight, com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_132)) }
             }
             val dates = groups.flatten().map { it.date }.toSet()
-            Row { listOf("П", "В", "С", "Ч", "П", "С", "Н").forEach { Text(it, Modifier.weight(1f)) } }
+            Row { java.time.DayOfWeek.entries.map { it.getDisplayName(java.time.format.TextStyle.NARROW, Locale.getDefault()) }.forEach { Text(it, Modifier.weight(1f)) } }
             val offset = month.atDay(1).dayOfWeek.value - 1
             repeat((offset + month.lengthOfMonth() + 6) / 7) { week ->
                 Row {
@@ -82,11 +82,11 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
                     }
                 }
             }
-            Text(if (day.isBlank()) "Състезания през месеца" else "Състезания на $day", style = MaterialTheme.typography.labelLarge)
+            Text(if (day.isBlank()) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_133) else com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_005, day), style = MaterialTheme.typography.labelLarge)
             TextButton(onClick = { day = ""; monthText = YearMonth.now().toString() }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_035)) }
         }
         val visible = groups.filter { routes -> !calendar || routes.any { if (day.isNotBlank()) it.date == day else it.date.startsWith(monthText) } }
-        Text("${visible.size} състезания", style = MaterialTheme.typography.labelLarge)
+        Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_006, visible.size), style = MaterialTheme.typography.labelLarge)
         if (visible.isEmpty() && state.loaded) Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_036))
         visible.forEach { routes ->
             val first = routes.first()
@@ -97,11 +97,11 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
                     Text(routes.map { it.date }.distinct().let { if (it.size == 1) it.first() else "${it.first()} – ${it.last()}" })
                     if (first.location.isNotBlank()) Text(first.location)
                     Text(routes.map { sportLabel(it.sport) }.distinct().joinToString(" · "), color = MaterialTheme.colorScheme.primary)
-                    Text("${routes.size} дистанции · Виж и избери →", style = MaterialTheme.typography.labelLarge)
+                    Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_007, routes.size), style = MaterialTheme.typography.labelLarge)
                 }
             }
         }
-        Text("Източник: racecalendar.bg · Личните участия са в отделния ти календар.", style = MaterialTheme.typography.bodySmall)
+        Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_134), style = MaterialTheme.typography.bodySmall)
     }
     opened?.let { routes ->
         AlertDialog(onDismissRequest = { opened = null }, title = { Text(routes.first().catalogueTitle.ifBlank { routes.first().title }) },
@@ -111,10 +111,10 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
                         val added = saved.any { it.title == route.title && it.date == route.date && it.time == route.time && it.distanceKm == route.distanceKm && it.sport == route.sport }
                         HorizontalDivider()
                         Text(route.title, style = MaterialTheme.typography.titleSmall)
-                        Text("${sportLabel(route.sport)} · ${route.date} · ${route.time.ifBlank { "Часът не е публикуван" }}")
-                        Text(listOfNotNull(route.distanceKm?.let { "$it km" }, route.elevationGainMeters?.let { "D+ $it m" }, route.cutoffTime.takeIf(String::isNotBlank)?.let { "Лимит: $it" }).joinToString(" · "))
+                        Text("${sportLabel(route.sport)} · ${route.date} · ${route.time.ifBlank { com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.no_start_time) }}")
+                        Text(listOfNotNull(route.distanceKm?.let { "$it km" }, route.elevationGainMeters?.let { "D+ $it m" }, route.cutoffTime.takeIf(String::isNotBlank)?.let { com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_022, it) }).joinToString(" · "))
                         OutlinedButton(onClick = { opened = null; onSelect(route) }, enabled = !busy && !added) {
-                            Text(if (added) "В моя календар ✓" else "Добави в моя календар")
+                            Text(if (added) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_135) else com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_136))
                         }
                     }
                 }

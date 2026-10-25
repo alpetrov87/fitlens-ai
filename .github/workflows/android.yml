@@ -39,6 +39,28 @@ jobs:
           sdkmanager --licenses <<< "$(printf 'y\n%.0s' {1..100})"
           sdkmanager 'platforms;android-35' 'build-tools;34.0.0' 'platform-tools'
       - uses: gradle/actions/setup-gradle@v4
+      - name: Configure APK version and optional persistent signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.FITLENS_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.FITLENS_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.FITLENS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.FITLENS_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "FITLENS_VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            test -n "$STORE_PASSWORD" && test -n "$KEY_ALIAS" && test -n "$KEY_PASSWORD"
+            signing_path="$RUNNER_TEMP/fitlens-signing.jks"
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$signing_path"
+            chmod 600 "$signing_path"
+            echo "FITLENS_KEYSTORE_PATH=$signing_path" >> "$GITHUB_ENV"
+            echo "FITLENS_KEYSTORE_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+            echo "FITLENS_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+            echo "FITLENS_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Persistent signing is not configured. This APK may require uninstalling an older debug build."
+          fi
       - name: Build, test and lint
         run: ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
       - name: Upload debug APK

@@ -51,21 +51,21 @@ internal fun sportIcon(sport: String): ImageVector = when {
 }
 
 internal fun sportLabel(sport: String): String = when (sport) {
-    "running" -> "Бягане"
-    "trail_running" -> "Трейл бягане"
+    "running" -> com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_119)
+    "trail_running" -> com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_120)
     "mountain_biking" -> "MTB"
-    "cycling" -> "Колоездене"
-    "swimming" -> "Плуване"
-    "walking" -> "Ходене"
-    "hiking" -> "Преход"
-    "strength_training" -> "Силова тренировка"
-    "yoga" -> "Йога"
-    "other" -> "Друго"
+    "cycling" -> com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_121)
+    "swimming" -> com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_122)
+    "walking" -> com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_123)
+    "hiking" -> com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_124)
+    "strength_training" -> com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_125)
+    "yoga" -> com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_126)
+    "other" -> com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_127)
     else -> sport.replace('_', ' ').replaceFirstChar { it.uppercase() }
 }
 
 internal fun MetricOrigin.label(): String = when (this) {
-    MetricOrigin.NONE -> "Няма данни"
+    MetricOrigin.NONE -> com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_128)
     MetricOrigin.GARMIN_CSV -> "Garmin CSV"
     MetricOrigin.GARMIN_PERSONAL_API -> "Garmin"
     MetricOrigin.MYFITNESSPAL_CSV -> "MyFitnessPal CSV"

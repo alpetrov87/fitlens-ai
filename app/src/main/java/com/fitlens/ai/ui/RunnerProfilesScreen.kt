@@ -28,8 +28,8 @@ internal fun RunnerProfilesScreen() {
     val store = remember { RunnerProfileStore(context) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_038), style = MaterialTheme.typography.headlineMedium)
-        Text("Показатели и състезателна история от BTR и ITRA. Запазените данни се включват в отчета за ChatGPT.")
-        Text("При ITRA WAF блокиране публичният профилен линк се прочита чрез Jina Reader. Не се изпращат ключове или лични Garmin данни.",
+        Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_140))
+        Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_141),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         store.all().forEach { profile -> key(profile.provider) { RunnerProviderCard(profile, store) } }
     }
@@ -62,20 +62,20 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
                 val previousScore = if (editing) score else saved.score
                 val previousResults = if (editing) results else saved.results
                 val mixed = (imported.score == null && previousScore.isNotBlank()) || (imported.results == null && previousResults.isNotBlank())
-                val newSource = if (mixed) "Публична страница и предишни запазени стойности" else "Извлечено от публична профилна страница"
+                val newSource = if (mixed) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_142) else com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_143)
                 val updated = saved.copy(url = target, score = imported.score ?: previousScore,
                     results = imported.results ?: previousResults, source = newSource)
                 if (editing) {
                     score = updated.score; results = updated.results; source = updated.source
                     save(updated)
                     editing = false
-                    message = "${initial.provider} профилът е прочетен, запазен и показан."
+                    message = com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_003, initial.provider)
                 } else {
                     save(updated)
-                    message = "Профилът е обновен. Липсващите полета са запазени от предишното обновяване."
+                    message = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_144)
                 }
             } catch (cancelled: CancellationException) { throw cancelled
-            } catch (failure: Exception) { message = "${initial.provider}: ${failure.message ?: "Обновяването не успя."}"
+            } catch (failure: Exception) { message = "${initial.provider}: ${failure.message ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.refresh_failed)}"
             } finally { busy = false }
         }
     }
@@ -84,15 +84,15 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (!editing) {
             val indicators = saved.score.split(" · ").filter(String::isNotBlank)
-            Text(indicators.firstOrNull() ?: "Няма извлечен показател", style = MaterialTheme.typography.headlineSmall,
+            Text(indicators.firstOrNull() ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_145), style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary)
             if (initial.provider == "ITRA") EnduranceCards(saved.score)
             indicators.drop(1).filterNot { it.startsWith("ITRA ") }.forEach { indicator -> Text(indicator, style = MaterialTheme.typography.bodyLarge) }
-            if (saved.updated.isNotBlank()) Text("Последен запис: ${saved.updated}", style = MaterialTheme.typography.labelMedium)
+            if (saved.updated.isNotBlank()) Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_000, saved.updated), style = MaterialTheme.typography.labelMedium)
             Text(saved.source, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val raceRows = saved.results.lineSequence().filter(String::isNotBlank).toList()
-            Text("Състезателни резултати · ${raceRows.size}", style = MaterialTheme.typography.titleMedium)
-            if (raceRows.isEmpty()) Text("Няма налични резултати. Обнови профила или добави данни чрез „Редактирай“.")
+            Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_001, raceRows.size), style = MaterialTheme.typography.titleMedium)
+            if (raceRows.isEmpty()) Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_146))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(raceRows) { result ->
                     Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(24.dp)) {
@@ -104,30 +104,30 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
                 }
             }
             Button(onClick = { refresh() }, enabled = !busy && saved.url.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
-                Text(if (busy) "Обновяване…" else "Обнови от профила")
+                Text(if (busy) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_147) else com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_148))
             }
             TextButton(onClick = {
                 url = saved.url; score = saved.score; results = saved.results; source = saved.source; message = null; editing = true
             }, enabled = !busy) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_039)) }
         } else {
-            OutlinedTextField(url, { url = it.take(500); source = "Ръчно въведени данни" }, enabled = !busy,
+            OutlinedTextField(url, { url = it.take(500); source = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_149) }, enabled = !busy,
                 label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_040)) }, modifier = Modifier.fillMaxWidth())
             OutlinedButton(onClick = { refresh() }, enabled = !busy && url.isNotBlank()) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_041)) }
-            OutlinedTextField(score, { score = it.take(120); source = "Ръчно въведени или коригирани данни" }, enabled = !busy,
+            OutlinedTextField(score, { score = it.take(120); source = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_150) }, enabled = !busy,
                 label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_042)) }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(results, { results = it.take(4000); source = "Ръчно въведени или коригирани данни" }, enabled = !busy,
+            OutlinedTextField(results, { results = it.take(4000); source = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_150) }, enabled = !busy,
                 label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_043)) }, minLines = 3, modifier = Modifier.fillMaxWidth())
             Button(onClick = {
-                runCatching { save(saved.copy(url = url, score = score, results = results, source = source)); editing = false; message = "Профилът е запазен." }
-                    .onFailure { message = it.message ?: "Записът не успя." }
+                runCatching { save(saved.copy(url = url, score = score, results = results, source = source)); editing = false; message = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_151) }
+                    .onFailure { message = it.message ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_152) }
             }, enabled = !busy) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_044)) }
             TextButton(onClick = { editing = false; message = null }, enabled = !busy) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_014)) }
         }
         TextButton(onClick = {
             val target = saved.url.ifBlank { if (initial.provider == "BTR") "https://www.my-btr.com/" else "https://itra.run/" }
             runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target))) }
-                .onFailure { message = "Няма приложение за отваряне на линка." }
-        }) { Text("Отвори ${initial.provider} профила") }
+                .onFailure { message = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_153) }
+        }) { Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_002, initial.provider)) }
         message?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
     }
 }

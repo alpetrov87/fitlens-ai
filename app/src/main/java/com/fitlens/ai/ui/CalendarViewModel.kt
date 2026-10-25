@@ -42,7 +42,7 @@ class CalendarViewModel(private val store: CalendarEventStore, private val linkI
             } catch (cancelled: CancellationException) { throw cancelled
             } catch (failure: Exception) {
                 mutableCatalogue.value = mutableCatalogue.value.copy(loading = false,
-                    error = failure.message ?: "Календарът на racecalendar.bg не може да бъде прочетен.")
+                    error = failure.message ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_137))
             }
         }
     }
@@ -60,7 +60,7 @@ class CalendarViewModel(private val store: CalendarEventStore, private val linkI
                 throw cancelled
             } catch (failure: Exception) {
                 mutableState.value = mutableState.value.copy(loading = false,
-                    error = failure.message ?: "Линкът на събитието не може да бъде прочетен.")
+                    error = failure.message ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_138))
             } finally {
                 operationRunning = false
             }
@@ -80,7 +80,7 @@ class CalendarViewModel(private val store: CalendarEventStore, private val linkI
                 throw cancelled
             } catch (failure: Exception) {
                 mutableState.value = mutableState.value.copy(loading = false,
-                    error = failure.message ?: "Календарът не може да бъде зареден.")
+                    error = failure.message ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_139))
             } finally {
                 operationRunning = false
             }

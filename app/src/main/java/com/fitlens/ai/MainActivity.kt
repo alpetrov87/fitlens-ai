@@ -40,8 +40,13 @@ import java.io.InputStreamReader
 import java.nio.charset.StandardCharsets
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(base: android.content.Context) {
+        super.attachBaseContext(com.fitlens.ai.data.AppLanguage.wrap(base))
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        java.util.Locale.setDefault(resources.configuration.locales[0])
+        com.fitlens.ai.data.LocalizedText.initialize(this)
         enableEdgeToEdge()
         LegacyAiCredentialCleaner.run(applicationContext)
         GarminSyncScheduler.reconcile(applicationContext)

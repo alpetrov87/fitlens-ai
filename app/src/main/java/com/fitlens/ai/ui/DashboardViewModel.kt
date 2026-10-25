@@ -60,7 +60,7 @@ class DashboardViewModel(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableImportMessage.value = "Автоматичната Garmin синхронизация не успя: ${failure.message ?: "опитай отново по-късно."}"
+                mutableImportMessage.value = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.auto_sync_failed)
             } finally {
                 mutableGarminBusy.value = false
                 refresh()
@@ -74,29 +74,29 @@ class DashboardViewModel(
             try {
                 val count = withContext(Dispatchers.IO) { repository.importCsv(source, csv) }
                 mutableImportMessage.value = when (source) {
-                    CsvImportSource.GARMIN -> "Импортирани са данни от Garmin за $count дати."
-                    CsvImportSource.MYFITNESSPAL -> "Импортирани са хранителни записи от MyFitnessPal за $count дати."
+                    CsvImportSource.GARMIN -> com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_017, count)
+                    CsvImportSource.MYFITNESSPAL -> com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_018, count)
                 }
                 refresh()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableImportMessage.value = failure.message ?: "CSV файлът не може да бъде импортиран."
+                mutableImportMessage.value = failure.message ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_154)
             }
         }
     }
 
     fun reportImportError(message: String) { mutableImportMessage.value = message }
 
-    fun connectGarmin(apiKey: String) = runGarminAction("Garmin е свързан и днешните данни са синхронизирани.") {
+    fun connectGarmin(apiKey: String) = runGarminAction(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_155)) {
         repository.connectGarmin(apiKey)
         mutableGarminConnected.value = true
         onGarminConnectionChanged(true)
     }
 
-    fun syncGarmin() = runGarminAction("Данните от Garmin са обновени.") { repository.syncGarmin() }
+    fun syncGarmin() = runGarminAction(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_156)) { repository.syncGarmin() }
 
-    fun disconnectGarmin() = runGarminAction("Garmin ключът и синхронизираните Garmin данни са изтрити от устройството.") {
+    fun disconnectGarmin() = runGarminAction(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_157)) {
         repository.disconnectGarmin()
         mutableGarminConnected.value = false
         onGarminConnectionChanged(false)
@@ -109,11 +109,11 @@ class DashboardViewModel(
             try {
                 val result = withContext(Dispatchers.IO) { repository.syncTrainingHistory(days) }
                 mutableHistoryCount.value = result.activities.size
-                mutableImportMessage.value = "Изтеглени са ${result.activities.size} Garmin активности и наличните обобщения за сън/HRV за последните $days дни."
+                mutableImportMessage.value = com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_019, result.activities.size, days)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableImportMessage.value = failure.message ?: "Garmin историята не може да се изтегли."
+                mutableImportMessage.value = failure.message ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_158)
             } finally { mutableHistoryBusy.value = false }
         }
     }
@@ -135,12 +135,12 @@ class DashboardViewModel(
                     )
                 }
                 mutableHistoryCount.value = history.activities.size
-                require(history.activities.isNotEmpty()) { "Няма Garmin активности за отчета. Синхронизирай историята и опитай отново." }
-                mutableShareReport.value = ChatGptShareReport.build(history.activities, history.recovery, event, runnerProfiles.all())
+                require(history.activities.isNotEmpty()) { com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_159) }
+                mutableShareReport.value = ChatGptShareReport.build(history.activities, history.recovery, event, runnerProfiles.all(), java.util.Locale.getDefault().language)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableImportMessage.value = failure.message ?: "Отчетът за ChatGPT не може да бъде подготвен."
+                mutableImportMessage.value = failure.message ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_160)
             } finally { mutableHistoryBusy.value = false; mutableReportBusy.value = false }
         }
     }
@@ -151,7 +151,7 @@ class DashboardViewModel(
         if (mutableGarminBusy.value) return
         mutableGarminBusy.value = true
         viewModelScope.launch {
-            mutableImportMessage.value = "Свързване с Garmin…"
+            mutableImportMessage.value = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_161)
             try {
                 withContext(Dispatchers.IO) { action() }
                 mutableImportMessage.value = success
@@ -159,7 +159,7 @@ class DashboardViewModel(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableImportMessage.value = failure.message ?: "Garmin синхронизацията неуспешна."
+                mutableImportMessage.value = failure.message ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_162)
             } finally {
                 mutableGarminBusy.value = false
             }
@@ -170,12 +170,12 @@ class DashboardViewModel(
         viewModelScope.launch {
             try {
                 withContext(Dispatchers.IO) { repository.clearImports() }
-                mutableImportMessage.value = "Импортираните данни са изтрити от устройството."
+                mutableImportMessage.value = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_163)
                 refresh()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {
-                mutableImportMessage.value = failure.message ?: "Данните не могат да бъдат изтрити."
+                mutableImportMessage.value = failure.message ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_164)
             }
         }
     }

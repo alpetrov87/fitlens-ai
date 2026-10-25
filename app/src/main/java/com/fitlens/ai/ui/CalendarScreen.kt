@@ -42,7 +42,7 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
         Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_045), style = MaterialTheme.typography.headlineMedium)
         Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_046), color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
-        state.error?.let { error -> InfoCard("Календарът има нужда от внимание", Icons.Default.Info) {
+        state.error?.let { error -> InfoCard(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_165), Icons.Default.Info) {
             Text(error)
             TextButton(onClick = onRetry, enabled = !state.loading) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_017)) }
         } }
@@ -60,16 +60,16 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween) {
                     IconButton(onClick = { monthText = month.minusMonths(1).toString() }) {
-                        Icon(Icons.Default.ChevronLeft, contentDescription = "Предишен месец")
+                        Icon(Icons.Default.ChevronLeft, contentDescription = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_131))
                     }
-                    Text(month.format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.forLanguageTag("bg")))
+                    Text(month.format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault()))
                         .replaceFirstChar { it.uppercase() }, style = MaterialTheme.typography.titleMedium)
                     IconButton(onClick = { monthText = month.plusMonths(1).toString() }) {
-                        Icon(Icons.Default.ChevronRight, contentDescription = "Следващ месец")
+                        Icon(Icons.Default.ChevronRight, contentDescription = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_132))
                     }
                 }
                 Row(Modifier.fillMaxWidth()) {
-                    listOf("П", "В", "С", "Ч", "П", "С", "Н").forEach {
+                    java.time.DayOfWeek.entries.map { it.getDisplayName(java.time.format.TextStyle.NARROW, Locale.getDefault()) }.forEach {
                         Box(Modifier.weight(1f).height(32.dp), contentAlignment = Alignment.Center) {
                             Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -85,7 +85,7 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
                                 if (day in 1..month.lengthOfMonth()) {
                                     val date = month.atDay(day).toString()
                                     TextButton(onClick = { selected = date }, modifier = Modifier.heightIn(min = 48.dp).semantics {
-                                        contentDescription = "$date${if (selected == date) ", избран ден" else ""}${if (date in eventDates) ", има събития" else ""}"
+                                        contentDescription = "$date${if (selected == date) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.selected_day) else ""}${if (date in eventDates) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.has_events) else ""}"
                                     },
                                         contentPadding = PaddingValues(0.dp), shape = CircleShape,
                                         colors = ButtonDefaults.textButtonColors(
@@ -108,7 +108,7 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(Modifier.width(8.dp)); Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_050))
         }
-        Text(LocalDate.parse(selected).format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("bg"))),
+        Text(LocalDate.parse(selected).format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.getDefault())),
             style = MaterialTheme.typography.titleLarge)
         val dayEvents = state.events.filter { it.date == selected }
         if (dayEvents.isEmpty()) Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_051), color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -119,7 +119,7 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
             upcoming.forEach { event -> EventCard(event, !state.loading) { deleteEvent = event } }
         }
         }
-        Text("Събитията са лични и се пазят на устройството. Garmin Personal API все още няма endpoint за бъдещ календар.",
+        Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_166),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     if (showAdd) EventDialog(selected, state.loading, state.error,
@@ -128,7 +128,7 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
         } }, onImportLink = { url, imported -> onImportLink(url, selectedDraft?.date ?: selected, imported) }, initialDraft = selectedDraft)
     deleteEvent?.let { event ->
         AlertDialog(onDismissRequest = { deleteEvent = null }, title = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_053)) },
-            text = { Text("Да се изтрие ли „${event.title}“ от календара?") },
+            text = { Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_008, event.title)) },
             confirmButton = { TextButton(onClick = { onDelete(event.id); deleteEvent = null }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_013)) } },
             dismissButton = { TextButton(onClick = { deleteEvent = null }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_014)) } })
     }
@@ -143,20 +143,20 @@ private fun EventCard(event: CalendarEvent, enabled: Boolean, onDelete: () -> Un
             SportBadge(event.sport)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(event.title, style = MaterialTheme.typography.titleMedium)
-                Text("${event.date} · ${event.time.ifBlank { "Цял ден" }}", style = MaterialTheme.typography.bodySmall)
+                Text("${event.date} · ${event.time.ifBlank { com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.all_day) }}", style = MaterialTheme.typography.bodySmall)
                 Text(sportLabel(event.sport), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 if (event.location.isNotBlank()) Text(event.location, style = MaterialTheme.typography.bodySmall)
                 val details = buildList {
                     event.distanceKm?.let { add("${"%.2f".format(Locale.US, it).trimEnd('0').trimEnd('.')} km") }
                     event.elevationGainMeters?.let { add("D+ $it m") }
-                    event.cutoffTime.takeIf(String::isNotBlank)?.let { add("лимит $it") }
+                    event.cutoffTime.takeIf(String::isNotBlank)?.let { add(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_023, it)) }
                 }
                 if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
                 if (event.sourceUrl.isNotBlank()) TextButton(onClick = {
                     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(event.sourceUrl))) }
                 }, contentPadding = PaddingValues(0.dp)) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_054)) }
             }
-            IconButton(onClick = onDelete, enabled = enabled) { Icon(Icons.Default.DeleteOutline, contentDescription = "Изтрий ${event.title}") }
+            IconButton(onClick = onDelete, enabled = enabled) { Icon(Icons.Default.DeleteOutline, contentDescription = com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_009, event.title)) }
         }
     }
 }
@@ -186,7 +186,7 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
                 OutlinedTextField(sourceUrl, { sourceUrl = it.take(500); linkStatus = null },
                     label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_057)) }, singleLine = true,
                     placeholder = { Text("https://…") }, enabled = !busy)
-                Text("При попълване FitLens отваря публичната HTTPS страница от телефона ти. Провери намерените данни преди запис.",
+                Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_167),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 OutlinedButton(onClick = { onImportLink(sourceUrl) { imported ->
                     title = imported.draft.title
@@ -198,12 +198,12 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
                     distanceKm = imported.draft.distanceKm?.toString().orEmpty()
                     cutoffTime = imported.draft.cutoffTime
                     elevationGainMeters = imported.draft.elevationGainMeters?.toString().orEmpty()
-                    linkStatus = if (imported.dateWasFound) "Данните са попълнени. Провери ги преди запис." else
-                        "Намерих името, но не и датата. Провери и попълни останалото ръчно."
+                    linkStatus = if (imported.dateWasFound) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_168) else
+                        com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_169)
                     error = null
                 } }, enabled = sourceUrl.isNotBlank() && !busy, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Link, contentDescription = null)
-                    Spacer(Modifier.width(8.dp)); Text(if (busy) "Чета страницата…" else "Попълни от линка")
+                    Spacer(Modifier.width(8.dp)); Text(if (busy) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_170) else com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_171))
                 }
                 linkStatus?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary) }
                 OutlinedButton(onClick = { dateOpen = true }, modifier = Modifier.fillMaxWidth()) {
@@ -216,7 +216,7 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
                 OutlinedTextField(elevationGainMeters, { elevationGainMeters = it.take(8) }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_060)) },
                     placeholder = { Text("1200") }, singleLine = true)
                 OutlinedTextField(cutoffTime, { cutoffTime = it.take(80) }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_061)) },
-                    placeholder = { Text("6 часа") }, singleLine = true)
+                    placeholder = { Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_172)) }, singleLine = true)
                 Box {
                     OutlinedButton(onClick = { sportsOpen = true }, modifier = Modifier.fillMaxWidth()) {
                         Icon(sportIcon(sport), contentDescription = null, modifier = Modifier.size(20.dp))
@@ -238,16 +238,16 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
                 sourceUrl = sourceUrl.trim(), distanceKm = distanceKm.trim().replace(',', '.').toDoubleOrNull(),
                 cutoffTime = cutoffTime.trim(), elevationGainMeters = elevationGainMeters.trim().toIntOrNull())
             if (distanceKm.isNotBlank() && draft.distanceKm == null) {
-                error = "Дистанцията трябва да е число, например 42.2."
+                error = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_173)
                 return@TextButton
             }
             if (elevationGainMeters.isNotBlank() && draft.elevationGainMeters == null) {
-                error = "Денивелацията трябва да е цяло число в метри."
+                error = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_174)
                 return@TextButton
             }
             val failure = runCatching { draft.validate() }.exceptionOrNull()
             if (failure != null) error = failure.message else { error = null; onSave(draft) }
-        }) { Text(if (busy) "Запазване…" else "Запази") } },
+        }) { Text(if (busy) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_175) else com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_176)) } },
         dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_014)) } })
     if (dateOpen) {
         val picker = rememberDatePickerState(initialSelectedDateMillis = LocalDate.parse(date).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())

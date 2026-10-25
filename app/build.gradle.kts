@@ -10,9 +10,18 @@ android {
         applicationId = "com.fitlens.ai"
         minSdk = 26
         targetSdk = 35
-        versionCode = 16
-        versionName = "0.14.0"
+        versionCode = System.getenv("FITLENS_VERSION_CODE")?.toInt() ?: 17
+        versionName = "0.15.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+    val persistentKey = System.getenv("FITLENS_KEYSTORE_PATH")
+    if (!persistentKey.isNullOrBlank()) {
+        signingConfigs.getByName("debug") {
+            storeFile = file(persistentKey)
+            storePassword = requireNotNull(System.getenv("FITLENS_KEYSTORE_PASSWORD"))
+            keyAlias = requireNotNull(System.getenv("FITLENS_KEY_ALIAS"))
+            keyPassword = requireNotNull(System.getenv("FITLENS_KEY_PASSWORD"))
+        }
     }
     buildFeatures { compose = true }
     compileOptions {
