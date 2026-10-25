@@ -89,7 +89,7 @@ class RaceCalendarCatalogue {
                 val elevation = distance.optInt("elevationGain", -1).takeIf { it in 0..100_000 }
                 val time = distance.optString("startTime").take(5).takeIf { it.matches(Regex("\\d{2}:\\d{2}")) }.orEmpty()
                 val draft = EventDraft(title.take(120), date, time, sport, location, sourceUrl, km,
-                    elevationGainMeters = elevation)
+                    elevationGainMeters = elevation, catalogueTitle = raceName)
                 if (runCatching { draft.validate() }.isSuccess) add(draft)
             }
         }

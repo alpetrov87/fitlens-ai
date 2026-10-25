@@ -30,6 +30,7 @@ data class EventDraft(
     val distanceKm: Double? = null,
     val cutoffTime: String = "",
     val elevationGainMeters: Int? = null,
+    val catalogueTitle: String = "",
 ) {
     fun validate() {
         require(title.trim().length in 1..120) { "Въведи име на събитието (до 120 знака)." }
