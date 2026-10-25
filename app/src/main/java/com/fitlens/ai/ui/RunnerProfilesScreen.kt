@@ -27,7 +27,7 @@ internal fun RunnerProfilesScreen() {
     val context = LocalContext.current
     val store = remember { RunnerProfileStore(context) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Text("Моят прогрес", style = MaterialTheme.typography.headlineMedium)
+        Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_038), style = MaterialTheme.typography.headlineMedium)
         Text("Показатели и състезателна история от BTR и ITRA. Запазените данни се включват в отчета за ChatGPT.")
         Text("При ITRA WAF блокиране публичният профилен линк се прочита чрез Jina Reader. Не се изпращат ключове или лични Garmin данни.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -108,20 +108,20 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
             }
             TextButton(onClick = {
                 url = saved.url; score = saved.score; results = saved.results; source = saved.source; message = null; editing = true
-            }, enabled = !busy) { Text("Редактирай профила") }
+            }, enabled = !busy) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_039)) }
         } else {
             OutlinedTextField(url, { url = it.take(500); source = "Ръчно въведени данни" }, enabled = !busy,
-                label = { Text("Линк към личния профил") }, modifier = Modifier.fillMaxWidth())
-            OutlinedButton(onClick = { refresh() }, enabled = !busy && url.isNotBlank()) { Text("Прочети, запази и покажи") }
+                label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_040)) }, modifier = Modifier.fillMaxWidth())
+            OutlinedButton(onClick = { refresh() }, enabled = !busy && url.isNotBlank()) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_041)) }
             OutlinedTextField(score, { score = it.take(120); source = "Ръчно въведени или коригирани данни" }, enabled = !busy,
-                label = { Text("Показател и стойност") }, modifier = Modifier.fillMaxWidth())
+                label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_042)) }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(results, { results = it.take(4000); source = "Ръчно въведени или коригирани данни" }, enabled = !busy,
-                label = { Text("Състезателни резултати — по един на ред") }, minLines = 3, modifier = Modifier.fillMaxWidth())
+                label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_043)) }, minLines = 3, modifier = Modifier.fillMaxWidth())
             Button(onClick = {
                 runCatching { save(saved.copy(url = url, score = score, results = results, source = source)); editing = false; message = "Профилът е запазен." }
                     .onFailure { message = it.message ?: "Записът не успя." }
-            }, enabled = !busy) { Text("Запази и покажи профила") }
-            TextButton(onClick = { editing = false; message = null }, enabled = !busy) { Text("Отказ") }
+            }, enabled = !busy) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_044)) }
+            TextButton(onClick = { editing = false; message = null }, enabled = !busy) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_014)) }
         }
         TextButton(onClick = {
             val target = saved.url.ifBlank { if (initial.provider == "BTR") "https://www.my-btr.com/" else "https://itra.run/" }

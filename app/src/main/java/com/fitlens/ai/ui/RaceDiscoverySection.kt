@@ -35,21 +35,21 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
         if (!state.loaded && !state.loading && state.error == null) onLoad(RaceCalendarCatalogue.HOME)
     }
     InfoCard("Открий състезание", Icons.Default.Explore) {
-        Text("Едно състезание, всички дистанции. Избери своята цел.")
+        Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_030))
         OutlinedButton(onClick = { onLoad(RaceCalendarCatalogue.HOME) }, enabled = !state.loading) {
-            Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Обнови")
+            Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_031))
         }
         if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
         state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        OutlinedTextField(query, { query = it }, label = { Text("Име или място") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(query, { query = it }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_032)) }, modifier = Modifier.fillMaxWidth())
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("all" to "Всички", "trail_running" to "Трейл", "mountain_biking" to "MTB").forEach { (key, label) ->
                 FilterChip(selected = sport == key, onClick = { sport = key }, label = { Text(label) })
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = !calendar, onClick = { calendar = false }, label = { Text("Списък") })
-            FilterChip(selected = calendar, onClick = { calendar = true }, label = { Text("Календар") })
+            FilterChip(selected = !calendar, onClick = { calendar = false }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_033)) })
+            FilterChip(selected = calendar, onClick = { calendar = true }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_034)) })
         }
         val groups = groupCatalogue(state.entries).filter { routes ->
             routes.any { it.date >= LocalDate.now().toString() } &&
@@ -83,11 +83,11 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
                 }
             }
             Text(if (day.isBlank()) "Състезания през месеца" else "Състезания на $day", style = MaterialTheme.typography.labelLarge)
-            TextButton(onClick = { day = ""; monthText = YearMonth.now().toString() }) { Text("Към текущия месец") }
+            TextButton(onClick = { day = ""; monthText = YearMonth.now().toString() }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_035)) }
         }
         val visible = groups.filter { routes -> !calendar || routes.any { if (day.isNotBlank()) it.date == day else it.date.startsWith(monthText) } }
         Text("${visible.size} състезания", style = MaterialTheme.typography.labelLarge)
-        if (visible.isEmpty() && state.loaded) Text("Няма състезания за този избор. Смени датата или филтрите.")
+        if (visible.isEmpty() && state.loaded) Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_036))
         visible.forEach { routes ->
             val first = routes.first()
             Card(onClick = { opened = routes }, modifier = Modifier.fillMaxWidth(),
@@ -118,6 +118,6 @@ internal fun RaceDiscoverySection(state: RaceCatalogueState, saved: List<Calenda
                         }
                     }
                 }
-            }, confirmButton = { TextButton(onClick = { opened = null }) { Text("Затвори") } })
+            }, confirmButton = { TextButton(onClick = { opened = null }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_037)) } })
     }
 }

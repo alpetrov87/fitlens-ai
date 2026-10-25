@@ -29,13 +29,13 @@ internal fun SettingsScreen(
     var projectMessage by remember { mutableStateOf<String?>(null) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
         .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text("Настройки", style = MaterialTheme.typography.headlineMedium)
-        Text("Връзките и данните ти, на едно място.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_000), style = MaterialTheme.typography.headlineMedium)
+        Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_001), color = MaterialTheme.colorScheme.onSurfaceVariant)
         InfoCard("Garmin Connect", Icons.Default.Watch) {
             Text(if (connected) "Свързан с личен API ключ" else "Добави личния си Personal API ключ",
                 color = MaterialTheme.colorScheme.primary)
             if (connected) {
-                Button(onClick = onSync, enabled = !busy && !historyBusy, modifier = Modifier.fillMaxWidth()) { Text("Изтегли данните за днес") }
+                Button(onClick = onSync, enabled = !busy && !historyBusy, modifier = Modifier.fillMaxWidth()) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_002)) }
                 OutlinedButton(onClick = onSyncHistory, enabled = !busy && !historyBusy, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp)); Text(if (historyBusy) "Изтегляне на история…" else "Изтегли тренировките за 30 дни")
@@ -49,32 +49,32 @@ internal fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(), label = { Text("Personal API key") },
                     visualTransformation = PasswordVisualTransformation(), enabled = !busy)
                 Button(onClick = { onConnect(key); key = "" }, enabled = key.isNotBlank() && !busy,
-                    modifier = Modifier.fillMaxWidth()) { Text("Свържи и синхронизирай") }
+                    modifier = Modifier.fillMaxWidth()) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_003)) }
             }
             TextButton(onClick = { context.startActivity(Intent(Intent.ACTION_VIEW,
-                Uri.parse("https://connect.garmin.com/app/settings/personalApiToken"))) }) { Text("Създай ключ в Garmin Connect") }
+                Uri.parse("https://connect.garmin.com/app/settings/personalApiToken"))) }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_004)) }
             Text("Личният ключ се пази криптиран на това устройство и се изпраща само към Garmin през HTTPS.",
                 style = MaterialTheme.typography.bodySmall)
             if (connected) Text("Данните се обновяват при отваряне на приложението и във фонова задача приблизително на всеки 4 часа при налична мрежа. Android може да отложи задачата, за да пести батерия.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedButton(onClick = { onImport(CsvImportSource.GARMIN) }, enabled = !busy) {
                 Icon(Icons.Default.UploadFile, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(8.dp)); Text("Импортирай Garmin CSV")
+                Spacer(Modifier.width(8.dp)); Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_005))
             }
         }
         InfoCard("ChatGPT анализ", Icons.Default.AutoAwesome) {
             OutlinedTextField(projectUrl, { projectUrl = it.take(500); projectMessage = null },
-                label = { Text("Линк към моя ChatGPT проект") }, placeholder = { Text("https://chatgpt.com/g/g-p-…/project") },
+                label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_006)) }, placeholder = { Text("https://chatgpt.com/g/g-p-…/project") },
                 singleLine = true, modifier = Modifier.fillMaxWidth())
             Row {
                 TextButton(onClick = {
                     runCatching { projectStore.save(projectUrl) }.onSuccess { projectMessage = "Проектът е запазен." }
                         .onFailure { projectMessage = it.message }
-                }) { Text("Запази проекта") }
+                }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_007)) }
                 TextButton(onClick = {
                     runCatching { projectStore.save(""); projectUrl = "" }.onSuccess { projectMessage = "Линкът е премахнат." }
                         .onFailure { projectMessage = it.message }
-                }) { Text("Премахни") }
+                }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_008)) }
             }
             projectMessage?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
             Text("Създай проект в ChatGPT и копирай адреса му от браузъра. При анализ FitLens копира отчета и отваря проекта. Постави текста в нов или съществуващ разговор и го изпрати сам.",
@@ -87,13 +87,13 @@ internal fun SettingsScreen(
         InfoCard("MyFitnessPal", Icons.Default.Restaurant) {
             Text("Добави хранителни данни от CSV файл. Директна API връзка още не е налична.")
             Button(onClick = { onImport(CsvImportSource.MYFITNESSPAL) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                Text("Импортирай MyFitnessPal CSV")
+                Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_009))
             }
             Text("CSV файловете се обработват на устройството. Пароли за MyFitnessPal не са нужни.",
                 style = MaterialTheme.typography.bodySmall)
         }
         InfoCard("Външен вид", Icons.Default.BrightnessAuto) {
-            Text("Темата следва телефона")
+            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_010))
             Text("Светлите и тъмните цветове се сменят автоматично според системната настройка.",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -104,10 +104,10 @@ internal fun SettingsScreen(
         InfoCard("Управление на данните", Icons.Default.Storage) {
             Text("Премахва изтеглените показатели и активности. Запазва календарните събития и Garmin връзката.")
             OutlinedButton(onClick = { confirm = "imports" }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
-                Text("Изтрий импортираните данни")
+                Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_011))
             }
         }
-        Text("FitLens AI · Лична версия", style = MaterialTheme.typography.labelMedium,
+        Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_012), style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     if (confirm != null) {
@@ -116,7 +116,7 @@ internal fun SettingsScreen(
             title = { Text(if (garmin) "Премахване на Garmin връзката" else "Изтриване на импортираните данни") },
             text = { Text(if (garmin) "Garmin ключът и локалните Garmin данни ще бъдат изтрити. Календарът и MyFitnessPal данните ще останат."
                 else "Изтеглените Garmin и MyFitnessPal показатели, активности, сън и HRV ще бъдат изтрити. Календарът и Garmin ключът ще останат.") },
-            confirmButton = { TextButton(onClick = { confirm = null; if (garmin) onDisconnect() else onClear() }) { Text("Изтрий") } },
-            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Отказ") } })
+            confirmButton = { TextButton(onClick = { confirm = null; if (garmin) onDisconnect() else onClear() }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_013)) } },
+            dismissButton = { TextButton(onClick = { confirm = null }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_014)) } })
     }
 }

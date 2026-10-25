@@ -115,7 +115,7 @@ private fun HomeScreen(
     var selectedEventId by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
         .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text("Твоят ден", style = MaterialTheme.typography.headlineMedium)
+        Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_015), style = MaterialTheme.typography.headlineMedium)
         Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.forLanguageTag("bg"))),
             color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (connected) {
@@ -126,13 +126,13 @@ private fun HomeScreen(
         } else {
             FilledTonalButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Default.Link, contentDescription = null, Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp)); Text("Свържи Garmin в настройките")
+                Spacer(Modifier.width(8.dp)); Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_016))
             }
         }
         when (state) {
             DashboardState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
             DashboardState.Error -> InfoCard("Данните не могат да се заредят", Icons.Default.Info) {
-                TextButton(onClick = onRefresh) { Text("Опитай отново") }
+                TextButton(onClick = onRefresh) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_017)) }
             }
             is DashboardState.Ready -> {
                 val data = state.dashboard
@@ -142,7 +142,7 @@ private fun HomeScreen(
                     Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             Icon(Icons.Default.DirectionsWalk, contentDescription = null)
-                            Text("ДВИЖЕНИЕ И ВЪЗСТАНОВЯВАНЕ", style = MaterialTheme.typography.labelLarge)
+                            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_018), style = MaterialTheme.typography.labelLarge)
                         }
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                             Surface(shape = androidx.compose.foundation.shape.CircleShape,
@@ -164,7 +164,7 @@ private fun HomeScreen(
                             StatValue(sleep?.let { "${it / 60} ч ${it % 60} мин" } ?: "—", "сън")
                             StatValue(data.recovery?.hrvLastNightMs?.let { "$it ms" } ?: "—", "HRV")
                         }
-                        if (data.recovery == null) Text("Няма изтеглени данни за сън и HRV за днес.",
+                        if (data.recovery == null) Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_019),
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                     }
@@ -185,7 +185,7 @@ private fun HomeScreen(
                         Text("Записан прием в Garmin: ${data.garminCaloriesConsumed} kcal")
                     }
                 }
-                Text("Активности днес", style = MaterialTheme.typography.titleLarge)
+                Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_020), style = MaterialTheme.typography.titleLarge)
                 if (data.garminActivities.isEmpty()) {
                     InfoCard("Денят е пред теб", Icons.Default.DirectionsRun) {
                         Text(if (connected) "Няма изтеглени активности за днес. Синхронизирай след следващата тренировка."
@@ -197,24 +197,24 @@ private fun HomeScreen(
         }
         val next = events.firstOrNull { it.date >= LocalDate.now().toString() }
         InfoCard("Следващо събитие", Icons.Default.Event) {
-            if (next == null) Text("Планирай следващата си спортна цел в календара.")
+            if (next == null) Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_021))
             else {
                 Text(next.title, style = MaterialTheme.typography.titleLarge)
                 Text("${next.date}${next.time.takeIf(String::isNotBlank)?.let { " · $it" }.orEmpty()} · ${sportLabel(next.sport)}")
             }
-            TextButton(onClick = onCalendar) { Text("Отвори календара") }
+            TextButton(onClick = onCalendar) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_022)) }
         }
         InfoCard("Анализ с ChatGPT", Icons.Default.AutoAwesome) {
             Text("Подготви отчет от последните 30 дни и го отвори в ChatGPT. Не е необходим API ключ.")
             if (!connected) {
-                Text("Свържи Garmin, за да изтеглиш тренировките си.")
-                OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) { Text("Настрой Garmin") }
+                Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_023))
+                OutlinedButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_024)) }
             } else {
                 OutlinedButton(onClick = { eventMenu = true }, modifier = Modifier.fillMaxWidth()) {
                     Text(events.firstOrNull { it.id == selectedEventId }?.let { "Състезание: ${it.title}" } ?: "Избери предстоящо събитие (по избор)")
                 }
                 DropdownMenu(expanded = eventMenu, onDismissRequest = { eventMenu = false }) {
-                    DropdownMenuItem(text = { Text("Без избрано събитие") }, onClick = { selectedEventId = ""; eventMenu = false })
+                    DropdownMenuItem(text = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_025)) }, onClick = { selectedEventId = ""; eventMenu = false })
                     events.filter { it.date >= LocalDate.now().toString() }.forEach { event ->
                         DropdownMenuItem(text = { Text("${event.title} · ${event.date}") },
                             onClick = { selectedEventId = event.id; eventMenu = false })
@@ -241,7 +241,7 @@ private fun HomeScreen(
         val projectUrl = ChatGptProjectStore(projectContext).load()
         var projectError by remember(shareReport) { mutableStateOf<String?>(null) }
         AlertDialog(onDismissRequest = onDismissShareReport,
-            title = { Text("Преглед на отчета") },
+            title = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_026)) },
             text = { Column(Modifier.heightIn(max = 440.dp).verticalScroll(rememberScrollState())) {
                 Text("Точно този текст ще бъде споделен. Garmin ключът и access token-ът не са включени.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -254,17 +254,17 @@ private fun HomeScreen(
                             android.widget.Toast.makeText(projectContext, "Отчетът е копиран. Постави го в разговор в проекта.", android.widget.Toast.LENGTH_LONG).show()
                             onDismissShareReport()
                         } catch (_: Exception) { projectError = "Отчетът не можа да бъде копиран или проектът да бъде отворен. Опитай отново или използвай нов чат." }
-                    }, modifier = Modifier.fillMaxWidth()) { Text("Копирай отчета и отвори моя проект") }
-                    Text("Постави текста в избрания разговор и го изпрати.", style = MaterialTheme.typography.bodySmall)
+                    }, modifier = Modifier.fillMaxWidth()) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_027)) }
+                    Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_028), style = MaterialTheme.typography.bodySmall)
                 }
                 projectError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 Spacer(Modifier.height(12.dp)); Text(shareReport, style = MaterialTheme.typography.bodySmall)
             } },
             confirmButton = { TextButton(onClick = { onOpenChatGpt(shareReport); onDismissShareReport() }) {
                 Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(6.dp)); Text("Нов чат / споделяне")
+                Spacer(Modifier.width(6.dp)); Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_029))
             } },
-            dismissButton = { TextButton(onClick = onDismissShareReport) { Text("Отказ") } })
+            dismissButton = { TextButton(onClick = onDismissShareReport) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_014)) } })
     }
 }
 

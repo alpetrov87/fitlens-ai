@@ -39,22 +39,22 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
     val eventDates = state.events.map { it.date }.toSet()
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
         .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text("Твоите следващи цели", style = MaterialTheme.typography.headlineMedium)
-        Text("Състезания, участия и планове за движение.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_045), style = MaterialTheme.typography.headlineMedium)
+        Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_046), color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
         state.error?.let { error -> InfoCard("Календарът има нужда от внимание", Icons.Default.Info) {
             Text(error)
-            TextButton(onClick = onRetry, enabled = !state.loading) { Text("Опитай отново") }
+            TextButton(onClick = onRetry, enabled = !state.loading) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_017)) }
         } }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            FilterChip(selected = !discover, onClick = { discover = false }, label = { Text("Моите участия") })
-            FilterChip(selected = discover, onClick = { discover = true }, label = { Text("Открий състезание") })
+            FilterChip(selected = !discover, onClick = { discover = false }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_047)) })
+            FilterChip(selected = discover, onClick = { discover = true }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_048)) })
         }
         if (discover) RaceDiscoverySection(catalogue, state.events, state.loading, onLoadCatalogue) { draft ->
             selectedDraft = draft; showAdd = true
         }
         if (!discover) {
-        TextButton(onClick = { selected = LocalDate.now().toString(); monthText = YearMonth.now().toString() }) { Text("Към днес") }
+        TextButton(onClick = { selected = LocalDate.now().toString(); monthText = YearMonth.now().toString() }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_049)) }
         Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
@@ -106,16 +106,16 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
         }
         Button(onClick = { selectedDraft = null; showAdd = true }, enabled = !state.loading, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(Modifier.width(8.dp)); Text("Добави събитие")
+            Spacer(Modifier.width(8.dp)); Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_050))
         }
         Text(LocalDate.parse(selected).format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.forLanguageTag("bg"))),
             style = MaterialTheme.typography.titleLarge)
         val dayEvents = state.events.filter { it.date == selected }
-        if (dayEvents.isEmpty()) Text("Няма добавени събития за този ден.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (dayEvents.isEmpty()) Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_051), color = MaterialTheme.colorScheme.onSurfaceVariant)
         dayEvents.forEach { event -> EventCard(event, !state.loading) { deleteEvent = event } }
         val upcoming = state.events.filter { it.date >= LocalDate.now().toString() && it.date != selected }
         if (upcoming.isNotEmpty()) {
-            Text("Предстоящи участия", style = MaterialTheme.typography.titleLarge)
+            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_052), style = MaterialTheme.typography.titleLarge)
             upcoming.forEach { event -> EventCard(event, !state.loading) { deleteEvent = event } }
         }
         }
@@ -127,10 +127,10 @@ internal fun CalendarScreen(state: CalendarState, onAdd: (EventDraft, () -> Unit
             selected = draft.date; monthText = draft.date.take(7); showAdd = false; selectedDraft = null
         } }, onImportLink = { url, imported -> onImportLink(url, selectedDraft?.date ?: selected, imported) }, initialDraft = selectedDraft)
     deleteEvent?.let { event ->
-        AlertDialog(onDismissRequest = { deleteEvent = null }, title = { Text("Изтриване на събитие") },
+        AlertDialog(onDismissRequest = { deleteEvent = null }, title = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_053)) },
             text = { Text("Да се изтрие ли „${event.title}“ от календара?") },
-            confirmButton = { TextButton(onClick = { onDelete(event.id); deleteEvent = null }) { Text("Изтрий") } },
-            dismissButton = { TextButton(onClick = { deleteEvent = null }) { Text("Отказ") } })
+            confirmButton = { TextButton(onClick = { onDelete(event.id); deleteEvent = null }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_013)) } },
+            dismissButton = { TextButton(onClick = { deleteEvent = null }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_014)) } })
     }
 }
 
@@ -154,7 +154,7 @@ private fun EventCard(event: CalendarEvent, enabled: Boolean, onDelete: () -> Un
                 if (details.isNotEmpty()) Text(details.joinToString(" · "), style = MaterialTheme.typography.bodySmall)
                 if (event.sourceUrl.isNotBlank()) TextButton(onClick = {
                     runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(event.sourceUrl))) }
-                }, contentPadding = PaddingValues(0.dp)) { Text("Отвори страницата на събитието") }
+                }, contentPadding = PaddingValues(0.dp)) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_054)) }
             }
             IconButton(onClick = onDelete, enabled = enabled) { Icon(Icons.Default.DeleteOutline, contentDescription = "Изтрий ${event.title}") }
         }
@@ -179,12 +179,12 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
     var sportsOpen by remember { mutableStateOf(false) }
     var dateOpen by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    AlertDialog(onDismissRequest = { if (!busy) onDismiss() }, title = { Text("Ново събитие") },
+    AlertDialog(onDismissRequest = { if (!busy) onDismiss() }, title = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_055)) },
         text = {
             Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(title, { title = it.take(120) }, label = { Text("Име на събитието") }, singleLine = true)
+                OutlinedTextField(title, { title = it.take(120) }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_056)) }, singleLine = true)
                 OutlinedTextField(sourceUrl, { sourceUrl = it.take(500); linkStatus = null },
-                    label = { Text("Линк към официалната страница (по избор)") }, singleLine = true,
+                    label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_057)) }, singleLine = true,
                     placeholder = { Text("https://…") }, enabled = !busy)
                 Text("При попълване FitLens отваря публичната HTTPS страница от телефона ти. Провери намерените данни преди запис.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -210,12 +210,12 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
                     Icon(Icons.Default.DateRange, contentDescription = null)
                     Spacer(Modifier.width(8.dp)); Text(date)
                 }
-                OutlinedTextField(time, { time = it.take(5) }, label = { Text("Час (по избор)") }, placeholder = { Text("09:30") }, singleLine = true)
-                OutlinedTextField(distanceKm, { distanceKm = it.take(12) }, label = { Text("Дистанция в km (по избор)") },
+                OutlinedTextField(time, { time = it.take(5) }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_058)) }, placeholder = { Text("09:30") }, singleLine = true)
+                OutlinedTextField(distanceKm, { distanceKm = it.take(12) }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_059)) },
                     placeholder = { Text("42.2") }, singleLine = true)
-                OutlinedTextField(elevationGainMeters, { elevationGainMeters = it.take(8) }, label = { Text("Положителна денивелация в m (по избор)") },
+                OutlinedTextField(elevationGainMeters, { elevationGainMeters = it.take(8) }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_060)) },
                     placeholder = { Text("1200") }, singleLine = true)
-                OutlinedTextField(cutoffTime, { cutoffTime = it.take(80) }, label = { Text("Контролно време (по избор)") },
+                OutlinedTextField(cutoffTime, { cutoffTime = it.take(80) }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_061)) },
                     placeholder = { Text("6 часа") }, singleLine = true)
                 Box {
                     OutlinedButton(onClick = { sportsOpen = true }, modifier = Modifier.fillMaxWidth()) {
@@ -229,7 +229,7 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
                         }
                     }
                 }
-                OutlinedTextField(location, { location = it.take(200) }, label = { Text("Място (по избор)") }, singleLine = true)
+                OutlinedTextField(location, { location = it.take(200) }, label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_062)) }, singleLine = true)
                 (error ?: storeError)?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
@@ -248,14 +248,14 @@ private fun EventDialog(initialDate: String, busy: Boolean, storeError: String?,
             val failure = runCatching { draft.validate() }.exceptionOrNull()
             if (failure != null) error = failure.message else { error = null; onSave(draft) }
         }) { Text(if (busy) "Запазване…" else "Запази") } },
-        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Отказ") } })
+        dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_014)) } })
     if (dateOpen) {
         val picker = rememberDatePickerState(initialSelectedDateMillis = LocalDate.parse(date).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
         DatePickerDialog(onDismissRequest = { dateOpen = false },
             confirmButton = { TextButton(onClick = {
                 picker.selectedDateMillis?.let { date = Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate().toString() }
                 dateOpen = false
-            }) { Text("Избери") } },
-            dismissButton = { TextButton(onClick = { dateOpen = false }) { Text("Отказ") } }) { DatePicker(picker) }
+            }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_063)) } },
+            dismissButton = { TextButton(onClick = { dateOpen = false }) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_014)) } }) { DatePicker(picker) }
     }
 }
