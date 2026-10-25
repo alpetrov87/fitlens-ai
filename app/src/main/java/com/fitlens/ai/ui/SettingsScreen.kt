@@ -94,9 +94,26 @@ internal fun SettingsScreen(
         }
         InfoCard(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.language), Icons.Default.Language) {
             val selectedLanguage = com.fitlens.ai.data.AppLanguage.selection(context)
-            listOf("" to androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.system_language), "bg" to "Български", "en" to "English").forEach { (tag, label) ->
-                TextButton(onClick = { com.fitlens.ai.data.AppLanguage.select(context, tag) }) {
-                    Text((if (selectedLanguage == tag) "✓ " else "") + label)
+            val languages = listOf("" to androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.system_language),
+                "bg" to "Български", "en" to "English")
+            var languageMenuOpen by remember { mutableStateOf(false) }
+            Box(Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { languageMenuOpen = true }, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Default.Language, contentDescription = null)
+                    Spacer(Modifier.width(12.dp))
+                    Text(languages.firstOrNull { it.first == selectedLanguage }?.second ?: languages.first().second,
+                        modifier = Modifier.weight(1f))
+                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                }
+                DropdownMenu(expanded = languageMenuOpen, onDismissRequest = { languageMenuOpen = false }) {
+                    languages.forEach { (tag, label) ->
+                        DropdownMenuItem(text = { Text(label) },
+                            trailingIcon = { if (selectedLanguage == tag) Icon(Icons.Default.Check, contentDescription = null) },
+                            onClick = {
+                                languageMenuOpen = false
+                                if (selectedLanguage != tag) com.fitlens.ai.data.AppLanguage.select(context, tag)
+                            })
+                    }
                 }
             }
         }
