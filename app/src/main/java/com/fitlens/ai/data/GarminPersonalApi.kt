@@ -10,7 +10,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** Garmin Personal API client for one person's own account. Never logs credentials or responses. */
-data class GarminDayData(val summary: ImportedDailyMetrics, val activities: List<GarminActivity>)
+data class GarminDayData(val summary: ImportedDailyMetrics, val activities: List<GarminActivity>, val recovery: List<GarminRecoveryDay> = emptyList())
 
 /** Garmin's official client reads the token endpoint's response body as a raw JWT string. */
 internal fun parseGarminAccessToken(body: String): String? = body.trim().takeIf(::isGarminJwt)
@@ -63,9 +63,23 @@ class GarminPersonalApi(
         val apiKey = keyStore.load() ?: error("Добави Garmin Personal API ключ, за да синхронизираш историята.")
         val token = exchangeKey(apiKey)
         val activities = fetchActivities(token, startDate, endDate)
-        val sleep = getJson(token,
+        GarminTrainingHistory(activities, fetchRecovery(token, startDate, endDate))
+    }
+
+    private fun optionalRecovery(request: () -> Any?): Any? = try {
+        request()
+    } catch (cancelled: kotlinx.coroutines.CancellationException) {
+        throw cancelled
+    } catch (_: java.io.IOException) {
+        null
+    } catch (_: IllegalStateException) {
+        null
+    }
+
+    private fun fetchRecovery(token: String, startDate: String, endDate: String): List<GarminRecoveryDay> {
+        val sleep = optionalRecovery { getJson(token,
             "$BASE_URL/sleep-service/sleep/dailySleepSummariesByDate?startDate=$startDate&endDate=$endDate",
-            "обобщенията за сън")
+            "обобщенията за сън") }
         val recovery = mutableMapOf<String, GarminRecoveryDay>()
         fun addSleep(item: JSONObject) {
             val date = item.optString("calendarDate").takeIf(String::isNotBlank) ?: return
@@ -79,7 +93,7 @@ class GarminPersonalApi(
                 if (list != null) for (i in 0 until list.length()) list.optJSONObject(i)?.let(::addSleep)
             }
         }
-        val hrv = getJson(token, "$BASE_URL/hrv-service/hrv/daily/$startDate/$endDate", "обобщенията за HRV") as? JSONObject
+        val hrv = optionalRecovery { getJson(token, "$BASE_URL/hrv-service/hrv/daily/$startDate/$endDate", "обобщенията за HRV") } as? JSONObject
         val hrvDays = hrv?.optJSONArray("hrvSummaries") ?: JSONArray()
         for (i in 0 until hrvDays.length()) {
             val item = hrvDays.optJSONObject(i) ?: continue
@@ -88,7 +102,7 @@ class GarminPersonalApi(
                 hrvLastNightMs = item.optNullableDouble("lastNightAvg")?.toInt(),
                 hrvStatus = item.optString("status").takeIf(String::isNotBlank))
         }
-        GarminTrainingHistory(activities, recovery.values.sortedBy(GarminRecoveryDay::date))
+        return recovery.values.sortedBy(GarminRecoveryDay::date)
     }
 
     fun disconnect() = keyStore.clear()
@@ -109,7 +123,7 @@ class GarminPersonalApi(
             garminCaloriesConsumed = summaryJson?.optNullableDouble("consumedKilocalories")?.toInt(),
         )
         val activities = fetchActivities(token, date, date)
-        return GarminDayData(summary, activities)
+        return GarminDayData(summary, activities, fetchRecovery(token, date, date))
     }
 
     private fun fetchActivities(token: String, startDate: String, endDate: String): List<GarminActivity> {

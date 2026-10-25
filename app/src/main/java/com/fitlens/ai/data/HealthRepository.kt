@@ -153,6 +153,14 @@ class DefaultHealthRepository(
         val data = api.connect(apiKey)
         store.mergeAll(listOf(data.summary))
         store.replaceGarminActivities(data.summary.date, data.activities)
+        data.recovery.forEach { day ->
+            val previous = store.recoveryBetween(day.date, day.date).firstOrNull()
+            store.replaceGarminRecoveryBetween(day.date, day.date, listOf(day.copy(
+                sleepMinutes = day.sleepMinutes ?: previous?.sleepMinutes,
+                hrvLastNightMs = day.hrvLastNightMs ?: previous?.hrvLastNightMs,
+                hrvStatus = day.hrvStatus ?: previous?.hrvStatus,
+            )))
+        }
     }
 
     override suspend fun syncGarmin() {
@@ -161,6 +169,14 @@ class DefaultHealthRepository(
         val data = api.sync()
         store.mergeAll(listOf(data.summary))
         store.replaceGarminActivities(data.summary.date, data.activities)
+        data.recovery.forEach { day ->
+            val previous = store.recoveryBetween(day.date, day.date).firstOrNull()
+            store.replaceGarminRecoveryBetween(day.date, day.date, listOf(day.copy(
+                sleepMinutes = day.sleepMinutes ?: previous?.sleepMinutes,
+                hrvLastNightMs = day.hrvLastNightMs ?: previous?.hrvLastNightMs,
+                hrvStatus = day.hrvStatus ?: previous?.hrvStatus,
+            )))
+        }
     }
 
     override suspend fun disconnectGarmin() {
