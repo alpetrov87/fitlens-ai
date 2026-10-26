@@ -118,13 +118,13 @@ class MainActivity : ComponentActivity() {
     private fun openChatGpt(context: android.content.Context, report: String) {
         val share = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, "FitLens AI · Garmin отчет")
+            putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.share_subject))
             putExtra(Intent.EXTRA_TEXT, report)
         }
         try {
             context.startActivity(Intent(share).setPackage("com.openai.chatgpt"))
         } catch (_: ActivityNotFoundException) {
-            context.startActivity(Intent.createChooser(share, "Сподели отчета с ChatGPT"))
+            context.startActivity(Intent.createChooser(share, context.getString(R.string.share_chooser)))
         }
     }
 

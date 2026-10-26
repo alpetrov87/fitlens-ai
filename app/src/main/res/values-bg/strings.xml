@@ -11,7 +11,7 @@
   <string name="ui_009">Импортирай MyFitnessPal CSV</string>
   <string name="ui_010">Темата следва телефона</string>
   <string name="ui_011">Изтрий импортираните данни</string>
-  <string name="ui_012">FitLens AI · Лична версия</string>
+  <string name="ui_012">bAIr · Лична версия</string>
   <string name="ui_013">Изтрий</string>
   <string name="ui_014">Отказ</string>
   <string name="ui_015">Твоят ден</string>
@@ -75,9 +75,9 @@
   <string name="extra_073">ChatGPT анализ</string>
   <string name="extra_074">Проектът е запазен.</string>
   <string name="extra_075">Линкът е премахнат.</string>
-  <string name="extra_076">Създай проект в ChatGPT и копирай адреса му от браузъра. При анализ FitLens копира отчета и отваря проекта. Постави текста в нов или съществуващ разговор и го изпрати сам.</string>
-  <string name="extra_077">Не е необходим API ключ. От Начало FitLens подготвя отчет и го отваря чрез Android менюто за споделяне.</string>
-  <string name="extra_078">Преди споделяне ще видиш целия текст. Отговорът остава в избрания ChatGPT разговор и не се връща автоматично във FitLens.</string>
+  <string name="extra_076">Създай проект в ChatGPT и копирай адреса му от браузъра. При анализ bAIr копира отчета и отваря проекта. Постави текста в нов или съществуващ разговор и го изпрати сам.</string>
+  <string name="extra_077">Не е необходим API ключ. От Начало bAIr подготвя отчет и го отваря чрез Android менюто за споделяне.</string>
+  <string name="extra_078">Преди споделяне ще видиш целия текст. Отговорът остава в избрания ChatGPT разговор и не се връща автоматично във bAIr.</string>
   <string name="extra_079">Добави хранителни данни от CSV файл. Директна API връзка още не е налична.</string>
   <string name="extra_080">CSV файловете се обработват на устройството. Пароли за MyFitnessPal не са нужни.</string>
   <string name="extra_081">Външен вид</string>
@@ -111,9 +111,9 @@
   <string name="extra_109">Избери предстоящо събитие (по избор)</string>
   <string name="extra_110">Подготвям отчета…</string>
   <string name="extra_111">Подготви отчет за ChatGPT</string>
-  <string name="extra_112">FitLens първо показва целия отчет. Данните напускат приложението само след като избереш да ги споделиш.</string>
+  <string name="extra_112">bAIr първо показва целия отчет. Данните напускат приложението само след като избереш да ги споделиш.</string>
   <string name="extra_113">Точно този текст ще бъде споделен. Garmin ключът и access token-ът не са включени.</string>
-  <string name="extra_114">FitLens отчет</string>
+  <string name="extra_114">bAIr отчет</string>
   <string name="extra_115">Отчетът е копиран. Постави го в разговор в проекта.</string>
   <string name="extra_116">Отчетът не можа да бъде копиран или проектът да бъде отворен. Опитай отново или използвай нов чат.</string>
   <string name="extra_117">Скрий подробностите</string>
@@ -166,7 +166,7 @@
   <string name="extra_164">Данните не могат да бъдат изтрити.</string>
   <string name="extra_165">Календарът има нужда от внимание</string>
   <string name="extra_166">Събитията са лични и се пазят на устройството. Garmin Personal API все още няма endpoint за бъдещ календар.</string>
-  <string name="extra_167">При попълване FitLens отваря публичната HTTPS страница от телефона ти. Провери намерените данни преди запис.</string>
+  <string name="extra_167">При попълване bAIr отваря публичната HTTPS страница от телефона ти. Провери намерените данни преди запис.</string>
   <string name="extra_168">Данните са попълнени. Провери ги преди запис.</string>
   <string name="extra_169">Намерих името, но не и датата. Провери и попълни останалото ръчно.</string>
   <string name="extra_170">Чета страницата…</string>
@@ -207,4 +207,12 @@
   <string name="selected_day">, избран ден</string>
   <string name="has_events">, има събития</string>
 <string name="auto_sync_failed">Автоматичната Garmin синхронизация не успя. Опитай отново по-късно.</string>
+
+  <string name="app_name">bAIr</string>
+  <string name="brand_legacy">Мечка по пътечка</string>
+  <string name="brand_slogan">Планини. Кал. Лоши решения.</string>
+  <string name="brand_intro">Твоите приключения. Твоите данни.</string>
+  <string name="share_subject">bAIr · Garmin отчет</string>
+  <string name="share_chooser">Сподели отчета с ChatGPT</string>
+  <string name="about_app">За приложението</string>
 </resources>

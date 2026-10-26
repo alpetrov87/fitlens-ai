@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
@@ -80,9 +81,17 @@ fun DashboardScreen(
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Image(painterResource(R.drawable.fitlens_logo), contentDescription = null,
                     modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.small))
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("FitLens", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
-                    Text("AI", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.secondary)
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    val wordmarkInk = MaterialTheme.colorScheme.onBackground
+                    val wordmarkAccent = MaterialTheme.colorScheme.secondary
+                    Text(androidx.compose.ui.text.buildAnnotatedString {
+                        withStyle(androidx.compose.ui.text.SpanStyle(color = wordmarkInk)) { append("b") }
+                        withStyle(androidx.compose.ui.text.SpanStyle(color = wordmarkAccent)) { append("AI") }
+                        withStyle(androidx.compose.ui.text.SpanStyle(color = wordmarkInk)) { append("r") }
+                    }, style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold)
+                    Text(androidx.compose.ui.res.stringResource(R.string.brand_legacy),
+                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Spacer(Modifier.weight(1f))
                 if (garminConnected) Icon(Icons.Default.CheckCircle, contentDescription = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_093),

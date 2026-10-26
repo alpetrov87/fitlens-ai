@@ -11,7 +11,7 @@
   <string name="ui_009">Import MyFitnessPal CSV</string>
   <string name="ui_010">Theme follows your phone</string>
   <string name="ui_011">Delete imported data</string>
-  <string name="ui_012">FitLens AI · Personal edition</string>
+  <string name="ui_012">bAIr · Personal edition</string>
   <string name="ui_013">Delete</string>
   <string name="ui_014">Cancel</string>
   <string name="ui_015">Your day</string>
@@ -75,9 +75,9 @@
   <string name="extra_073">ChatGPT analysis</string>
   <string name="extra_074">Project saved.</string>
   <string name="extra_075">Link removed.</string>
-  <string name="extra_076">Create a ChatGPT project and copy its URL from your browser. FitLens copies your report and opens the project. Paste it into a new or existing conversation and send it.</string>
+  <string name="extra_076">Create a ChatGPT project and copy its URL from your browser. bAIr copies your report and opens the project. Paste it into a new or existing conversation and send it.</string>
   <string name="extra_077">No API key needed. From Home, prepare a report and share it using Android.</string>
-  <string name="extra_078">Review the full text before sharing. Replies stay in ChatGPT and do not return to FitLens automatically.</string>
+  <string name="extra_078">Review the full text before sharing. Replies stay in ChatGPT and do not return to bAIr automatically.</string>
   <string name="extra_079">Import nutrition from a CSV file. A direct API connection is not available yet.</string>
   <string name="extra_080">CSV files are processed on your device. No MyFitnessPal password is needed.</string>
   <string name="extra_081">Appearance</string>
@@ -111,9 +111,9 @@
   <string name="extra_109">Choose an upcoming event (optional)</string>
   <string name="extra_110">Preparing report…</string>
   <string name="extra_111">Prepare ChatGPT report</string>
-  <string name="extra_112">FitLens shows the full report first. Data leaves the app only when you choose to share it.</string>
+  <string name="extra_112">bAIr shows the full report first. Data leaves the app only when you choose to share it.</string>
   <string name="extra_113">This is the exact text to be shared. Your Garmin key and access token are not included.</string>
-  <string name="extra_114">FitLens report</string>
+  <string name="extra_114">bAIr report</string>
   <string name="extra_115">Report copied. Paste it into a conversation in your project.</string>
   <string name="extra_116">Unable to copy the report or open the project. Retry or use a new chat.</string>
   <string name="extra_117">Hide details</string>
@@ -166,7 +166,7 @@
   <string name="extra_164">Unable to delete data.</string>
   <string name="extra_165">Calendar needs attention</string>
   <string name="extra_166">Events are private and stored on this device. Garmin Personal API does not expose future calendar events.</string>
-  <string name="extra_167">FitLens reads the public HTTPS page from your phone. Review the extracted data before saving.</string>
+  <string name="extra_167">bAIr reads the public HTTPS page from your phone. Review the extracted data before saving.</string>
   <string name="extra_168">Data filled in. Review before saving.</string>
   <string name="extra_169">Found the name but not the date. Review and fill in the remaining fields.</string>
   <string name="extra_170">Reading page…</string>
@@ -207,4 +207,12 @@
   <string name="selected_day">, selected day</string>
   <string name="has_events">, has events</string>
 <string name="auto_sync_failed">Automatic Garmin sync failed. Try again later.</string>
+
+  <string name="app_name">bAIr</string>
+  <string name="brand_legacy">Мечка по пътечка</string>
+  <string name="brand_slogan">Bad decisions. Better data.</string>
+  <string name="brand_intro">Your adventures. Your data.</string>
+  <string name="share_subject">bAIr · Garmin report</string>
+  <string name="share_chooser">Share report with ChatGPT</string>
+  <string name="about_app">About the app</string>
 </resources>

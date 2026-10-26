@@ -132,8 +132,18 @@ internal fun SettingsScreen(
                 Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_011))
             }
         }
-        Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_012), style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        InfoCard(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.about_app), Icons.Default.Info) {
+            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.app_name),
+                style = MaterialTheme.typography.headlineSmall)
+            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.brand_legacy),
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.brand_slogan),
+                style = MaterialTheme.typography.titleMedium)
+            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.brand_intro),
+                style = MaterialTheme.typography.bodyMedium)
+            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_012),
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
     if (confirm != null) {
         val garmin = confirm == "garmin"
