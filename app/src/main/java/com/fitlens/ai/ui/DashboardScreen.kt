@@ -124,15 +124,6 @@ private fun HomeScreen(
     var selectedEventId by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
         .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.primaryContainer,
-            modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(androidx.compose.ui.res.stringResource(R.string.brand_slogan),
-                    style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                Text(androidx.compose.ui.res.stringResource(R.string.brand_intro),
-                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
-            }
-        }
         Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_015), style = MaterialTheme.typography.headlineMedium)
         Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())),
             color = MaterialTheme.colorScheme.onSurfaceVariant)

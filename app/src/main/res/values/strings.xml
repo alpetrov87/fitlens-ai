@@ -214,4 +214,5 @@
   <string name="brand_intro">Your adventures. Your data.</string>
   <string name="share_subject">bAIr · Garmin report</string>
   <string name="share_chooser">Share report with ChatGPT</string>
+  <string name="about_app">About the app</string>
 </resources>

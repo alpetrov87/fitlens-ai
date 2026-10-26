@@ -214,4 +214,5 @@
   <string name="brand_intro">Твоите приключения. Твоите данни.</string>
   <string name="share_subject">bAIr · Garmin отчет</string>
   <string name="share_chooser">Сподели отчета с ChatGPT</string>
+  <string name="about_app">За приложението</string>
 </resources>
