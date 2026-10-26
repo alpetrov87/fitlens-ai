@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="108" height="108" viewBox="0 0 108 108" role="img" aria-labelledby="title"><title id="title">Android adaptive icon layout study: hide guides before export</title><rect width="108" height="108" fill="#FAF6E9"/><g transform="translate(12 12) scale(.168)"><g id="mascot" stroke="#1B3023" stroke-width="6" stroke-linejoin="round" stroke-linecap="round">
+ <g id="ears"><circle cx="167" cy="104" r="32" fill="#9C5C33"/><circle cx="327" cy="104" r="32" fill="#9C5C33"/><circle cx="167" cy="104" r="15" fill="#D7A16F"/><circle cx="327" cy="104" r="15" fill="#D7A16F"/></g>
+ <path id="body" d="M180 230 Q132 258 145 350 L135 375 165 367 Q245 403 328 367 L350 376 343 350 Q361 270 306 235Z" fill="#9C5C33"/>
+ <path id="head" d="M153 151 Q154 94 204 89 L218 75 229 87 246 72 256 88 Q332 85 345 146 L359 161 345 172 Q349 239 292 254 Q208 274 160 229 L147 237 152 218 137 207 152 195Z" fill="#9C5C33"/>
+ <ellipse id="muzzle" cx="250" cy="203" rx="59" ry="40" fill="#E9BC83"/>
+ <g id="eyes" fill="#1B3023" stroke="none"><ellipse cx="211" cy="166" rx="8" ry="10"/><ellipse cx="291" cy="166" rx="8" ry="10"/><circle cx="214" cy="163" r="2.5" fill="white"/><circle cx="294" cy="163" r="2.5" fill="white"/></g>
+ <path id="nose" d="M234 189 Q250 179 267 189 Q263 207 250 207 Q237 205 234 189Z" fill="#1B3023"/>
+ <path id="smile" d="M250 207V218 Q266 233 284 216 M250 218 Q237 229 225 219" fill="none" stroke-width="4"/>
+ <path id="arms" d="M165 279 Q112 289 124 317 Q135 330 164 307 M329 278 Q378 276 378 303 Q374 323 341 311" fill="#9C5C33"/>
+ <g id="watch"><rect x="344" y="282" width="22" height="39" rx="6" fill="#1B3023"/><rect x="344" y="290" width="22" height="22" rx="5" fill="#AACB98"/><path d="M350 301 355 305 361 295" fill="none" stroke-width="3"/></g>
+ <g id="trail-shoes" fill="#A94815"><path d="M169 367 208 373 211 397 Q188 412 145 399 L150 385Z"/><path d="M285 374 320 365 338 386 347 398 Q305 413 280 397Z"/></g>
+ <path id="shoe-soles" d="M147 401 209 401 M283 401 345 401" stroke-width="9"/>
+ <g id="mud" fill="#6F482F" stroke="none"><ellipse cx="183" cy="386" rx="8" ry="5"/><circle cx="307" cy="387" r="5"/><circle cx="185" cy="330" r="8"/><circle cx="202" cy="341" r="4"/></g><g id="glasses" fill="none" stroke-width="7"><rect x="183" y="145" width="53" height="40" rx="13"/><rect x="267" y="145" width="53" height="40" rx="13"/><path d="M236 159Q252 149 267 159 M183 155 166 148 M320 155 334 148"/></g></g></g><g id="guides" fill="none" stroke="#A94815" stroke-width=".5" stroke-dasharray="2 2"><circle cx="54" cy="54" r="33"/><rect x="18" y="18" width="72" height="72"/></g></svg>
