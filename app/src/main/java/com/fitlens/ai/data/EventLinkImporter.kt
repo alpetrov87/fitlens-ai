@@ -77,7 +77,7 @@ class EventLinkImporter {
             val safeClient = client.newBuilder().dns(safeDns).build()
             val accept = if (allowJson) "application/json,text/html;q=0.5" else "text/html,application/xhtml+xml"
             val request = Request.Builder().url(current).header("Accept", accept)
-                .header("User-Agent", "FitLensAI/0.12 (public data import)").get().build()
+                .header("User-Agent", "bAIr/0.16 (public data import)").get().build()
             safeClient.newCall(request).execute().use { response ->
                 if (response.code in REDIRECT_CODES) {
                     require(redirectCount < MAX_REDIRECTS) { "Страницата препраща през прекалено много адреси." }
