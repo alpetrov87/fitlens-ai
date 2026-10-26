@@ -1,11 +1,14 @@
 # bAIr — issue #3 review pack
 
-Start with [the design brief](BRIEF.md) and open [index.html](index.html) locally in a browser to compare three editable vector directions. PNG previews are included for quick mobile review. All files are concept-only and not production assets.
+**Current revision: use the existing logo bear.** The owner rejected the childish cartoon direction. Read [revision 02](REVISION-02.md) and open [index.html](index.html) to compare the updated concepts.
 
-- [01 Trail buddy](concepts/01-trail-buddy.svg)
-- [02 Data den](concepts/02-data-den.svg) — recommended starting direction for the app
-- [03 Bike and mud](concepts/03-bike-and-mud.svg)
+- [04 Heritage](concepts/04-heritage.svg) — recommended
+- [05 Editorial](concepts/05-editorial.svg)
+- [06 Expedition](concepts/06-expedition.svg)
+- [Generated direction board](previews/mature-direction-board.png) — illustrative mockup, not final artwork
 
-The `previews` folder includes editable launcher/avatar/banner layout studies with visible crop/safe-area guides. Hide guides before any approved final export. No app resources, IDs, name, themes or pipelines were modified.
+The new SVG files embed the actual original bear illustration as raster PNG and retain editable vector wordmarks/layouts. They are **not fully vector mascot artwork**. The generated board may vary from the source; the SVG compositions preserve the source image.
 
-Validation: SVG XML/IDs/local HTML references and safe-area dimensions checked; all three concept SVG files rendered to PNG with Inkscape. Illustration remains intentionally marked as a wireframe/concept. Android build is not required for this isolated design/documentation change.
+[Original brief](BRIEF.md) remains for context and safe-area guidance. Concepts 01–03 and their preview templates are superseded/rejected, not recommendations. No production app files have changed.
+
+Validation: XML/IDs/embedded image references checked; updated SVG concepts rendered and visually inspected through Inkscape. No Android build required for this isolated design-only revision.
