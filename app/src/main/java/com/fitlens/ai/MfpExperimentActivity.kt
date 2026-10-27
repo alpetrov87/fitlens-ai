@@ -29,11 +29,15 @@ class MfpExperimentActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             FitLensTheme {
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                 var date by remember { mutableStateOf(LocalDate.now().toString()) }
                 var username by remember { mutableStateOf("") }
                 var status by remember { mutableStateOf("") }
                 var origin by remember { mutableStateOf("www.myfitnesspal.com") }
                 var loaded by remember { mutableStateOf(false) }
+                var loading by remember { mutableStateOf(false) }
+                var failed by remember { mutableStateOf(false) }
+                var progress by remember { mutableIntStateOf(0) }
                 var preview by remember { mutableStateOf<MfpDiaryPreview?>(null) }
                 var confirmed by remember { mutableStateOf(false) }
                 val web = remember {
@@ -46,30 +50,70 @@ class MfpExperimentActivity : ComponentActivity() {
                         settings.setSupportMultipleWindows(false)
                         settings.saveFormData = false
                         settings.safeBrowsingEnabled = true
+                        CookieManager.getInstance().setAcceptCookie(true)
                         CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
+                        webChromeClient = object : WebChromeClient() {
+                            override fun onProgressChanged(view: WebView, newProgress: Int) { progress = newProgress }
+                        }
                         webViewClient = object : WebViewClient() {
                             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                                 if (!request.isForMainFrame) return false
                                 val allowed = isMfpPage(request.url.toString())
-                                if (!allowed) status = getString(R.string.mfp_external_blocked)
+                                if (!allowed) { status = getString(R.string.mfp_external_blocked); loading = false }
                                 return !allowed
                             }
                             override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
-                                loaded = false; preview = null
+                                loaded = false; preview = null; loading = url != "about:blank"; failed = false; progress = 0
                                 if (url != null && url != "about:blank" && !isMfpPage(url)) {
-                                    view.stopLoading(); status = getString(R.string.mfp_external_blocked); return
+                                    view.stopLoading(); loading = false; failed = true
+                                    status = getString(R.string.mfp_external_blocked); return
                                 }
                                 origin = url?.let { android.net.Uri.parse(it).host }.orEmpty()
                             }
-                            override fun onPageFinished(view: WebView, url: String?) { loaded = isMfpPage(url.orEmpty()) }
+                            override fun onPageFinished(view: WebView, url: String?) {
+                                loading = false; loaded = !failed && isMfpPage(url.orEmpty())
+                            }
+                            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                                if (request.isForMainFrame) {
+                                    failed = true; loading = false; loaded = false
+                                    status = getString(R.string.mfp_network_error, error.errorCode)
+                                }
+                            }
+                            override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: WebResourceResponse) {
+                                if (request.isForMainFrame) {
+                                    failed = true; loading = false; loaded = false
+                                    status = getString(R.string.mfp_http_error, response.statusCode)
+                                }
+                            }
+                            override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: android.net.http.SslError) {
+                                handler.cancel()
+                                failed = true; loading = false; loaded = false
+                                status = getString(R.string.mfp_tls_error)
+                            }
                         }
                     }
                 }
                 DisposableEffect(web) { onDispose { web.stopLoading(); web.destroy() } }
+                LaunchedEffect(web) {
+                    web.loadUrl("https://www.myfitnesspal.com/account/login")
+                }
+                LaunchedEffect(loading) {
+                    if (loading) {
+                        kotlinx.coroutines.delay(20_000)
+                        if (loading && status.isBlank()) status = getString(R.string.mfp_loading_slow)
+                    }
+                }
                 Column(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.fillMaxWidth().heightIn(max = 240.dp).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(stringResource(R.string.mfp_experiment), style = MaterialTheme.typography.titleLarge)
-                    Text(stringResource(R.string.mfp_experiment_note), style = MaterialTheme.typography.bodySmall)
                     Text("HTTPS · $origin", style = MaterialTheme.typography.labelMedium)
+                    OutlinedButton(onClick = {
+                        status = ""; preview = null
+                        val current = web.url.orEmpty()
+                        web.loadUrl(if (isMfpPage(current)) current else "https://www.myfitnesspal.com/account/login")
+                    }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_retry_loading)) }
+                    Text(stringResource(R.string.mfp_experiment_note), style = MaterialTheme.typography.bodySmall)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(date, { date = it.take(10); preview = null }, label = { Text(stringResource(R.string.mfp_date)) }, singleLine = true, modifier = Modifier.weight(1f))
                         OutlinedTextField(username, { username = it.take(100); preview = null }, label = { Text(stringResource(R.string.mfp_username)) }, singleLine = true, modifier = Modifier.weight(1f))
@@ -104,7 +148,12 @@ class MfpExperimentActivity : ComponentActivity() {
                                 .onFailure { status = getString(R.string.mfp_read_failed) }
                         }
                     }, enabled = loaded, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_read_day)) }
-                    if (status.isNotBlank()) Text(status, style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (loading) {
+                        LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
+                        Text(stringResource(R.string.mfp_loading_page), style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (status.isNotBlank()) Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     AndroidView(factory = { web }, modifier = Modifier.fillMaxWidth().weight(1f))
                     TextButton(onClick = { finish() }) { Text(stringResource(R.string.mfp_close)) }
                 }
@@ -133,6 +182,7 @@ class MfpExperimentActivity : ComponentActivity() {
                                 status = getString(if (saved) R.string.mfp_saved else R.string.mfp_save_failed)
                             }) { Text(stringResource(R.string.mfp_save_preview)) }
                         }, dismissButton = { TextButton(onClick = { preview = null }) { Text(stringResource(R.string.mfp_close)) } })
+                }
                 }
             }
         }

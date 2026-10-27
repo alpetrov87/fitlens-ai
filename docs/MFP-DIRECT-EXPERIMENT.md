@@ -24,3 +24,7 @@ CAPTCHA, embedded-browser restrictions, account sign-in method or the site's cur
 ## Validation
 
 Synthetic parser tests cover food rows, thousands separators, decimal macros, zero versus missing values, daily total versus goal/remaining/subtotal rows, trusted origin/date guards, and rejecting a login form. Android compile, unit tests and lint are run before branch publication. These tests establish the prototype behavior, not compatibility with the live authenticated site.
+
+## 0.18.1 — blank-screen diagnostics
+
+The experiment now owns a Material Surface background/content color, including dark mode, and opens MyFitnessPal sign-in automatically. Native controls are limited to a scrollable 240dp header so they cannot consume the entire portrait screen. Scroll that header to reach date/username/read controls. A reload action, progress indicator, slow-load notice and main-frame HTTP/network/TLS error messages are provided. TLS errors remain cancelled. This fixes initialization/layout visibility problems; it does not prove that MyFitnessPal permits embedded sign-in. If the site still fails, report the displayed status or a screenshot without credentials.

@@ -279,4 +279,10 @@
   <string name="mfp_save_preview">Save test snapshot</string>
   <string name="mfp_saved">Test snapshot saved locally, separate from the main data.</string>
   <string name="mfp_save_failed">Unable to save.</string>
+  <string name="mfp_retry_loading">Reload website</string>
+  <string name="mfp_loading_page">Loading MyFitnessPal…</string>
+  <string name="mfp_network_error">Website failed to load (WebView error %1$d). Check your connection and Android System WebView updates, then retry.</string>
+  <string name="mfp_http_error">MyFitnessPal returned HTTP %1$d. The website may restrict embedded browsers.</string>
+  <string name="mfp_tls_error">The secure website connection could not be verified. Loading was stopped.</string>
+  <string name="mfp_loading_slow">Loading is taking longer than expected. Scroll the controls above to retry or clear the session.</string>
 </resources>

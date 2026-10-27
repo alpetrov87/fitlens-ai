@@ -279,4 +279,10 @@
   <string name="mfp_save_preview">Запази тестовия преглед</string>
   <string name="mfp_saved">Тестовият преглед е запазен локално, отделно от основните данни.</string>
   <string name="mfp_save_failed">Записът не успя.</string>
+  <string name="mfp_retry_loading">Презареди сайта</string>
+  <string name="mfp_loading_page">Зареждане на MyFitnessPal…</string>
+  <string name="mfp_network_error">Сайтът не се зареди (WebView грешка %1$d). Провери връзката и актуализацията на Android System WebView, после опитай отново.</string>
+  <string name="mfp_http_error">MyFitnessPal върна HTTP %1$d. Сайтът може да ограничава вградения браузър.</string>
+  <string name="mfp_tls_error">Защитената връзка към сайта не можа да бъде потвърдена. Зареждането е спряно.</string>
+  <string name="mfp_loading_slow">Зареждането се бави. Превърти горните контроли, за да презаредиш сайта или да изчистиш сесията.</string>
 </resources>
