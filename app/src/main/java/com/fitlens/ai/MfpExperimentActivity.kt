@@ -59,8 +59,9 @@ class MfpExperimentActivity : ComponentActivity() {
                             val info = withContext(Dispatchers.IO) { manager.getWorkInfosForUniqueWork(MfpSyncWorker.NAME).get().maxByOrNull { item -> item.tags.firstOrNull { it.startsWith("mfp-start:") }?.substringAfter(':')?.toLongOrNull() ?: 0L } }
                             syncing = info != null && !info.state.isFinished
                             if (info != null) {
-                                val done = if (info.state == androidx.work.WorkInfo.State.SUCCEEDED) 30 else info.progress.getInt("done", info.outputData.getInt("done", 0))
-                                batchProgress = getString(R.string.mfp_background_progress, done, mfpWorkState(this@MfpExperimentActivity, info.state))
+                                val done = info.progress.getInt("done", info.outputData.getInt("done", 0))
+                                val total = info.progress.getInt("total", info.outputData.getInt("total", 30))
+                                batchProgress = getString(R.string.mfp_sync_progress, done, total, mfpWorkState(this@MfpExperimentActivity, info.state))
                                 if (info.state == androidx.work.WorkInfo.State.FAILED) status = getString(R.string.mfp_background_failed, info.outputData.getString("error").orEmpty())
                             }
                             delay(1000)

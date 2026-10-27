@@ -9,6 +9,15 @@ import java.time.LocalDate
 internal class MfpHistoryStore(context: Context) {
     private val prefs = context.getSharedPreferences("mfp_history", Context.MODE_PRIVATE)
     fun account(): String = prefs.getString("active_account", "").orEmpty()
+    fun days(account: String = account()): List<MfpDiaryPreview> {
+        if (!account.matches(Regex("[A-Za-z0-9_.-]{1,100}"))) return emptyList()
+        val prefix = account.lowercase(java.util.Locale.ROOT) + ":"
+        return prefs.all.mapNotNull { (key, value) ->
+            if (!key.startsWith(prefix) || value !is String) null else runCatching {
+                readMfpSnapshot(value).takeIf { it.date == key.removePrefix(prefix) }
+            }.getOrNull()
+        }.sortedByDescending { it.date }
+    }
     fun generation(): Int = prefs.getInt("generation", 0)
     fun save(account: String, data: MfpDiaryPreview, expectedGeneration: Int? = null): Boolean = synchronized(lock) {
         if (expectedGeneration != null && expectedGeneration != generation()) return false

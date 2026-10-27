@@ -116,3 +116,31 @@ Local automated tests cover native HTML sanitization, multiple meals, and date
 mismatch/login rejection. Actual background access and lock-screen behavior
 need a phone test with an authenticated account; no live account is available
 in the build environment.
+
+## 0.21.0: browsable diary and incremental update
+
+The MFP tab now displays private, persisted snapshots by selected date: daily
+energy and macronutrients, other available nutrient totals, expandable meals
+with every stored food and its returned nutrients, and a selectable seven-day
+calorie chart. Day chips show whether a snapshot exists; arrows and a date
+picker also allow older saved days to be opened. The saved date span, saved-day
+count, and coverage of the current rolling 30-day window are shown separately,
+so gaps are not represented as a complete date interval. Missing fields use a
+dash, not an invented zero or daily goal. Chart heights are relative to the
+largest recorded day in that week; they do not represent goal completion.
+
+**Update diary** inspects valid snapshots for the entered account. It downloads
+all missing dates within the last 30 days and always refreshes today plus the
+previous two days to pick up edits. A complete previous import therefore usually
+needs three requests tomorrow, not another 30. Existing older days remain saved;
+old edits outside this refresh window require a manual re-read. **Account and
+synchronization → Read and save 30 days** still performs an explicit full refresh
+ending on its selected date.
+
+Each worker persists its exact date plan before fetching and checkpoints its
+position after saving each day. Retries reuse that plan, so a changed cache does
+not shift the checkpoint. Progress shows actual done/total requests. Snapshots
+are read only from the selected account namespace; corrupt or mismatched dated
+snapshots are excluded from the cache and are eligible for re-download. Existing
+snapshots need no migration. The ChatGPT report continues to use daily summaries
+from the same stored history.

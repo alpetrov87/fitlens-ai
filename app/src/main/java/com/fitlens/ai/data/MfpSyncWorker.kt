@@ -26,10 +26,18 @@ class MfpSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorke
         val client = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
             .callTimeout(20, TimeUnit.SECONDS).build()
         try {
-            for (offset in checkpoint.getInt(id.toString(), 0)..29) {
+            val planKey = "$id:plan"
+            val dates = checkpoint.getString(planKey, null)?.let { raw ->
+                val array = org.json.JSONArray(raw)
+                (0 until array.length()).map { array.getString(it) }
+            } ?: mfpSyncDates(end, store.days(account).map { it.date }.toSet(),
+                full = !inputData.getBoolean("incremental", false)).also {
+                check(checkpoint.edit().putString(planKey, org.json.JSONArray(it).toString()).commit())
+            }
+            for (offset in checkpoint.getInt(id.toString(), 0) until dates.size) {
                 if (isStopped) return@withContext Result.failure()
-                val day = end.minusDays(offset.toLong()).toString()
-                setProgress(workDataOf("done" to offset, "date" to day))
+                val day = dates[offset]
+                setProgress(workDataOf("done" to offset, "date" to day, "total" to dates.size))
                 val url = "https://www.myfitnesspal.com/food/diary/$account?date=$day"
                 val cookie = withContext(Dispatchers.Main) { CookieManager.getInstance().getCookie(url) }.orEmpty()
                 if (cookie.isBlank()) return@withContext failure("login")
@@ -67,18 +75,21 @@ class MfpSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorke
                 if (isStopped) return@withContext Result.failure()
                 check(MfpHistoryStore(applicationContext).save(account, data, inputData.getInt("generation", -1)))
                 check(checkpoint.edit().putInt(id.toString(), offset + 1).commit())
-                setProgress(workDataOf("done" to offset + 1, "date" to day))
+                setProgress(workDataOf("done" to offset + 1, "date" to day, "total" to dates.size))
                 delay(350)
             }
-            Result.success(workDataOf("done" to 30))
+            Result.success(workDataOf("done" to dates.size, "total" to dates.size))
         } catch (cancelled: kotlinx.coroutines.CancellationException) {
             throw cancelled
         } catch (_: java.io.IOException) {
             if (runAttemptCount < 3) Result.retry() else failure("network")
         } catch (_: Exception) { failure("page") }
     }
-    private fun failure(reason: String) = Result.failure(workDataOf("error" to reason,
-        "done" to applicationContext.getSharedPreferences("mfp_sync", Context.MODE_PRIVATE).getInt(id.toString(), 0)))
+    private fun failure(reason: String): Result {
+        val checkpoint = applicationContext.getSharedPreferences("mfp_sync", Context.MODE_PRIVATE)
+        val total = runCatching { org.json.JSONArray(checkpoint.getString("$id:plan", "[]")).length() }.getOrDefault(0)
+        return Result.failure(workDataOf("error" to reason, "done" to checkpoint.getInt(id.toString(), 0), "total" to total))
+    }
     companion object { const val NAME = "mfp-diary-history" }
 }
 
