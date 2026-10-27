@@ -31,9 +31,11 @@ internal class MfpDiaryDateMismatch : IllegalArgumentException("Diary date does 
 /** Reads only the diary table supplied by an explicit user action; never reads login forms/cookies. */
 internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPreview {
     require(html.length <= 250_000) { "Diary table too large" }
-    val table = Jsoup.parse(html).selectFirst("table")
-        ?: error("Unsupported diary layout")
-    val documentDate = table.attr("data-diary-date").takeIf { it.isNotBlank() }
+    val document = Jsoup.parse(html)
+    val tables = document.select("table")
+    check(tables.isNotEmpty()) { "Unsupported diary layout" }
+    val rows = tables.flatMap { table -> table.select("tr").filter { it.closest("table") == table } }
+    val documentDate = document.selectFirst("[data-diary-date]")?.attr("data-diary-date")?.takeIf { it.isNotBlank() }
     if (!isMfpDiaryForDate(url, date, documentDate)) throw MfpDiaryDateMismatch()
     fun key(text: String): String? = when (text.lowercase(java.util.Locale.ROOT).trim()
         .replace(Regex("[\\s\\u00a0]+"), " ")
@@ -58,15 +60,18 @@ internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPre
     var meal = ""
     // Unfilled meal sections may only have a title. Reuse the actual nutrient columns,
     // including the repeated footer header, rather than overwriting them with nulls.
-    var headers: List<String?> = table.select("tr").map { row ->
+    var headers: List<String?> = rows.map { row ->
         row.children().filter { it.tagName() in listOf("td", "th") }.map { key(it.text()) }
     }.firstOrNull { columns -> columns.drop(1).count { it != null } >= 2 }.orEmpty()
     var totals: Map<String, Double> = emptyMap()
-    for (row in table.select("tr")) {
+    for (row in rows) {
         val cells = row.children().filter { it.tagName() == "td" || it.tagName() == "th" }
         val headerKeys = cells.map { key(it.text()) }
-        val mealHeader = row.hasClass("meal_header") || row.hasClass("meal-header") || headerKeys.drop(1).count { it != null } >= 2
         val firstText = cells.firstOrNull()?.text()?.lowercase(java.util.Locale.ROOT).orEmpty()
+        val namedMeal = firstText in listOf("breakfast", "lunch", "dinner", "snacks", "snack", "закуска", "обяд", "вечеря", "междинно хранене")
+        val mealHeader = row.hasClass("meal_header") || row.hasClass("meal-header") ||
+            row.attr("data-meal-heading") == "true" || namedMeal && cells.drop(1).all { it.text().isBlank() } ||
+            headerKeys.drop(1).count { it != null } >= 2
         if (mealHeader) {
             meal = cells.firstOrNull()?.text().orEmpty()
             if (headerKeys.drop(1).count { it != null } >= 2) headers = headerKeys

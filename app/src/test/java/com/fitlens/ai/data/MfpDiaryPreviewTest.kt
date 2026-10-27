@@ -65,6 +65,19 @@ class MfpDiaryPreviewTest {
         assertFalse(isMfpDiaryForDate(url, "2026-10-27", "2026-10-26"))
         assertFalse(isMfpDiaryForDate(url.replace("2026-10-27", "2026-10-26"), "2026-10-27", "2026-10-27"))
     }
+    @Test fun readsAllMealsAcrossTablesAndTitleOnlySections() {
+        val data = parseMfpDiary("""<div data-diary-date="2026-10-27">
+          <table><tr class="meal_header"><td>Breakfast</td><td>Calories kcal</td><td>Protein g</td></tr>
+          <tr><td>Example oats</td><td>200</td><td>8</td></tr><tr class="bottom"><td>Subtotal</td><td>200</td><td>8</td></tr></table>
+          <table><tr><td>Lunch</td></tr><tr class="food"><td>Example rice</td><td>300</td><td>10</td></tr>
+          <tr class="bottom"><td>Subtotal</td><td>300</td><td>10</td></tr>
+          <tr data-meal-heading="true"><td>After training</td></tr><tr><td>Example shake</td><td>150</td><td>20</td></tr></table>
+          <table><tr class="meal-header"><td>Dinner</td><td>Calories kcal</td><td>Protein g</td></tr>
+          <tr><td>Example dinner</td><td>400</td><td>25</td></tr><tr class="total"><td>Totals</td><td>1050</td><td>63</td></tr></table></div>""", url, "2026-10-27")
+        assertEquals(listOf("Breakfast", "Lunch", "After training", "Dinner"), data.foods.map { it.meal })
+        assertEquals(4, data.foods.size)
+        assertEquals(1050.0, data.totals["calories"]!!, 0.01)
+    }
     @Test fun onlyAllowsTrustedHttpsDiaryForExactDate() {
         assertTrue(isMfpDiaryForDate(url, "2026-10-27"))
         listOf("https://myfitnesspal.com.evil.test/food/diary/test?date=2026-10-27", "http://www.myfitnesspal.com/food/diary/test?date=2026-10-27", url+"&date=2026-10-28", url.replace("/food/diary/", "/food/diaryevil/"), url.replace("2026-10-27", "2026-10-26")).forEach {

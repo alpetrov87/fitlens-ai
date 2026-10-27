@@ -295,4 +295,6 @@
   <string name="mfp_selected_day">Selected date: %1$s</string>
   <string name="mfp_date_mismatch">The page does not match the selected date %1$s. Choose the correct date in Day and reading and tap Open day.</string>
   <string name="mfp_no_food_rows">No individual food rows were recognized in the table. Only available totals are shown.</string>
+  <string name="mfp_meal_counts">Recognized: %1$d meals · %2$d foods. Compare all meals with the website before saving.</string>
+  <string name="mfp_meal_group">%1$s · %2$d foods</string>
 </resources>

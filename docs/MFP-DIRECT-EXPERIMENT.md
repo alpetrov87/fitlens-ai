@@ -53,3 +53,11 @@ A title-only empty meal header no longer replaces known nutrient columns with nu
 The website panel now displays the native selected date. The sanitizer additionally copies only the known diary calendar field `input#date_selector[name=hidden_date_selector]` into a `data-diary-date` table attribute, if it contains an ISO date. This is a calendar field, not a login/hidden credential field. Conflicting URL/document dates are rejected. A diary URL without a date parameter is accepted only when that explicit document date matches the selected day; it is never assumed to mean today. Existing authenticated origin and diary-path checks remain mandatory. Save still requires user confirmation of date/account.
 
 If food rows are absent but numeric totals exist, the preview says only totals were recognized. These fixes are regression-tested locally, but the user's current-day page still needs real-account validation.
+
+## 0.18.5 — meal completeness
+
+The user observed only breakfast in a successful preview. Extraction now considers all diary meal tables and explicit daily total tables in document order, not only the first matching table. Direct rows are copied once per table to avoid nested-table duplication. Plain standard meal names and explicit single-cell heading markers are supported in addition to nutrient/class headers. The parser retains nutrient column alignment across title-only later sections. No totals are synthesized from partial food lists.
+
+The preview reports recognized meal and food counts so the owner can compare the result against the complete page. Synthetic regression data covers Breakfast, Lunch, a custom After training heading, Dinner, styled rows and a separate total. This does not establish that every live layout is covered; 30-day collection remains postponed until completeness is confirmed on the phone.
+
+The review dialog also lists each recognized meal as a compact expandable group, with meal/food counts before the detailed food rows. This prevents a long breakfast list from visually hiding all later meal headings. The stored snapshot still contains all parsed food rows, regardless of which group is expanded.

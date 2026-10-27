@@ -192,24 +192,40 @@ class MfpExperimentActivity : ComponentActivity() {
                         status = ""
                         // Captures only a diary table, never document HTML, scripts, cookies or storage.
                         web.evaluateJavascript("""(function(){
-                            const marker=document.querySelector('tr.meal_header, tr.meal-header');
-                            let table=marker ? marker.closest('table') : document.querySelector('table#diary-table, #diary-table table');
-                            if(!table) table=Array.from(document.querySelectorAll('table')).reverse().find(t => /calories/i.test(t.innerText) && /totals/i.test(t.innerText));
-                            if(!table) return '';
-                            const clean=document.createElement('table');
+                            const tables=Array.from(document.querySelectorAll('table'));
+                            const candidates=new Set();
+                            document.querySelectorAll('tr.meal_header, tr.meal-header').forEach(row => { const t=row.closest('table'); if(t) candidates.add(t); });
+                            tables.forEach(t => {
+                                const rows=Array.from(t.querySelectorAll('tr')).filter(r => r.closest('table') === t);
+                                const text=rows.map(r => r.innerText).join(' ');
+                                const heading=rows.some(r => {
+                                    const c=Array.from(r.children).filter(x => x.tagName === 'TD' || x.tagName === 'TH');
+                                    return c.length && (/^(breakfast|lunch|dinner|snacks|закуска|обяд|вечеря)$/i.test(c[0].innerText.trim()) || c.length === 1 && (c[0].colSpan > 1 || c[0].querySelector('h1,h2,h3,h4')));
+                                });
+                                const numeric=rows.some(r => Array.from(r.children).filter(c => /[0-9]/.test(c.innerText)).length >= 2);
+                                const total=rows.some(r => r.classList.contains('total') && !r.classList.contains('alt') && !r.classList.contains('remaining'));
+                                if(t.id === 'diary-table' || total || heading && numeric || /calories/i.test(text) && /breakfast|lunch|dinner|snacks|totals/i.test(text)) candidates.add(t);
+                            });
+                            if(!candidates.size) return '';
+                            const clean=document.createElement('div');
                             const dateField=document.querySelector('input#date_selector[name="hidden_date_selector"]');
                             if(dateField && /^\d{4}-\d{2}-\d{2}$/.test(dateField.value)) clean.setAttribute('data-diary-date',dateField.value);
-                            for(const row of table.querySelectorAll('tr')) {
-                                if(row.closest('table') !== table) continue;
-                                const copy=document.createElement('tr');
-                                copy.className=row.className;
-                                for(const cell of row.children) {
-                                    if(cell.tagName !== 'TD' && cell.tagName !== 'TH') continue;
-                                    const c=document.createElement(cell.tagName.toLowerCase());
-                                    c.textContent=cell.innerText.trim();
-                                    copy.appendChild(c);
+                            for(const table of tables.filter(t => candidates.has(t))) {
+                                const output=document.createElement('table');
+                                for(const row of table.querySelectorAll('tr')) {
+                                    if(row.closest('table') !== table) continue;
+                                    const copy=document.createElement('tr');
+                                    copy.className=row.className;
+                                    const cells=Array.from(row.children).filter(c => c.tagName === 'TD' || c.tagName === 'TH');
+                                    if(cells.length === 1 && (cells[0].colSpan > 1 || cells[0].querySelector('h1,h2,h3,h4'))) copy.setAttribute('data-meal-heading','true');
+                                    for(const cell of cells) {
+                                        const c=document.createElement(cell.tagName.toLowerCase());
+                                        c.textContent=cell.innerText.trim();
+                                        copy.appendChild(c);
+                                    }
+                                    if(copy.children.length) output.appendChild(copy);
                                 }
-                                if(copy.children.length) clean.appendChild(copy);
+                                if(output.children.length) clean.appendChild(output);
                             }
                             return clean.outerHTML.length <= 250000 ? clean.outerHTML : '';
                         })()""") { result ->
@@ -226,19 +242,27 @@ class MfpExperimentActivity : ComponentActivity() {
                     }
                 }
                 preview?.let { data ->
+                    var expandedMeal by remember(data) { mutableStateOf<String?>(null) }
                     AlertDialog(onDismissRequest = { preview = null }, title = { Text(stringResource(R.string.mfp_preview)) },
                         text = {
                             Column(Modifier.heightIn(max = 430.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(data.date)
-                                Text(stringResource(R.string.mfp_verify_date))
-                                Row { Checkbox(confirmed, { confirmed = it }); Text(stringResource(R.string.mfp_confirm_date)) }
-                                Text(stringResource(R.string.mfp_preview_note))
+                                Text(stringResource(R.string.mfp_meal_counts, data.foods.map { it.meal }.distinct().size, data.foods.size))
                                 if (data.foods.isEmpty()) Text(stringResource(R.string.mfp_no_food_rows))
                                 data.totals.forEach { (key, value) -> Text("$key: $value") }
-                                data.foods.forEach { food ->
-                                    HorizontalDivider(); Text("${food.meal} · ${food.name}")
-                                    food.nutrients.forEach { (key, value) -> Text("$key: $value") }
+                                data.foods.groupBy { it.meal }.forEach { (meal, foods) ->
+                                    HorizontalDivider()
+                                    TextButton(onClick = { expandedMeal = if (expandedMeal == meal) null else meal }, modifier = Modifier.fillMaxWidth()) {
+                                        Text(stringResource(R.string.mfp_meal_group, meal, foods.size) + if (expandedMeal == meal) " −" else " +")
+                                    }
+                                    if (expandedMeal == meal) foods.forEach { food ->
+                                        Text(food.name, style = MaterialTheme.typography.titleSmall)
+                                        food.nutrients.forEach { (key, value) -> Text("$key: $value") }
+                                    }
                                 }
+                                Text(stringResource(R.string.mfp_preview_note))
+                                Text(stringResource(R.string.mfp_verify_date))
+                                Row { Checkbox(confirmed, { confirmed = it }); Text(stringResource(R.string.mfp_confirm_date)) }
                             }
                         }, confirmButton = {
                             TextButton(enabled = confirmed, onClick = {

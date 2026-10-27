@@ -295,4 +295,6 @@
   <string name="mfp_selected_day">Избран ден: %1$s</string>
   <string name="mfp_date_mismatch">Страницата не съвпада с избрания ден %1$s. В „Ден и прочит“ избери правилната дата и натисни „Отвори деня“.</string>
   <string name="mfp_no_food_rows">В таблицата няма разпознати отделни храни. Показваме само наличните общи стойности.</string>
+  <string name="mfp_meal_counts">Разпознати: %1$d хранения · %2$d храни. Сравни всички хранения със сайта преди запис.</string>
+  <string name="mfp_meal_group">%1$s · %2$d храни</string>
 </resources>
