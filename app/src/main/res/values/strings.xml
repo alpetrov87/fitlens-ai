@@ -257,4 +257,26 @@
   <string name="nutrition_date">Date</string>
   <string name="nutrition_food_info">Food information</string>
   <string name="nutrition_time">Time</string>
+  <string name="mfp_experiment">MyFitnessPal — direct access test</string>
+  <string name="mfp_experiment_settings_note">Experiment: website sign-in and one-day diary reading. Not automatic synchronization.</string>
+  <string name="mfp_experiment_note">Sign in only on the MyFitnessPal website. Native code does not read passwords or cookies. WebView manages the session on this device until cleared. External Google/Apple sign-in is not supported in this test.</string>
+  <string name="mfp_external_blocked">External navigation blocked. Use MyFitnessPal website sign-in; CAPTCHA is not bypassed.</string>
+  <string name="mfp_date">Date YYYY-MM-DD</string>
+  <string name="mfp_username">MFP username</string>
+  <string name="mfp_login">Sign in</string>
+  <string name="mfp_open_diary">Open day</string>
+  <string name="mfp_clear_session">Sign out/clear</string>
+  <string name="mfp_invalid_input">Check the date and username (not your email address).</string>
+  <string name="mfp_session_cleared">MyFitnessPal session cleared.</string>
+  <string name="mfp_wrong_page">Open the diary for the selected date and wait for it to load.</string>
+  <string name="mfp_read_failed">No supported diary table found. Sign-in may be incomplete, access blocked, or the website layout changed. Try English in MyFitnessPal. Nothing was saved.</string>
+  <string name="mfp_read_day">Read this day</string>
+  <string name="mfp_close">Close</string>
+  <string name="mfp_preview">Review extracted data</string>
+  <string name="mfp_verify_date">Verify the date on the website. The table may still be updating; we cannot independently verify each row date.</string>
+  <string name="mfp_confirm_date">The website date and account are correct.</string>
+  <string name="mfp_preview_note">Only recognized visible columns are shown. calories = kcal; macros/sugar/fibre = g; sodium/potassium = mg. Missing nutrients are not inferred. This does not yet replace nutrition on the home screen.</string>
+  <string name="mfp_save_preview">Save test snapshot</string>
+  <string name="mfp_saved">Test snapshot saved locally, separate from the main data.</string>
+  <string name="mfp_save_failed">Unable to save.</string>
 </resources>

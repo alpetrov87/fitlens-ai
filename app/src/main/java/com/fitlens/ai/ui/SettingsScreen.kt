@@ -85,6 +85,11 @@ internal fun SettingsScreen(
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         InfoCard("MyFitnessPal", Icons.Default.Restaurant) {
+            OutlinedButton(onClick = { context.startActivity(Intent(context, com.fitlens.ai.MfpExperimentActivity::class.java)) }, modifier = Modifier.fillMaxWidth()) {
+                Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.mfp_experiment))
+            }
+            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.mfp_experiment_settings_note), style = MaterialTheme.typography.bodySmall)
+
             Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_079))
             Button(onClick = { onImport(CsvImportSource.MYFITNESSPAL) }, enabled = !busy, modifier = Modifier.fillMaxWidth()) {
                 Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_009))

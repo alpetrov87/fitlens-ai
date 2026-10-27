@@ -257,4 +257,26 @@
   <string name="nutrition_date">Дата</string>
   <string name="nutrition_food_info">Информация за храната</string>
   <string name="nutrition_time">Час</string>
+  <string name="mfp_experiment">MyFitnessPal — директен тест</string>
+  <string name="mfp_experiment_settings_note">Експеримент: вход в сайта и прочит на един ден. Не е автоматична синхронизация.</string>
+  <string name="mfp_experiment_note">Влез само в сайта на MyFitnessPal. Тестът не чете паролата или cookies в native код. Сесията се управлява от WebView и остава на устройството до изчистване. Външен Google/Apple вход не се поддържа в този тест.</string>
+  <string name="mfp_external_blocked">Външната навигация е блокирана. Използвай входа на самия MyFitnessPal; не заобикаляме CAPTCHA.</string>
+  <string name="mfp_date">Дата YYYY-MM-DD</string>
+  <string name="mfp_username">MFP потребителско име</string>
+  <string name="mfp_login">Вход</string>
+  <string name="mfp_open_diary">Отвори деня</string>
+  <string name="mfp_clear_session">Изход/изчисти</string>
+  <string name="mfp_invalid_input">Провери датата и потребителското име (не имейл адрес).</string>
+  <string name="mfp_session_cleared">Сесията на MyFitnessPal е изчистена.</string>
+  <string name="mfp_wrong_page">Отвори дневника за избраната дата и изчакай зареждането.</string>
+  <string name="mfp_read_failed">Не намерих поддържана таблица с хранения. Възможни причини: входът не е завършен, блокиране или нов изглед на сайта. Опитай английски език в MyFitnessPal. Нищо не е записано.</string>
+  <string name="mfp_read_day">Прочети този ден</string>
+  <string name="mfp_close">Затвори</string>
+  <string name="mfp_preview">Преглед на намерените данни</string>
+  <string name="mfp_verify_date">Провери датата в самия сайт. Таблицата може още да се обновява; не можем независимо да потвърдим датата на всеки ред.</string>
+  <string name="mfp_confirm_date">Датата и профилът в сайта са правилни.</string>
+  <string name="mfp_preview_note">Показваме само разпознатите видими колони. calories = kcal; макроси/захар/фибри = g; sodium/potassium = mg. Не изчисляваме липсващи нутриенти. Това още не заменя хранителните данни в основния екран.</string>
+  <string name="mfp_save_preview">Запази тестовия преглед</string>
+  <string name="mfp_saved">Тестовият преглед е запазен локално, отделно от основните данни.</string>
+  <string name="mfp_save_failed">Записът не успя.</string>
 </resources>
