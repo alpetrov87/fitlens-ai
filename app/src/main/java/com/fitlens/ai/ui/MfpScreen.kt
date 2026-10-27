@@ -46,6 +46,7 @@ internal fun MfpScreen() {
     var account by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var syncStatus by remember { mutableStateOf("") }
+    var needsReimport by remember { mutableStateOf(false) }
     var confirm by remember { mutableStateOf(false) }
     var picker by remember { mutableStateOf(false) }
     var selected by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
@@ -65,6 +66,7 @@ internal fun MfpScreen() {
                 }
                 account = result.first
                 days = result.second
+                needsReimport = store.needsReimport(account)
                 val work = result.third
                 busy = work != null && !work.state.isFinished
                 syncStatus = work?.let {
@@ -98,6 +100,8 @@ internal fun MfpScreen() {
                 if (days.isNotEmpty()) Text(stringResource(R.string.mfp_saved_range,
                     LocalDate.parse(days.last().date).format(dateFormat), LocalDate.parse(days.first().date).format(dateFormat), days.size),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (needsReimport) Text(stringResource(R.string.mfp_reimport_notice), style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(R.string.mfp_incremental_help), style = MaterialTheme.typography.bodySmall)
                 Button(onClick = { confirm = true }, enabled = !busy && account.matches(Regex("[A-Za-z0-9_.-]{1,100}")), modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Sync, null, Modifier.size(18.dp))

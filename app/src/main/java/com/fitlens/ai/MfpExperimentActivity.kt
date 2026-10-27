@@ -343,7 +343,10 @@ private val MFP_DIARY_SCRIPT = """(function(){
                                     if(cells.length === 1 && (cells[0].colSpan > 1 || cells[0].querySelector('h1,h2,h3,h4'))) copy.setAttribute('data-meal-heading','true');
                                     for(const cell of cells) {
                                         const c=document.createElement(cell.tagName.toLowerCase());
-                                        c.textContent=cell.innerText.trim();
+                                        const value=cell.querySelector('.macro-value');
+                                        const text=cell.cloneNode(true);
+                                        text.querySelectorAll('.macro-percentage').forEach(part => part.remove());
+                                        c.textContent=value ? value.textContent.trim() : (cell.querySelector('.macro-percentage') ? text.textContent.trim() : cell.innerText.trim());
                                         copy.appendChild(c);
                                     }
                                     if(copy.children.length) output.appendChild(copy);

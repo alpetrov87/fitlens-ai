@@ -11,6 +11,7 @@ internal fun mfpSyncDates(end: LocalDate, saved: Set<String>, full: Boolean = fa
 internal fun readMfpSnapshot(raw: String): MfpDiaryPreview {
     require(raw.length <= 1_000_000)
     val json = JSONObject(raw)
+    require(json.optInt("parserVersion", 0) == MFP_DIARY_PARSER_VERSION) { "Diary requires re-import" }
     val date = json.getString("date")
     require(LocalDate.parse(date).toString() == date)
     fun nutrients(values: JSONObject): Map<String, Double> = values.keys().asSequence().mapNotNull { key ->

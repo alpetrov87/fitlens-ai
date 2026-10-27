@@ -144,3 +144,27 @@ are read only from the selected account namespace; corrupt or mismatched dated
 snapshots are excluded from the cache and are eligible for re-download. Existing
 snapshots need no migration. The ChatGPT report continues to use daily summaries
 from the same stored history.
+
+## 0.21.1: separate macro values from percentages
+
+Legacy MFP diary cells can contain adjacent `.macro-value` and
+`.macro-percentage` spans. Jsoup's plain text included both, and the numeric
+reader then removed the intervening space. This could turn a gram value and a
+percentage into an incorrect large number. Both native HTML extraction and the
+manual WebView extraction now prefer `.macro-value` and exclude
+`.macro-percentage`; the parser also handles the original spans directly.
+Whitespace is accepted only for properly grouped thousands, not arbitrary
+adjacent numbers. Decimal and grouped-thousands formats remain supported.
+
+Snapshots now carry parserVersion 2. Unversioned snapshots are preserved in
+private storage but excluded from the diary, cache coverage, sync planning, and
+ChatGPT reports because their original values cannot safely be reconstructed.
+The diary shows a re-import notice if old snapshots exist in the current 30-day
+window. Press **Update diary** once to re-read that window with the fixed parser;
+subsequent updates return to incremental mode. Older archived dates can be
+re-read through the account screen. No heuristic division or rescaling of
+stored food amounts is performed.
+
+Regression tests use synthetic entries and cover hidden/reordered percentages,
+food rows and daily totals, native sanitization, ambiguous adjacent numbers,
+decimal/thousands separators, and cache-version rejection/round-trip.

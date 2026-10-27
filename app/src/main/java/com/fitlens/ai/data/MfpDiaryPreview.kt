@@ -4,6 +4,8 @@ import org.jsoup.Jsoup
 import java.net.URI
 import java.time.LocalDate
 
+internal const val MFP_DIARY_PARSER_VERSION = 2
+
 internal data class MfpFoodPreview(val meal: String, val name: String, val nutrients: Map<String, Double>)
 internal data class MfpDiaryPreview(val date: String, val foods: List<MfpFoodPreview>, val totals: Map<String, Double>)
 
@@ -51,7 +53,10 @@ internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPre
         else -> null
     }
     fun number(text: String): Double? {
-        val raw = text.trim().replace("\u00a0", "").replace(" ", "")
+        val spaced = text.trim().replace(Regex("[\\s\\u00a0\\u202f]+"), " ")
+        // Only properly grouped thousands may contain whitespace. Never join two values.
+        if (' ' in spaced && !spaced.matches(Regex("[+-]?\\d{1,3}( \\d{3})+([.,]\\d+)?"))) return null
+        val raw = spaced.replace(" ", "")
         if (!raw.matches(Regex("[+-]?[0-9][0-9,.]*"))) return null
         val normalized = if (raw.matches(Regex("[+-]?\\d{1,3}(,\\d{3})+(\\.\\d+)?"))) raw.replace(",", "") else raw.replace(',', '.')
         return normalized.toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0 }
@@ -77,16 +82,22 @@ internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPre
             if (headerKeys.drop(1).count { it != null } >= 2) headers = headerKeys
         } else if (row.hasClass("total") || firstText in listOf("totals", "total", "общо", "your daily goal", "remaining")) {
             if (!row.hasClass("alt") && !row.hasClass("remaining") && firstText !in listOf("your daily goal", "remaining") && totals.isEmpty()) {
-                totals = cells.mapIndexedNotNull { i, cell -> headers.getOrNull(i)?.let { k -> number(cell.text())?.let { k to it } } }.toMap()
+                totals = cells.mapIndexedNotNull { i, cell -> headers.getOrNull(i)?.let { k -> number(mfpNutrientCellText(cell))?.let { k to it } } }.toMap()
             }
             meal = ""
         } else if (row.hasClass("bottom")) {
             meal = ""
         } else if (!row.hasClass("bottom") && !row.hasClass("meal_total") && !row.hasClass("meal-total") && cells.size > 1 && meal.isNotBlank()) {
-            val nutrients = cells.mapIndexedNotNull { i, cell -> headers.getOrNull(i)?.let { k -> number(cell.text())?.let { k to it } } }.toMap()
+            val nutrients = cells.mapIndexedNotNull { i, cell -> headers.getOrNull(i)?.let { k -> number(mfpNutrientCellText(cell))?.let { k to it } } }.toMap()
             if (nutrients.isNotEmpty()) foods += MfpFoodPreview(meal.take(120), cells.first().text().take(300), nutrients)
         }
     }
     require(headers.any { it != null } && (totals.isNotEmpty() || foods.isNotEmpty())) { "No recognized nutrition fields" }
     return MfpDiaryPreview(date, foods, totals)
+}
+
+/** MFP keeps gram values and macro percentages in adjacent spans in the same cell. */
+internal fun mfpNutrientCellText(cell: org.jsoup.nodes.Element): String {
+    cell.selectFirst(".macro-value")?.let { return it.text() }
+    return cell.clone().apply { select(".macro-percentage").remove() }.text()
 }

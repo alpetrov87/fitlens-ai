@@ -114,7 +114,7 @@ internal fun mfpDiaryTables(html: String): String {
             val cells = row.children().filter { it.tagName() in listOf("td", "th") }
             val copy = Element("tr").attr("class", row.className())
             if (cells.size == 1 && (cells[0].attr("colspan").toIntOrNull()?.let { it > 1 } == true || cells[0].select("h1,h2,h3,h4").isNotEmpty())) copy.attr("data-meal-heading", "true")
-            cells.forEach { copy.appendChild(Element(it.tagName()).text(it.text())) }
+            cells.forEach { copy.appendChild(Element(it.tagName()).text(mfpNutrientCellText(it))) }
             if (cells.isNotEmpty()) output.appendChild(copy)
         }
         if (output.childrenSize() > 0) clean.appendChild(output)
