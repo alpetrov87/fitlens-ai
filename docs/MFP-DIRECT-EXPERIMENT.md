@@ -61,3 +61,26 @@ The user observed only breakfast in a successful preview. Extraction now conside
 The preview reports recognized meal and food counts so the owner can compare the result against the complete page. Synthetic regression data covers Breakfast, Lunch, a custom After training heading, Dinner, styled rows and a separate total. This does not establish that every live layout is covered; 30-day collection remains postponed until completeness is confirmed on the phone.
 
 The review dialog also lists each recognized meal as a compact expandable group, with meal/food counts before the detailed food rows. This prevents a long breakfast list from visually hiding all later meal headings. The stored snapshot still contains all parsed food rows, regardless of which group is expanded.
+
+## 0.19.0: foreground 30-day import
+
+After signing in, open **Day and read**, enter your own diary username and the
+last date, then choose **Read and save 30 days**. Confirm the account. The app
+visits that date and the previous 29 sequentially, with a pause between pages.
+Keep this screen open; Stop or closing it cancels the job. Each successful read
+is immediately committed locally by account/date, including all meal rows and
+returned daily totals. A new successful read replaces that date; failures do
+not clear existing history. Authentication, HTTP, timeout, parsing, or date
+errors stop the batch, preserving earlier days. An unrecognized empty diary is
+not assumed to be a zero-intake day. Retry the remaining period by selecting
+its last unread date. Re-reading a date does not duplicate it.
+
+**Saved history** previews daily totals for the current 30-day period of the
+last imported account. ChatGPT report preparation includes these same daily
+totals, coverage, and meal/food counts, never cookies or credentials. Full food
+rows remain local; they are not all pasted into the AI report. The report is
+reviewed/shared manually. Missing days are explicitly not treated as zero.
+Switching account does not combine histories. Clear session also clears this
+history. The old single-snapshot prototype is not silently attributed to an
+account or migrated. This is a website experiment, not an official MFP API or
+background synchronization; verify the first batch on the phone.

@@ -297,4 +297,13 @@
   <string name="mfp_no_food_rows">В таблицата няма разпознати отделни храни. Показваме само наличните общи стойности.</string>
   <string name="mfp_meal_counts">Разпознати: %1$d хранения · %2$d храни. Сравни всички хранения със сайта преди запис.</string>
   <string name="mfp_meal_group">%1$s · %2$d храни</string>
+    <string name="mfp_batch_start">Прочети и запази 30 дни</string>
+    <string name="mfp_batch_stop">Спри</string>
+    <string name="mfp_batch_consent">Потвърди, че потребителското име е на твоя вписан профил. Ще прочетем избрания ден и предходните 29 и ще запазим всички разпознати хранения на телефона. Остави екрана отворен. Дневните обобщения ще се включват в текста, който преглеждаш преди изпращане към ChatGPT. Историите на различни профили се пазят отделно.</string>
+    <string name="mfp_batch_progress">Ден %1$d/30 · запазени %2$d · %3$s</string>
+    <string name="mfp_batch_done">Готово: запазени %1$d дни.</string>
+    <string name="mfp_batch_stopped">Спряно. Запазени %1$d дни; наличната история е запазена.</string>
+    <string name="mfp_batch_failed">Провери входа, избраната дата и дневника и опитай отново. Неразпозната страница не се записва като празен ден.</string>
+<string name="mfp_history">Запазена история · последните 30 дни</string>
+<string name="mfp_history_empty">Няма запазени дни за този период.</string>
 </resources>

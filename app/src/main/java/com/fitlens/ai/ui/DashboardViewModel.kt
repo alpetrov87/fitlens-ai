@@ -136,7 +136,7 @@ class DashboardViewModel(
                 }
                 mutableHistoryCount.value = history.activities.size
                 require(history.activities.isNotEmpty()) { com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_159) }
-                mutableShareReport.value = ChatGptShareReport.build(history.activities, history.recovery, event, runnerProfiles.all(), java.util.Locale.getDefault().language)
+                mutableShareReport.value = ChatGptShareReport.build(history.activities, history.recovery, event, runnerProfiles.all(), java.util.Locale.getDefault().language) + com.fitlens.ai.data.LocalizedText.nutritionReport()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (failure: Exception) {

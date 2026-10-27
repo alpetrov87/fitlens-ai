@@ -297,4 +297,13 @@
   <string name="mfp_no_food_rows">No individual food rows were recognized in the table. Only available totals are shown.</string>
   <string name="mfp_meal_counts">Recognized: %1$d meals · %2$d foods. Compare all meals with the website before saving.</string>
   <string name="mfp_meal_group">%1$s · %2$d foods</string>
+    <string name="mfp_batch_start">Read and save 30 days</string>
+    <string name="mfp_batch_stop">Stop</string>
+    <string name="mfp_batch_consent">Confirm the username belongs to your signed-in account. This reads the selected date and previous 29 days and saves all recognized meals on this phone. Keep this screen open. Saved daily totals will be included in the report you review before sharing with ChatGPT. Switching accounts keeps their histories separate.</string>
+    <string name="mfp_batch_progress">Day %1$d/30 · saved %2$d · %3$s</string>
+    <string name="mfp_batch_done">Completed: %1$d days saved.</string>
+    <string name="mfp_batch_stopped">Stopped. Saved %1$d days; existing history is preserved.</string>
+    <string name="mfp_batch_failed">Check login, selected date and diary page, then try again. An unrecognized page is not saved as an empty day.</string>
+<string name="mfp_history">Saved history · last 30 days</string>
+<string name="mfp_history_empty">No saved days in this period.</string>
 </resources>

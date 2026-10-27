@@ -19,6 +19,8 @@ import com.fitlens.ai.data.*
 import com.fitlens.ai.ui.FitLensTheme
 import org.json.JSONTokener
 import java.time.LocalDate
+import kotlinx.coroutines.*
+import kotlin.coroutines.resume
 
 /** Isolated manual experiment. No native HTTP calls or JS bridge receives login credentials. */
 class MfpExperimentActivity : ComponentActivity() {
@@ -30,6 +32,13 @@ class MfpExperimentActivity : ComponentActivity() {
         setContent {
             FitLensTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                val scope = rememberCoroutineScope()
+                var batch by remember { mutableStateOf<Job?>(null) }
+                var batchProgress by remember { mutableStateOf("") }
+                var historyVisible by remember { mutableStateOf(false) }
+                var historyText by remember { mutableStateOf("") }
+                var batchConfirm by remember { mutableStateOf(false) }
+                val historyStore = remember { MfpHistoryStore(this) }
                 var date by remember { mutableStateOf(LocalDate.now().toString()) }
                 var username by remember { mutableStateOf("") }
                 var status by remember { mutableStateOf("") }
@@ -142,9 +151,17 @@ class MfpExperimentActivity : ComponentActivity() {
                     if (status.isNotBlank()) Text(status, style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.fillMaxWidth().heightIn(max = 88.dp).verticalScroll(rememberScrollState()))
-                    if (controlsVisible) {
+                    if (batchProgress.isNotBlank()) Text(batchProgress, style = MaterialTheme.typography.bodySmall)
+                    if (batch?.isActive == true) {
+                        OutlinedButton(onClick = { batch?.cancel(); web.stopLoading() }) { Text(stringResource(R.string.mfp_batch_stop)) }
+                    }
+                    if (controlsVisible && batch?.isActive != true) {
                         Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            OutlinedButton(onClick = {
+                                historyText = historyStore.report(language = java.util.Locale.getDefault().language)
+                                historyVisible = true
+                            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_history)) }
                             Text(stringResource(R.string.mfp_controls_help), style = MaterialTheme.typography.bodyMedium)
                             OutlinedTextField(date, { date = it.take(10); preview = null }, label = { Text(stringResource(R.string.mfp_date)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                             OutlinedTextField(username, { username = it.take(100); preview = null }, label = { Text(stringResource(R.string.mfp_username)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
@@ -156,6 +173,10 @@ class MfpExperimentActivity : ComponentActivity() {
                                     web.loadUrl("https://www.myfitnesspal.com/food/diary/$username?date=$date")
                                 }
                             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_open_diary)) }
+                            OutlinedButton(onClick = {
+                                if (!username.matches(Regex("[A-Za-z0-9_.-]{1,100}")) || runCatching { LocalDate.parse(date) }.isFailure) status = getString(R.string.mfp_invalid_input)
+                                else batchConfirm = true
+                            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_batch_start)) }
                             OutlinedButton(onClick = {
                                 status = ""; preview = null; controlsVisible = false; scrollTest = false
                                 web.loadUrl("https://www.myfitnesspal.com/account/login")
@@ -180,6 +201,7 @@ class MfpExperimentActivity : ComponentActivity() {
                                 CookieManager.getInstance().removeAllCookies { CookieManager.getInstance().flush() }
                                 WebStorage.getInstance().deleteAllData(); web.clearCache(true); web.clearHistory()
                                 getSharedPreferences("mfp_experiment", MODE_PRIVATE).edit().clear().apply()
+                                historyStore.clear()
                                 preview = null; status = getString(R.string.mfp_session_cleared)
                             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_clear_session)) }
                             Text(stringResource(R.string.mfp_experiment_note), style = MaterialTheme.typography.bodySmall)
@@ -191,7 +213,111 @@ class MfpExperimentActivity : ComponentActivity() {
                         if (!isMfpDiaryPage(page)) { status = getString(R.string.mfp_wrong_page); return@Button }
                         status = ""
                         // Captures only a diary table, never document HTML, scripts, cookies or storage.
-                        web.evaluateJavascript("""(function(){
+                        web.evaluateJavascript(MFP_DIARY_SCRIPT) { result ->
+                            if (web.url != page || date != requestedDate) { status = getString(R.string.mfp_wrong_page); return@evaluateJavascript }
+                            val html = runCatching { JSONTokener(result).nextValue() as? String }.getOrNull().orEmpty()
+                            runCatching { parseMfpDiary(html, page, requestedDate) }.onSuccess { preview = it; confirmed = false }
+                                .onFailure {
+                                    val count = org.jsoup.Jsoup.parse(html).select("tr").size
+                                    status = if (it is MfpDiaryDateMismatch) getString(R.string.mfp_date_mismatch, requestedDate)
+                                        else getString(R.string.mfp_read_failed_details, html.length, count)
+                                }
+                        }
+                    }, enabled = loaded && batch?.isActive != true, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_read_day)) }
+                    }
+                }
+                if (historyVisible) AlertDialog(onDismissRequest = { historyVisible = false },
+                    title = { Text(stringResource(R.string.mfp_history)) },
+                    text = { Text(historyText.ifBlank { getString(R.string.mfp_history_empty) }, modifier = Modifier.heightIn(max = 430.dp).verticalScroll(rememberScrollState())) },
+                    confirmButton = { TextButton(onClick = { historyVisible = false }) { Text(stringResource(R.string.mfp_close)) } })
+                if (batchConfirm) AlertDialog(onDismissRequest = { batchConfirm = false },
+                    title = { Text(stringResource(R.string.mfp_batch_start)) },
+                    text = { Text(stringResource(R.string.mfp_batch_consent)) },
+                    confirmButton = { TextButton(onClick = {
+                        batchConfirm = false
+                        val account = username
+                        val last = LocalDate.parse(date)
+                        controlsVisible = false; scrollTest = false; status = ""
+                        batch = scope.launch {
+                            var saved = 0
+                            try {
+                                for (offset in 0..29) {
+                                    ensureActive()
+                                    val day = last.minusDays(offset.toLong()).toString()
+                                    date = day
+                                    batchProgress = getString(R.string.mfp_batch_progress, offset + 1, saved, day)
+                                    val url = "https://www.myfitnesspal.com/food/diary/$account?date=$day"
+                                    loaded = false; failed = false
+                                    web.loadUrl(url)
+                                    withTimeout(45_000) {
+                                        while (!loaded && !failed) delay(250)
+                                        check(!failed) { getString(R.string.mfp_batch_failed) }
+                                        delay(1500)
+                                    }
+                                    val page = web.url.orEmpty()
+                                    check(isMfpDiaryPage(page)) { getString(R.string.mfp_wrong_page) }
+                                    val html = withTimeout(10_000) {
+                                        suspendCancellableCoroutine<String> { continuation ->
+                                            web.evaluateJavascript(MFP_DIARY_SCRIPT) { result ->
+                                                if (continuation.isActive) continuation.resume(runCatching { JSONTokener(result).nextValue() as? String }.getOrNull().orEmpty())
+                                            }
+                                        }
+                                    }
+                                    check(web.url == page) { getString(R.string.mfp_wrong_page) }
+                                    val data = parseMfpDiary(html, page, day)
+                                    check(historyStore.save(account, data)) { getString(R.string.mfp_save_failed) }
+                                    saved++
+                                    batchProgress = getString(R.string.mfp_batch_progress, offset + 1, saved, day)
+                                    delay(2500)
+                                }
+                                status = getString(R.string.mfp_batch_done, saved)
+                            } catch (cancelled: CancellationException) {
+                                status = getString(R.string.mfp_batch_stopped, saved)
+                                throw cancelled
+                            } catch (_: Exception) {
+                                status = getString(R.string.mfp_batch_stopped, saved) + " " + getString(R.string.mfp_batch_failed)
+                            }
+                        }
+                    }) { Text(stringResource(R.string.mfp_batch_start)) } },
+                    dismissButton = { TextButton(onClick = { batchConfirm = false }) { Text(stringResource(R.string.mfp_close)) } })
+                preview?.let { data ->
+                    var expandedMeal by remember(data) { mutableStateOf<String?>(null) }
+                    AlertDialog(onDismissRequest = { preview = null }, title = { Text(stringResource(R.string.mfp_preview)) },
+                        text = {
+                            Column(Modifier.heightIn(max = 430.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(data.date)
+                                Text(stringResource(R.string.mfp_meal_counts, data.foods.map { it.meal }.distinct().size, data.foods.size))
+                                if (data.foods.isEmpty()) Text(stringResource(R.string.mfp_no_food_rows))
+                                data.totals.forEach { (key, value) -> Text("$key: $value") }
+                                data.foods.groupBy { it.meal }.forEach { (meal, foods) ->
+                                    HorizontalDivider()
+                                    TextButton(onClick = { expandedMeal = if (expandedMeal == meal) null else meal }, modifier = Modifier.fillMaxWidth()) {
+                                        Text(stringResource(R.string.mfp_meal_group, meal, foods.size) + if (expandedMeal == meal) " −" else " +")
+                                    }
+                                    if (expandedMeal == meal) foods.forEach { food ->
+                                        Text(food.name, style = MaterialTheme.typography.titleSmall)
+                                        food.nutrients.forEach { (key, value) -> Text("$key: $value") }
+                                    }
+                                }
+                                Text(stringResource(R.string.mfp_preview_note))
+                                Text(stringResource(R.string.mfp_verify_date))
+                                Row { Checkbox(confirmed, { confirmed = it }); Text(stringResource(R.string.mfp_confirm_date)) }
+                            }
+                        }, confirmButton = {
+                            TextButton(enabled = confirmed, onClick = {
+                                val saved = historyStore.save(username, data)
+                                if (saved) preview = null
+                                status = getString(if (saved) R.string.mfp_saved else R.string.mfp_save_failed)
+                            }) { Text(stringResource(R.string.mfp_save_preview)) }
+                        }, dismissButton = { TextButton(onClick = { preview = null }) { Text(stringResource(R.string.mfp_close)) } })
+                }
+                }
+            }
+        }
+    }
+}
+
+private val MFP_DIARY_SCRIPT = """(function(){
                             const tables=Array.from(document.querySelectorAll('table'));
                             const candidates=new Set();
                             document.querySelectorAll('tr.meal_header, tr.meal-header').forEach(row => { const t=row.closest('table'); if(t) candidates.add(t); });
@@ -228,56 +354,4 @@ class MfpExperimentActivity : ComponentActivity() {
                                 if(output.children.length) clean.appendChild(output);
                             }
                             return clean.outerHTML.length <= 250000 ? clean.outerHTML : '';
-                        })()""") { result ->
-                            if (web.url != page || date != requestedDate) { status = getString(R.string.mfp_wrong_page); return@evaluateJavascript }
-                            val html = runCatching { JSONTokener(result).nextValue() as? String }.getOrNull().orEmpty()
-                            runCatching { parseMfpDiary(html, page, requestedDate) }.onSuccess { preview = it; confirmed = false }
-                                .onFailure {
-                                    val count = org.jsoup.Jsoup.parse(html).select("tr").size
-                                    status = if (it is MfpDiaryDateMismatch) getString(R.string.mfp_date_mismatch, requestedDate)
-                                        else getString(R.string.mfp_read_failed_details, html.length, count)
-                                }
-                        }
-                    }, enabled = loaded, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_read_day)) }
-                    }
-                }
-                preview?.let { data ->
-                    var expandedMeal by remember(data) { mutableStateOf<String?>(null) }
-                    AlertDialog(onDismissRequest = { preview = null }, title = { Text(stringResource(R.string.mfp_preview)) },
-                        text = {
-                            Column(Modifier.heightIn(max = 430.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(data.date)
-                                Text(stringResource(R.string.mfp_meal_counts, data.foods.map { it.meal }.distinct().size, data.foods.size))
-                                if (data.foods.isEmpty()) Text(stringResource(R.string.mfp_no_food_rows))
-                                data.totals.forEach { (key, value) -> Text("$key: $value") }
-                                data.foods.groupBy { it.meal }.forEach { (meal, foods) ->
-                                    HorizontalDivider()
-                                    TextButton(onClick = { expandedMeal = if (expandedMeal == meal) null else meal }, modifier = Modifier.fillMaxWidth()) {
-                                        Text(stringResource(R.string.mfp_meal_group, meal, foods.size) + if (expandedMeal == meal) " −" else " +")
-                                    }
-                                    if (expandedMeal == meal) foods.forEach { food ->
-                                        Text(food.name, style = MaterialTheme.typography.titleSmall)
-                                        food.nutrients.forEach { (key, value) -> Text("$key: $value") }
-                                    }
-                                }
-                                Text(stringResource(R.string.mfp_preview_note))
-                                Text(stringResource(R.string.mfp_verify_date))
-                                Row { Checkbox(confirmed, { confirmed = it }); Text(stringResource(R.string.mfp_confirm_date)) }
-                            }
-                        }, confirmButton = {
-                            TextButton(enabled = confirmed, onClick = {
-                                val rows = org.json.JSONArray().apply {
-                                    data.foods.forEach { f -> put(org.json.JSONObject().put("meal", f.meal).put("food", f.name).put("nutrients", org.json.JSONObject(f.nutrients))) }
-                                }
-                                val snapshot = org.json.JSONObject().put("date", data.date).put("totals", org.json.JSONObject(data.totals)).put("foods", rows)
-                                val saved = getSharedPreferences("mfp_experiment", MODE_PRIVATE).edit().putString("last_preview", snapshot.toString()).commit()
-                                if (saved) preview = null
-                                status = getString(if (saved) R.string.mfp_saved else R.string.mfp_save_failed)
-                            }) { Text(stringResource(R.string.mfp_save_preview)) }
-                        }, dismissButton = { TextButton(onClick = { preview = null }) { Text(stringResource(R.string.mfp_close)) } })
-                }
-                }
-            }
-        }
-    }
-}
+                        })()"""
