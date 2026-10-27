@@ -291,4 +291,5 @@
   <string name="mfp_scroll_test_button">Тест на скрола в WebView</string>
   <string name="mfp_scroll_test_local">Локален тест на скрола — не е MyFitnessPal</string>
   <string name="mfp_scroll_test_bottom">Стигна до края — скролът работи в WebView</string>
+  <string name="mfp_read_failed_details">Не разпознах дневника. Прочетени: %1$d символа от таблицата и %2$d реда; нищо не е записано. Ако дневникът се вижда, проблемът е в разпознаването. Съобщи тези числа, без да споделяш личните храни.</string>
 </resources>

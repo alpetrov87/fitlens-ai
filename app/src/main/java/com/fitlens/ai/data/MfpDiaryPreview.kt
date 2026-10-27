@@ -25,9 +25,11 @@ internal fun isMfpDiaryForDate(url: String, date: String): Boolean = runCatching
 internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPreview {
     require(isMfpDiaryForDate(url, date)) { "Invalid diary date or origin" }
     require(html.length <= 250_000) { "Diary table too large" }
-    val table = Jsoup.parse(html).selectFirst("table:has(tr.meal_header)")
+    val table = Jsoup.parse(html).selectFirst("table")
         ?: error("Unsupported diary layout")
-    fun key(text: String): String? = when (text.lowercase().trim().substringBefore('\n')) {
+    fun key(text: String): String? = when (text.lowercase(java.util.Locale.ROOT).trim()
+        .replace(Regex("[\\s\\u00a0]+"), " ")
+        .replace(Regex("\\s*\\(?(?:kcal|cal|mg|g|grams|ккал|мг|г)\\)?$"), "").trim()) {
         "calories", "калории" -> "calories"
         "carbs", "carbohydrates", "въглехидрати" -> "carbs"
         "protein", "протеин", "белтъчини" -> "protein"
@@ -50,17 +52,20 @@ internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPre
     var totals: Map<String, Double> = emptyMap()
     for (row in table.select("tr")) {
         val cells = row.children().filter { it.tagName() == "td" || it.tagName() == "th" }
-        if (row.hasClass("meal_header")) {
+        val headerKeys = cells.map { key(it.text()) }
+        val mealHeader = row.hasClass("meal_header") || row.hasClass("meal-header") || headerKeys.drop(1).count { it != null } >= 2
+        val firstText = cells.firstOrNull()?.text()?.lowercase(java.util.Locale.ROOT).orEmpty()
+        if (mealHeader) {
             meal = cells.firstOrNull()?.text().orEmpty()
-            headers = cells.map { key(it.ownText().ifBlank { it.text() }) }
-        } else if (row.hasClass("total")) {
-            if (!row.hasClass("alt") && !row.hasClass("remaining") && totals.isEmpty()) {
+            headers = headerKeys
+        } else if (row.hasClass("total") || firstText in listOf("totals", "total", "общо", "your daily goal", "remaining")) {
+            if (!row.hasClass("alt") && !row.hasClass("remaining") && firstText !in listOf("your daily goal", "remaining") && totals.isEmpty()) {
                 totals = cells.mapIndexedNotNull { i, cell -> headers.getOrNull(i)?.let { k -> number(cell.text())?.let { k to it } } }.toMap()
             }
             meal = ""
         } else if (row.hasClass("bottom")) {
             meal = ""
-        } else if (row.classNames().isEmpty() && cells.size > 1 && meal.isNotBlank()) {
+        } else if (!row.hasClass("bottom") && !row.hasClass("meal_total") && !row.hasClass("meal-total") && cells.size > 1 && meal.isNotBlank()) {
             val nutrients = cells.mapIndexedNotNull { i, cell -> headers.getOrNull(i)?.let { k -> number(cell.text())?.let { k to it } } }.toMap()
             if (nutrients.isNotEmpty()) foods += MfpFoodPreview(meal.take(120), cells.first().text().take(300), nutrients)
         }

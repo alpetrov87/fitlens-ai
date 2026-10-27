@@ -190,11 +190,33 @@ class MfpExperimentActivity : ComponentActivity() {
                         if (!isMfpDiaryForDate(page, requestedDate)) { status = getString(R.string.mfp_wrong_page); return@Button }
                         status = ""
                         // Captures only a diary table, never document HTML, scripts, cookies or storage.
-                        web.evaluateJavascript("""(function(){ const row=document.querySelector('tr.meal_header'); const t=row ? row.closest('table') : null; return t && t.outerHTML.length <= 250000 ? t.outerHTML : ''; })()""") { result ->
+                        web.evaluateJavascript("""(function(){
+                            const marker=document.querySelector('tr.meal_header, tr.meal-header');
+                            let table=marker ? marker.closest('table') : document.querySelector('table#diary-table, #diary-table table');
+                            if(!table) table=Array.from(document.querySelectorAll('table')).reverse().find(t => /calories/i.test(t.innerText) && /totals/i.test(t.innerText));
+                            if(!table) return '';
+                            const clean=document.createElement('table');
+                            for(const row of table.querySelectorAll('tr')) {
+                                if(row.closest('table') !== table) continue;
+                                const copy=document.createElement('tr');
+                                copy.className=row.className;
+                                for(const cell of row.children) {
+                                    if(cell.tagName !== 'TD' && cell.tagName !== 'TH') continue;
+                                    const c=document.createElement(cell.tagName.toLowerCase());
+                                    c.textContent=cell.innerText.trim();
+                                    copy.appendChild(c);
+                                }
+                                if(copy.children.length) clean.appendChild(copy);
+                            }
+                            return clean.outerHTML.length <= 250000 ? clean.outerHTML : '';
+                        })()""") { result ->
                             if (web.url != page || date != requestedDate) { status = getString(R.string.mfp_wrong_page); return@evaluateJavascript }
                             val html = runCatching { JSONTokener(result).nextValue() as? String }.getOrNull().orEmpty()
                             runCatching { parseMfpDiary(html, page, requestedDate) }.onSuccess { preview = it; confirmed = false }
-                                .onFailure { status = getString(R.string.mfp_read_failed) }
+                                .onFailure {
+                                    val count = org.jsoup.Jsoup.parse(html).select("tr").size
+                                    status = getString(R.string.mfp_read_failed_details, html.length, count)
+                                }
                         }
                     }, enabled = loaded, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_read_day)) }
                     }
