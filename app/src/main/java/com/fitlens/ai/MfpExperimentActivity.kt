@@ -24,7 +24,7 @@ import java.time.LocalDate
 class MfpExperimentActivity : ComponentActivity() {
     override fun attachBaseContext(base: Context) = super.attachBaseContext(AppLanguage.wrap(base))
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressLint("SetJavaScriptEnabled", "ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -40,8 +40,29 @@ class MfpExperimentActivity : ComponentActivity() {
                 var progress by remember { mutableIntStateOf(0) }
                 var preview by remember { mutableStateOf<MfpDiaryPreview?>(null) }
                 var confirmed by remember { mutableStateOf(false) }
+                var controlsVisible by remember { mutableStateOf(false) }
+                var scrollTest by remember { mutableStateOf(false) }
                 val web = remember {
                     WebView(this).apply {
+                        layoutParams = android.view.ViewGroup.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                            android.view.ViewGroup.LayoutParams.MATCH_PARENT)
+                        isNestedScrollingEnabled = true
+                        isVerticalScrollBarEnabled = true
+                        isHorizontalScrollBarEnabled = true
+                        // Preserve native WebView handling; only prevent the Compose parent taking its gesture.
+                        setOnTouchListener { view, event ->
+                            when (event.actionMasked) {
+                                android.view.MotionEvent.ACTION_DOWN, android.view.MotionEvent.ACTION_MOVE -> view.parent?.requestDisallowInterceptTouchEvent(true)
+                                android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> view.parent?.requestDisallowInterceptTouchEvent(false)
+                            }
+                            false
+                        }
+                        settings.useWideViewPort = true
+                        settings.loadWithOverviewMode = true
+                        settings.setSupportZoom(true)
+                        settings.builtInZoomControls = true
+                        settings.displayZoomControls = false
                         settings.javaScriptEnabled = true
                         settings.domStorageEnabled = true
                         settings.allowFileAccess = false
@@ -64,7 +85,7 @@ class MfpExperimentActivity : ComponentActivity() {
                             }
                             override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
                                 loaded = false; preview = null; loading = url != "about:blank"; failed = false; progress = 0
-                                if (url != null && url != "about:blank" && !isMfpPage(url)) {
+                                if (url != null && url != "about:blank" && !(scrollTest && url.startsWith("data:text/html")) && !isMfpPage(url)) {
                                     view.stopLoading(); loading = false; failed = true
                                     status = getString(R.string.mfp_external_blocked); return
                                 }
@@ -103,40 +124,68 @@ class MfpExperimentActivity : ComponentActivity() {
                         if (loading && status.isBlank()) status = getString(R.string.mfp_loading_slow)
                     }
                 }
-                Column(Modifier.fillMaxSize().systemBarsPadding().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Column(Modifier.fillMaxWidth().heightIn(max = 240.dp).verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.mfp_experiment), style = MaterialTheme.typography.titleLarge)
-                    Text("HTTPS · $origin", style = MaterialTheme.typography.labelMedium)
-                    OutlinedButton(onClick = {
-                        status = ""; preview = null
-                        val current = web.url.orEmpty()
-                        web.loadUrl(if (isMfpPage(current)) current else "https://www.myfitnesspal.com/account/login")
-                    }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_retry_loading)) }
-                    Text(stringResource(R.string.mfp_experiment_note), style = MaterialTheme.typography.bodySmall)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedTextField(date, { date = it.take(10); preview = null }, label = { Text(stringResource(R.string.mfp_date)) }, singleLine = true, modifier = Modifier.weight(1f))
-                        OutlinedTextField(username, { username = it.take(100); preview = null }, label = { Text(stringResource(R.string.mfp_username)) }, singleLine = true, modifier = Modifier.weight(1f))
+                Column(Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text(stringResource(R.string.mfp_experiment), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { finish() }) { Text(stringResource(R.string.mfp_close)) }
                     }
+                    Text(if (scrollTest) stringResource(R.string.mfp_scroll_test_local) else "HTTPS · $origin", style = MaterialTheme.typography.labelMedium)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        TextButton(onClick = { preview = null; web.loadUrl("https://www.myfitnesspal.com/account/login") }) { Text(stringResource(R.string.mfp_login)) }
-                        TextButton(onClick = {
-                            if (runCatching { LocalDate.parse(date) }.isFailure || !username.matches(Regex("[A-Za-z0-9_.-]{1,100}"))) {
-                                status = getString(R.string.mfp_invalid_input)
-                            } else {
-                                preview = null; status = ""
-                                web.loadUrl("https://www.myfitnesspal.com/food/diary/$username?date=$date")
-                            }
-                        }) { Text(stringResource(R.string.mfp_open_diary)) }
-                        TextButton(onClick = {
-                            web.stopLoading(); web.loadUrl("about:blank")
-                            CookieManager.getInstance().removeAllCookies { CookieManager.getInstance().flush() }
-                            WebStorage.getInstance().deleteAllData(); web.clearCache(true); web.clearHistory()
-                            getSharedPreferences("mfp_experiment", MODE_PRIVATE).edit().clear().apply()
-                            preview = null; status = getString(R.string.mfp_session_cleared)
-                        }) { Text(stringResource(R.string.mfp_clear_session)) }
+                        FilterChip(selected = !controlsVisible, onClick = { controlsVisible = false },
+                            label = { Text(stringResource(R.string.mfp_website_tab)) })
+                        FilterChip(selected = controlsVisible, onClick = { controlsVisible = true },
+                            label = { Text(stringResource(R.string.mfp_controls_tab)) })
                     }
-                    Button(onClick = {
+                    if (loading) LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
+                    if (status.isNotBlank()) Text(status, style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 88.dp).verticalScroll(rememberScrollState()))
+                    if (controlsVisible) {
+                        Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Text(stringResource(R.string.mfp_controls_help), style = MaterialTheme.typography.bodyMedium)
+                            OutlinedTextField(date, { date = it.take(10); preview = null }, label = { Text(stringResource(R.string.mfp_date)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(username, { username = it.take(100); preview = null }, label = { Text(stringResource(R.string.mfp_username)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                            Button(onClick = {
+                                if (runCatching { LocalDate.parse(date) }.isFailure || !username.matches(Regex("[A-Za-z0-9_.-]{1,100}"))) {
+                                    status = getString(R.string.mfp_invalid_input)
+                                } else {
+                                    preview = null; status = ""; controlsVisible = false; scrollTest = false
+                                    web.loadUrl("https://www.myfitnesspal.com/food/diary/$username?date=$date")
+                                }
+                            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_open_diary)) }
+                            OutlinedButton(onClick = {
+                                status = ""; preview = null; controlsVisible = false; scrollTest = false
+                                web.loadUrl("https://www.myfitnesspal.com/account/login")
+                            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_login)) }
+                            OutlinedButton(onClick = {
+                                status = ""; preview = null; controlsVisible = false
+                                val current = if (scrollTest) "" else web.url.orEmpty()
+                                scrollTest = false
+                                web.loadUrl(if (isMfpPage(current)) current else "https://www.myfitnesspal.com/account/login")
+                            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_retry_loading)) }
+                            OutlinedButton(onClick = {
+                                web.stopLoading(); preview = null; loaded = false; status = ""; scrollTest = true; controlsVisible = false
+                                val heading = getString(R.string.mfp_scroll_test_local)
+                                val bottom = getString(R.string.mfp_scroll_test_bottom)
+                                val rows = (1..25).joinToString("") { "<p style='padding:36px;border-bottom:1px solid #355b35'>${it}</p>" }
+                                val html = "<!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head><body style='font:24px sans-serif;background:#faf6e9;color:#1b3023'><h2>$heading</h2>$rows<h2>$bottom</h2></body></html>"
+                                web.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+                            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_scroll_test_button)) }
+                            TextButton(onClick = {
+                                scrollTest = false
+                                web.stopLoading(); web.loadUrl("about:blank")
+                                CookieManager.getInstance().removeAllCookies { CookieManager.getInstance().flush() }
+                                WebStorage.getInstance().deleteAllData(); web.clearCache(true); web.clearHistory()
+                                getSharedPreferences("mfp_experiment", MODE_PRIVATE).edit().clear().apply()
+                                preview = null; status = getString(R.string.mfp_session_cleared)
+                            }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_clear_session)) }
+                            Text(stringResource(R.string.mfp_experiment_note), style = MaterialTheme.typography.bodySmall)
+                        }
+                    } else {
+                        AndroidView(factory = { web }, modifier = Modifier.fillMaxWidth().weight(1f))
+                        Button(onClick = {
                         val page = web.url.orEmpty(); val requestedDate = date
                         if (!isMfpDiaryForDate(page, requestedDate)) { status = getString(R.string.mfp_wrong_page); return@Button }
                         status = ""
@@ -149,13 +198,6 @@ class MfpExperimentActivity : ComponentActivity() {
                         }
                     }, enabled = loaded, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_read_day)) }
                     }
-                    if (loading) {
-                        LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth())
-                        Text(stringResource(R.string.mfp_loading_page), style = MaterialTheme.typography.bodySmall)
-                    }
-                    if (status.isNotBlank()) Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
-                    AndroidView(factory = { web }, modifier = Modifier.fillMaxWidth().weight(1f))
-                    TextButton(onClick = { finish() }) { Text(stringResource(R.string.mfp_close)) }
                 }
                 preview?.let { data ->
                     AlertDialog(onDismissRequest = { preview = null }, title = { Text(stringResource(R.string.mfp_preview)) },

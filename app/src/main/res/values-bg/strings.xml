@@ -284,5 +284,11 @@
   <string name="mfp_network_error">Сайтът не се зареди (WebView грешка %1$d). Провери връзката и актуализацията на Android System WebView, после опитай отново.</string>
   <string name="mfp_http_error">MyFitnessPal върна HTTP %1$d. Сайтът може да ограничава вградения браузър.</string>
   <string name="mfp_tls_error">Защитената връзка към сайта не можа да бъде потвърдена. Зареждането е спряно.</string>
-  <string name="mfp_loading_slow">Зареждането се бави. Превърти горните контроли, за да презаредиш сайта или да изчистиш сесията.</string>
+  <string name="mfp_loading_slow">Зареждането се бави. В „Ден и прочит“ можеш да презаредиш сайта или да изчистиш сесията.</string>
+  <string name="mfp_website_tab">Сайт</string>
+  <string name="mfp_controls_tab">Ден и прочит</string>
+  <string name="mfp_controls_help">След входа избери дата и въведи MFP потребителското име (не имейл). „Отвори деня“ връща към сайта. След зареждане натисни „Прочети този ден“ под страницата.</string>
+  <string name="mfp_scroll_test_button">Тест на скрола в WebView</string>
+  <string name="mfp_scroll_test_local">Локален тест на скрола — не е MyFitnessPal</string>
+  <string name="mfp_scroll_test_bottom">Стигна до края — скролът работи в WebView</string>
 </resources>

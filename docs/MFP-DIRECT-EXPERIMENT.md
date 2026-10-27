@@ -28,3 +28,13 @@ Synthetic parser tests cover food rows, thousands separators, decimal macros, ze
 ## 0.18.1 — blank-screen diagnostics
 
 The experiment now owns a Material Surface background/content color, including dark mode, and opens MyFitnessPal sign-in automatically. Native controls are limited to a scrollable 240dp header so they cannot consume the entire portrait screen. Scroll that header to reach date/username/read controls. A reload action, progress indicator, slow-load notice and main-frame HTTP/network/TLS error messages are provided. TLS errors remain cancelled. This fixes initialization/layout visibility problems; it does not prove that MyFitnessPal permits embedded sign-in. If the site still fails, report the displayed status or a screenshot without credentials.
+
+## 0.18.2 — native WebView scrolling and separate controls
+
+The owner's clarification is that the **website itself** cannot scroll, not just the native controls. The WebView now explicitly fills its bounded area, enables native nested scrolling and scrollbars, uses a wide viewport/overview with pinch zoom, and asks the parent not to intercept its touch gesture. The touch listener returns false so native website interaction remains responsible for scrolling/clicking. No CSS is injected into the login page and no website challenge is bypassed.
+
+The old 240dp scrolling header from 0.18.1 is replaced with Website / Day and reading panels. Website contains only the web surface and an always-reachable Read this day action. Day and reading is a separate full-height native scrolling form; Open day returns to Website. Keyboard resizing is enabled. This also removes nested scrolling competition around the WebView.
+
+Use Day and reading → Test WebView scrolling to load an inert local page with 25 numbered sections and a bottom marker in the **same WebView**. It has an opaque local origin, no network resources, forms, scripts or health data, and cannot be imported as a diary. The UI labels it as a local test rather than showing a MyFitnessPal origin. If this page scrolls but MyFitnessPal does not, the remaining problem is specific to the website (for example an overlay or document-level scroll lock). If neither page scrolls, the native interaction/layout still requires device investigation. Sign in or Reload returns from the test to the real site without exporting cookies.
+
+Actual touch behavior and MyFitnessPal compatibility are not verified by JVM tests; they require the phone test. Preserve a redacted screenshot and describe which page is affected rather than sharing credentials/session data.

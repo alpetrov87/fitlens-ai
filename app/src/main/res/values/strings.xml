@@ -284,5 +284,11 @@
   <string name="mfp_network_error">Website failed to load (WebView error %1$d). Check your connection and Android System WebView updates, then retry.</string>
   <string name="mfp_http_error">MyFitnessPal returned HTTP %1$d. The website may restrict embedded browsers.</string>
   <string name="mfp_tls_error">The secure website connection could not be verified. Loading was stopped.</string>
-  <string name="mfp_loading_slow">Loading is taking longer than expected. Scroll the controls above to retry or clear the session.</string>
+  <string name="mfp_loading_slow">Loading is taking longer than expected. Use Day and reading to reload the website or clear the session.</string>
+  <string name="mfp_website_tab">Website</string>
+  <string name="mfp_controls_tab">Day and reading</string>
+  <string name="mfp_controls_help">After signing in, choose a date and enter your MFP username (not email). Open day returns to the website. Once loaded, tap Read this day below the page.</string>
+  <string name="mfp_scroll_test_button">Test WebView scrolling</string>
+  <string name="mfp_scroll_test_local">Local scroll test — not MyFitnessPal</string>
+  <string name="mfp_scroll_test_bottom">You reached the bottom — WebView scrolling works</string>
 </resources>
