@@ -292,4 +292,7 @@
   <string name="mfp_scroll_test_local">Local scroll test — not MyFitnessPal</string>
   <string name="mfp_scroll_test_bottom">You reached the bottom — WebView scrolling works</string>
   <string name="mfp_read_failed_details">Could not recognize the diary. Captured %1$d table characters and %2$d rows; nothing was saved. This is a parser/layout issue if the diary is visible. Report these counts without sharing private food data.</string>
+  <string name="mfp_selected_day">Selected date: %1$s</string>
+  <string name="mfp_date_mismatch">The page does not match the selected date %1$s. Choose the correct date in Day and reading and tap Open day.</string>
+  <string name="mfp_no_food_rows">No individual food rows were recognized in the table. Only available totals are shown.</string>
 </resources>

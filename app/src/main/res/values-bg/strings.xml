@@ -292,4 +292,7 @@
   <string name="mfp_scroll_test_local">Локален тест на скрола — не е MyFitnessPal</string>
   <string name="mfp_scroll_test_bottom">Стигна до края — скролът работи в WebView</string>
   <string name="mfp_read_failed_details">Не разпознах дневника. Прочетени: %1$d символа от таблицата и %2$d реда; нищо не е записано. Ако дневникът се вижда, проблемът е в разпознаването. Съобщи тези числа, без да споделяш личните храни.</string>
+  <string name="mfp_selected_day">Избран ден: %1$s</string>
+  <string name="mfp_date_mismatch">Страницата не съвпада с избрания ден %1$s. В „Ден и прочит“ избери правилната дата и натисни „Отвори деня“.</string>
+  <string name="mfp_no_food_rows">В таблицата няма разпознати отделни храни. Показваме само наличните общи стойности.</string>
 </resources>

@@ -13,20 +13,28 @@ internal fun isMfpPage(url: String): Boolean = runCatching {
         (uri.host == "myfitnesspal.com" || uri.host?.endsWith(".myfitnesspal.com") == true)
 }.getOrDefault(false)
 
-internal fun isMfpDiaryForDate(url: String, date: String): Boolean = runCatching {
+internal fun isMfpDiaryPage(url: String): Boolean = runCatching {
+    isMfpPage(url) && URI(url).path.matches(Regex("/food/diary(?:/[A-Za-z0-9_.-]+)?/?"))
+}.getOrDefault(false)
+
+internal fun isMfpDiaryForDate(url: String, date: String, documentDate: String? = null): Boolean = runCatching {
     LocalDate.parse(date)
     val uri = URI(url)
-    isMfpPage(url) && uri.path.matches(Regex("/food/diary(?:/[A-Za-z0-9_.-]+)?/?")) &&
-        uri.rawQuery?.split('&')?.count { it == "date=$date" } == 1 &&
-        uri.rawQuery?.split('&')?.count { it.substringBefore('=') == "date" } == 1
+    val dates = uri.rawQuery.orEmpty().split('&').filter { it.substringBefore('=') == "date" }
+    val verifiedDocument = documentDate?.takeIf { it.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) }
+    isMfpDiaryPage(url) && (verifiedDocument == null || verifiedDocument == date) &&
+        if (dates.isEmpty()) verifiedDocument == date else dates.size == 1 && dates.single() == "date=$date"
 }.getOrDefault(false)
+
+internal class MfpDiaryDateMismatch : IllegalArgumentException("Diary date does not match selection")
 
 /** Reads only the diary table supplied by an explicit user action; never reads login forms/cookies. */
 internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPreview {
-    require(isMfpDiaryForDate(url, date)) { "Invalid diary date or origin" }
     require(html.length <= 250_000) { "Diary table too large" }
     val table = Jsoup.parse(html).selectFirst("table")
         ?: error("Unsupported diary layout")
+    val documentDate = table.attr("data-diary-date").takeIf { it.isNotBlank() }
+    if (!isMfpDiaryForDate(url, date, documentDate)) throw MfpDiaryDateMismatch()
     fun key(text: String): String? = when (text.lowercase(java.util.Locale.ROOT).trim()
         .replace(Regex("[\\s\\u00a0]+"), " ")
         .replace(Regex("\\s*\\(?(?:kcal|cal|mg|g|grams|ккал|мг|г)\\)?$"), "").trim()) {
@@ -48,7 +56,11 @@ internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPre
     }
     val foods = mutableListOf<MfpFoodPreview>()
     var meal = ""
-    var headers: List<String?> = emptyList()
+    // Unfilled meal sections may only have a title. Reuse the actual nutrient columns,
+    // including the repeated footer header, rather than overwriting them with nulls.
+    var headers: List<String?> = table.select("tr").map { row ->
+        row.children().filter { it.tagName() in listOf("td", "th") }.map { key(it.text()) }
+    }.firstOrNull { columns -> columns.drop(1).count { it != null } >= 2 }.orEmpty()
     var totals: Map<String, Double> = emptyMap()
     for (row in table.select("tr")) {
         val cells = row.children().filter { it.tagName() == "td" || it.tagName() == "th" }
@@ -57,7 +69,7 @@ internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPre
         val firstText = cells.firstOrNull()?.text()?.lowercase(java.util.Locale.ROOT).orEmpty()
         if (mealHeader) {
             meal = cells.firstOrNull()?.text().orEmpty()
-            headers = headerKeys
+            if (headerKeys.drop(1).count { it != null } >= 2) headers = headerKeys
         } else if (row.hasClass("total") || firstText in listOf("totals", "total", "общо", "your daily goal", "remaining")) {
             if (!row.hasClass("alt") && !row.hasClass("remaining") && firstText !in listOf("your daily goal", "remaining") && totals.isEmpty()) {
                 totals = cells.mapIndexedNotNull { i, cell -> headers.getOrNull(i)?.let { k -> number(cell.text())?.let { k to it } } }.toMap()

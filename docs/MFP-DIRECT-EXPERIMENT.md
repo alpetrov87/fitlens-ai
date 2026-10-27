@@ -45,3 +45,11 @@ Actual touch behavior and MyFitnessPal compatibility are not verified by JVM tes
 The owner supplied a screenshot showing successful authentication and a real diary with nutrient labels split over name/unit lines (Calories/kcal, Protein/g, etc.). The parser now normalizes those units, supports styled food rows and semantic headers when meal CSS classes change, and retains the separation between intake, goals, remaining and subtotals. Synthetic regression fixtures reproduce these structures without copying the owner's personal food diary.
 
 Extraction sanitizes the selected table to direct row/cell text and row classes rather than forwarding event handlers, links, hidden fields or all original markup. This also reduces the chance that the 250k capture limit rejects a table with bulky editing markup. Fallback table selection remains restricted to a trusted diary URL/date and recognizable diary markers. On failure only captured character/row counts are shown, not private diary content. This is not an authenticated live-compatibility test: the owner still needs to test the new APK.
+
+## 0.18.4 — partial/current days and explicit page date
+
+A title-only empty meal header no longer replaces known nutrient columns with nulls. Headers are pre-scanned (including repeated footer headers), so unfilled later meals and recorded zero totals can be parsed without inventing missing foods. Synthetic tests cover these partial and empty-day layouts.
+
+The website panel now displays the native selected date. The sanitizer additionally copies only the known diary calendar field `input#date_selector[name=hidden_date_selector]` into a `data-diary-date` table attribute, if it contains an ISO date. This is a calendar field, not a login/hidden credential field. Conflicting URL/document dates are rejected. A diary URL without a date parameter is accepted only when that explicit document date matches the selected day; it is never assumed to mean today. Existing authenticated origin and diary-path checks remain mandatory. Save still requires user confirmation of date/account.
+
+If food rows are absent but numeric totals exist, the preview says only totals were recognized. These fixes are regression-tested locally, but the user's current-day page still needs real-account validation.

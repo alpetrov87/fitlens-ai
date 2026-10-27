@@ -38,6 +38,33 @@ class MfpDiaryPreviewTest {
         assertEquals(1, data.foods.size)
         assertEquals(300.0, data.totals["calories"]!!, 0.01)
     }
+    @Test fun retainsHeadersWhenLaterMealsAreEmpty() {
+        val data = parseMfpDiary("""<table><tr class="meal_header"><td>Breakfast</td><td>Calories kcal</td><td>Protein g</td></tr>
+          <tr><td>Example breakfast</td><td>350</td><td>12</td></tr>
+          <tr class="bottom"><td>Add Food</td><td>350</td><td>12</td></tr>
+          <tr class="meal_header"><td colspan="3">Lunch</td></tr>
+          <tr class="bottom"><td>Add Food</td></tr>
+          <tr class="meal_header"><td colspan="3">Dinner</td></tr>
+          <tr class="meal_header"><td colspan="3">Snacks</td></tr>
+          <tr class="total"><td>Totals</td><td>350</td><td>12</td></tr></table>""", url, "2026-10-27")
+        assertEquals(1, data.foods.size)
+        assertEquals(350.0, data.totals["calories"]!!, 0.01)
+    }
+    @Test fun emptyDayUsesFooterHeadersAndRecordedZeros() {
+        val data = parseMfpDiary("""<table><tr class="meal_header"><td colspan="3">Breakfast</td></tr>
+          <tr class="meal_header"><td colspan="3">Lunch</td></tr>
+          <tr class="total"><td>Totals</td><td>0</td><td>0</td></tr>
+          <tr><td></td><td>Calories kcal</td><td>Protein g</td></tr></table>""", url, "2026-10-27")
+        assertTrue(data.foods.isEmpty())
+        assertEquals(0.0, data.totals["calories"]!!, 0.01)
+    }
+    @Test fun dateLessUrlRequiresExplicitMatchingDiaryDate() {
+        val noDate = "https://www.myfitnesspal.com/food/diary/test"
+        assertFalse(isMfpDiaryForDate(noDate, "2026-10-27"))
+        assertTrue(isMfpDiaryForDate(noDate, "2026-10-27", "2026-10-27"))
+        assertFalse(isMfpDiaryForDate(url, "2026-10-27", "2026-10-26"))
+        assertFalse(isMfpDiaryForDate(url.replace("2026-10-27", "2026-10-26"), "2026-10-27", "2026-10-27"))
+    }
     @Test fun onlyAllowsTrustedHttpsDiaryForExactDate() {
         assertTrue(isMfpDiaryForDate(url, "2026-10-27"))
         listOf("https://myfitnesspal.com.evil.test/food/diary/test?date=2026-10-27", "http://www.myfitnesspal.com/food/diary/test?date=2026-10-27", url+"&date=2026-10-28", url.replace("/food/diary/", "/food/diaryevil/"), url.replace("2026-10-27", "2026-10-26")).forEach {

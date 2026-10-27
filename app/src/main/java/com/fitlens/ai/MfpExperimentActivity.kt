@@ -131,6 +131,7 @@ class MfpExperimentActivity : ComponentActivity() {
                         TextButton(onClick = { finish() }) { Text(stringResource(R.string.mfp_close)) }
                     }
                     Text(if (scrollTest) stringResource(R.string.mfp_scroll_test_local) else "HTTPS · $origin", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.mfp_selected_day, date), style = MaterialTheme.typography.labelMedium)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         FilterChip(selected = !controlsVisible, onClick = { controlsVisible = false },
                             label = { Text(stringResource(R.string.mfp_website_tab)) })
@@ -187,7 +188,7 @@ class MfpExperimentActivity : ComponentActivity() {
                         AndroidView(factory = { web }, modifier = Modifier.fillMaxWidth().weight(1f))
                         Button(onClick = {
                         val page = web.url.orEmpty(); val requestedDate = date
-                        if (!isMfpDiaryForDate(page, requestedDate)) { status = getString(R.string.mfp_wrong_page); return@Button }
+                        if (!isMfpDiaryPage(page)) { status = getString(R.string.mfp_wrong_page); return@Button }
                         status = ""
                         // Captures only a diary table, never document HTML, scripts, cookies or storage.
                         web.evaluateJavascript("""(function(){
@@ -196,6 +197,8 @@ class MfpExperimentActivity : ComponentActivity() {
                             if(!table) table=Array.from(document.querySelectorAll('table')).reverse().find(t => /calories/i.test(t.innerText) && /totals/i.test(t.innerText));
                             if(!table) return '';
                             const clean=document.createElement('table');
+                            const dateField=document.querySelector('input#date_selector[name="hidden_date_selector"]');
+                            if(dateField && /^\d{4}-\d{2}-\d{2}$/.test(dateField.value)) clean.setAttribute('data-diary-date',dateField.value);
                             for(const row of table.querySelectorAll('tr')) {
                                 if(row.closest('table') !== table) continue;
                                 const copy=document.createElement('tr');
@@ -215,7 +218,8 @@ class MfpExperimentActivity : ComponentActivity() {
                             runCatching { parseMfpDiary(html, page, requestedDate) }.onSuccess { preview = it; confirmed = false }
                                 .onFailure {
                                     val count = org.jsoup.Jsoup.parse(html).select("tr").size
-                                    status = getString(R.string.mfp_read_failed_details, html.length, count)
+                                    status = if (it is MfpDiaryDateMismatch) getString(R.string.mfp_date_mismatch, requestedDate)
+                                        else getString(R.string.mfp_read_failed_details, html.length, count)
                                 }
                         }
                     }, enabled = loaded, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_read_day)) }
@@ -229,6 +233,7 @@ class MfpExperimentActivity : ComponentActivity() {
                                 Text(stringResource(R.string.mfp_verify_date))
                                 Row { Checkbox(confirmed, { confirmed = it }); Text(stringResource(R.string.mfp_confirm_date)) }
                                 Text(stringResource(R.string.mfp_preview_note))
+                                if (data.foods.isEmpty()) Text(stringResource(R.string.mfp_no_food_rows))
                                 data.totals.forEach { (key, value) -> Text("$key: $value") }
                                 data.foods.forEach { food ->
                                     HorizontalDivider(); Text("${food.meal} · ${food.name}")
