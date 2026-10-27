@@ -70,11 +70,11 @@ fun DashboardScreen(
             NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 listOf(Triple("home", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_092), Icons.Default.Home),
                     Triple("calendar", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.ui_034), Icons.Default.DateRange),
-                    Triple("runner", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.ui_038), Icons.Default.Insights),
+                    Triple("runner", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.progress_nav), Icons.Default.Insights),
                     Triple("mfp", "MFP", Icons.Default.Restaurant),
                     Triple("settings", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.ui_000), Icons.Default.Settings)).forEach { (key, title, icon) ->
                     NavigationBarItem(selected = page == key, onClick = { page = key },
-                        icon = { Icon(icon, contentDescription = null) }, label = { Text(title) })
+                        icon = { Icon(icon, contentDescription = null) }, label = { Text(title, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis) })
                 }
             }
         },

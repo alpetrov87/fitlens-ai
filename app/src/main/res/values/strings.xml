@@ -315,4 +315,5 @@
 <string name="mfp_state_done">Complete</string>
 <string name="mfp_state_failed">Stopped with an error</string>
 <string name="mfp_state_cancelled">Cancelled</string>
+<string name="progress_nav">Progress</string>
 </resources>

@@ -315,4 +315,5 @@
 <string name="mfp_state_done">Готово</string>
 <string name="mfp_state_failed">Спряно с грешка</string>
 <string name="mfp_state_cancelled">Отменено</string>
+<string name="progress_nav">Прогрес</string>
 </resources>
