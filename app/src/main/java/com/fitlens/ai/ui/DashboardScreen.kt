@@ -179,19 +179,27 @@ private fun HomeScreen(
                     }
                 }
                 InfoCard(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_099), Icons.Default.Restaurant) {
-                    Text("${data.nutrition.calories} kcal", style = MaterialTheme.typography.headlineMedium)
-                    Text("${data.nutritionOrigin.label()}${data.nutritionDate?.let { " · $it" }.orEmpty()}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_010, data.nutrition.calorieGoal))
-                    LinearProgressIndicator(progress = { (data.nutrition.calories.toFloat() / data.nutrition.calorieGoal.coerceAtLeast(1)).coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth())
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        StatValue("${data.nutrition.proteinGrams} g", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_100))
-                        StatValue("${data.nutrition.carbsGrams} g", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_101))
-                        StatValue("${data.nutrition.fatGrams} g", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_102))
-                    }
-                    if (data.garminCaloriesConsumed != null && data.nutritionOrigin != MetricOrigin.GARMIN_PERSONAL_API) {
-                        Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_011, data.garminCaloriesConsumed))
+                    if (data.garminNutrition != null) {
+                        if (data.garminNutritionStatus == "unavailable") Text(androidx.compose.ui.res.stringResource(R.string.nutrition_cached), style = MaterialTheme.typography.bodySmall)
+                        GarminNutritionContent(data.garminNutrition)
+                    } else {
+                        if (data.garminNutritionStatus != null) Text(androidx.compose.ui.res.stringResource(
+                            if (data.garminNutritionStatus == "unavailable") R.string.nutrition_unavailable else R.string.nutrition_empty),
+                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("${data.nutrition.calories} kcal", style = MaterialTheme.typography.headlineMedium)
+                        Text("${data.nutritionOrigin.label()}${data.nutritionDate?.let { " · $it" }.orEmpty()}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_010, data.nutrition.calorieGoal))
+                        LinearProgressIndicator(progress = { (data.nutrition.calories.toFloat() / data.nutrition.calorieGoal.coerceAtLeast(1)).coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth())
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            StatValue("${data.nutrition.proteinGrams} g", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_100))
+                            StatValue("${data.nutrition.carbsGrams} g", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_101))
+                            StatValue("${data.nutrition.fatGrams} g", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_102))
+                        }
+                        if (data.garminCaloriesConsumed != null && data.nutritionOrigin != MetricOrigin.GARMIN_PERSONAL_API) {
+                            Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_011, data.garminCaloriesConsumed))
+                        }
                     }
                 }
                 Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_020), style = MaterialTheme.typography.titleLarge)

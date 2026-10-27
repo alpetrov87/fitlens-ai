@@ -25,7 +25,7 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
         val rows = readRows().map { row ->
             if (row.garminData || row.garminPersonalApiData) row.copy(
                 steps = null, activeMinutes = null, distanceKm = null,
-                garminCaloriesConsumed = null,
+                garminCaloriesConsumed = null, garminNutritionJson = null, garminNutritionStatus = null,
                 garminData = false, garminPersonalApiData = false,
             ) else row
         }.filter { it.myFitnessPalData }
@@ -87,13 +87,15 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
                     distanceKm = metricsForDate.distanceKm ?: previous.distanceKm,
                     garminData = true,
                     garminPersonalApiData = false,
-                    garminCaloriesConsumed = null,
+                    garminCaloriesConsumed = null, garminNutritionJson = null, garminNutritionStatus = null,
                 )
                 metricsForDate.garminPersonalApiData -> previous.copy(
                     steps = metricsForDate.steps,
                     activeMinutes = metricsForDate.activeMinutes,
                     distanceKm = metricsForDate.distanceKm,
                     garminCaloriesConsumed = metricsForDate.garminCaloriesConsumed,
+                    garminNutritionJson = if (metricsForDate.garminNutritionStatus == "unavailable") previous.garminNutritionJson else metricsForDate.garminNutritionJson,
+                    garminNutritionStatus = metricsForDate.garminNutritionStatus,
                     garminData = false,
                     garminPersonalApiData = true,
                 )
@@ -135,6 +137,8 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
         .put("garminData", garminData)
         .put("garminPersonalApiData", garminPersonalApiData)
         .put("garminCaloriesConsumed", garminCaloriesConsumed.jsonValue())
+        .put("garminNutritionJson", garminNutritionJson ?: JSONObject.NULL)
+        .put("garminNutritionStatus", garminNutritionStatus ?: JSONObject.NULL)
         .put("myFitnessPalData", myFitnessPalData)
 
     private fun JSONObject.toMetrics() = ImportedDailyMetrics(
@@ -151,6 +155,8 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
         garminPersonalApiData = optBoolean("garminPersonalApiData"),
         garminCaloriesConsumed = optNullableInt("garminCaloriesConsumed"),
         myFitnessPalData = optBoolean("myFitnessPalData"),
+        garminNutritionJson = optString("garminNutritionJson").takeUnless { isNull("garminNutritionJson") || it.isBlank() },
+        garminNutritionStatus = optString("garminNutritionStatus").takeUnless { isNull("garminNutritionStatus") || it.isBlank() },
     )
 
     private fun Int?.jsonValue(): Any = this ?: JSONObject.NULL

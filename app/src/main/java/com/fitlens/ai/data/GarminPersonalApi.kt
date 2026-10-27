@@ -123,7 +123,20 @@ class GarminPersonalApi(
             garminCaloriesConsumed = summaryJson?.optNullableDouble("consumedKilocalories")?.toInt(),
         )
         val activities = fetchActivities(token, date, date)
-        return GarminDayData(summary, activities, fetchRecovery(token, date, date))
+        var nutritionStatus = "unavailable"
+        val nutrition = try {
+            val response = getJson(token,
+                "$BASE_URL/nutrition-service/food/logs/$date?includeGoals=true&includeNutrition=true&includeMedia=false",
+                "nutrition") as? JSONObject
+            nutritionStatus = if (response == null || response.length() == 0) "empty" else "available"
+            response?.takeIf { it.length() > 0 }?.let { GarminNutrition.parse(date, it) }
+        } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
+        } catch (_: java.io.IOException) { nutritionStatus = "unavailable"; null
+        } catch (_: IllegalStateException) { nutritionStatus = "unavailable"; null
+        } catch (_: IllegalArgumentException) { nutritionStatus = "unavailable"; null
+        } catch (_: org.json.JSONException) { nutritionStatus = "unavailable"; null }
+        return GarminDayData(summary.copy(garminNutritionJson = nutrition?.json,
+            garminNutritionStatus = nutritionStatus), activities, fetchRecovery(token, date, date))
     }
 
     private fun fetchActivities(token: String, startDate: String, endDate: String): List<GarminActivity> {

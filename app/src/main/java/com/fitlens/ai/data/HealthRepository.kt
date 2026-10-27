@@ -14,6 +14,8 @@ data class Dashboard(
     val garminActivities: List<GarminActivity> = emptyList(),
     val garminCaloriesConsumed: Int? = null,
     val recovery: GarminRecoveryDay? = null,
+    val garminNutrition: GarminNutrition? = null,
+    val garminNutritionStatus: String? = null,
 )
 
 enum class CsvImportSource { GARMIN, MYFITNESSPAL }
@@ -32,6 +34,8 @@ data class ImportedDailyMetrics(
     val myFitnessPalData: Boolean = false,
     val garminPersonalApiData: Boolean = false,
     val garminCaloriesConsumed: Int? = null,
+    val garminNutritionJson: String? = null,
+    val garminNutritionStatus: String? = null,
 )
 
 /** Garmin's type key stays open-ended so new sports do not require an app schema change. */
@@ -105,6 +109,10 @@ class DefaultHealthRepository(
         if (latestGarmin == null && latestNutrition == null) return Dashboard(activity, nutrition, garminActivities = todaysActivities, recovery = recovery)
         return Dashboard(
             recovery = recovery,
+            garminNutrition = latestGarmin?.garminNutritionJson?.let { json ->
+                runCatching { GarminNutrition.parse(latestGarmin.date, org.json.JSONObject(json)) }.getOrNull()
+            },
+            garminNutritionStatus = latestGarmin?.garminNutritionStatus,
             activity = ActivitySummary(
                 steps = latestGarmin?.steps ?: activity.steps,
                 activeMinutes = latestGarmin?.activeMinutes ?: activity.activeMinutes,
