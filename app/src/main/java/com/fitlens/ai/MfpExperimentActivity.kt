@@ -1,5 +1,7 @@
 package com.fitlens.ai
 
+import androidx.lifecycle.repeatOnLifecycle
+
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
@@ -20,9 +22,8 @@ import com.fitlens.ai.ui.FitLensTheme
 import org.json.JSONTokener
 import java.time.LocalDate
 import kotlinx.coroutines.*
-import kotlin.coroutines.resume
 
-/** Isolated manual experiment. No native HTTP calls or JS bridge receives login credentials. */
+/** Website sign-in and manual preview; durable diary batches run in MfpSyncWorker. */
 class MfpExperimentActivity : ComponentActivity() {
     override fun attachBaseContext(base: Context) = super.attachBaseContext(AppLanguage.wrap(base))
 
@@ -32,15 +33,16 @@ class MfpExperimentActivity : ComponentActivity() {
         setContent {
             FitLensTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                val scope = rememberCoroutineScope()
-                var batch by remember { mutableStateOf<Job?>(null) }
+                val manager = remember { androidx.work.WorkManager.getInstance(this) }
+                val preferences = remember { getSharedPreferences("mfp_experiment", MODE_PRIVATE) }
+                var syncing by remember { mutableStateOf(false) }
                 var batchProgress by remember { mutableStateOf("") }
                 var historyVisible by remember { mutableStateOf(false) }
                 var historyText by remember { mutableStateOf("") }
                 var batchConfirm by remember { mutableStateOf(false) }
                 val historyStore = remember { MfpHistoryStore(this) }
                 var date by remember { mutableStateOf(LocalDate.now().toString()) }
-                var username by remember { mutableStateOf("") }
+                var username by remember { mutableStateOf(preferences.getString("username", historyStore.account()).orEmpty()) }
                 var status by remember { mutableStateOf("") }
                 var origin by remember { mutableStateOf("www.myfitnesspal.com") }
                 var loaded by remember { mutableStateOf(false) }
@@ -49,8 +51,22 @@ class MfpExperimentActivity : ComponentActivity() {
                 var progress by remember { mutableIntStateOf(0) }
                 var preview by remember { mutableStateOf<MfpDiaryPreview?>(null) }
                 var confirmed by remember { mutableStateOf(false) }
-                var controlsVisible by remember { mutableStateOf(false) }
+                var controlsVisible by remember { mutableStateOf(true) }
                 var scrollTest by remember { mutableStateOf(false) }
+                LaunchedEffect(manager) {
+                    lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                        while (true) {
+                            val info = withContext(Dispatchers.IO) { manager.getWorkInfosForUniqueWork(MfpSyncWorker.NAME).get().maxByOrNull { item -> item.tags.firstOrNull { it.startsWith("mfp-start:") }?.substringAfter(':')?.toLongOrNull() ?: 0L } }
+                            syncing = info != null && !info.state.isFinished
+                            if (info != null) {
+                                val done = if (info.state == androidx.work.WorkInfo.State.SUCCEEDED) 30 else info.progress.getInt("done", info.outputData.getInt("done", 0))
+                                batchProgress = getString(R.string.mfp_background_progress, done, mfpWorkState(this@MfpExperimentActivity, info.state))
+                                if (info.state == androidx.work.WorkInfo.State.FAILED) status = getString(R.string.mfp_background_failed, info.outputData.getString("error").orEmpty())
+                            }
+                            delay(1000)
+                        }
+                    }
+                }
                 val web = remember {
                     WebView(this).apply {
                         layoutParams = android.view.ViewGroup.LayoutParams(
@@ -102,6 +118,7 @@ class MfpExperimentActivity : ComponentActivity() {
                             }
                             override fun onPageFinished(view: WebView, url: String?) {
                                 loading = false; loaded = !failed && isMfpPage(url.orEmpty())
+                                CookieManager.getInstance().flush()
                             }
                             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                                 if (request.isForMainFrame) {
@@ -125,7 +142,8 @@ class MfpExperimentActivity : ComponentActivity() {
                 }
                 DisposableEffect(web) { onDispose { web.stopLoading(); web.destroy() } }
                 LaunchedEffect(web) {
-                    web.loadUrl("https://www.myfitnesspal.com/account/login")
+                    if (username.isNotBlank()) web.loadUrl("https://www.myfitnesspal.com/food/diary/$username?date=$date")
+                    else web.loadUrl("https://www.myfitnesspal.com/account/login")
                 }
                 LaunchedEffect(loading) {
                     if (loading) {
@@ -152,10 +170,15 @@ class MfpExperimentActivity : ComponentActivity() {
                         color = MaterialTheme.colorScheme.error,
                         modifier = Modifier.fillMaxWidth().heightIn(max = 88.dp).verticalScroll(rememberScrollState()))
                     if (batchProgress.isNotBlank()) Text(batchProgress, style = MaterialTheme.typography.bodySmall)
-                    if (batch?.isActive == true) {
-                        OutlinedButton(onClick = { batch?.cancel(); web.stopLoading() }) { Text(stringResource(R.string.mfp_batch_stop)) }
+                    if (syncing) {
+                        OutlinedButton(onClick = { manager.cancelUniqueWork(MfpSyncWorker.NAME) }) { Text(stringResource(R.string.mfp_batch_stop)) }
                     }
-                    if (controlsVisible && batch?.isActive != true) {
+                    if (syncing) {
+                        Column(Modifier.fillMaxWidth().weight(1f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            LinearProgressIndicator(Modifier.fillMaxWidth())
+                            Text(stringResource(R.string.mfp_tab_help))
+                        }
+                    } else if (controlsVisible) {
                         Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             OutlinedButton(onClick = {
@@ -164,7 +187,7 @@ class MfpExperimentActivity : ComponentActivity() {
                             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_history)) }
                             Text(stringResource(R.string.mfp_controls_help), style = MaterialTheme.typography.bodyMedium)
                             OutlinedTextField(date, { date = it.take(10); preview = null }, label = { Text(stringResource(R.string.mfp_date)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                            OutlinedTextField(username, { username = it.take(100); preview = null }, label = { Text(stringResource(R.string.mfp_username)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                            OutlinedTextField(username, { username = it.take(100); preferences.edit().putString("username", username).apply(); preview = null }, label = { Text(stringResource(R.string.mfp_username)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                             Button(onClick = {
                                 if (runCatching { LocalDate.parse(date) }.isFailure || !username.matches(Regex("[A-Za-z0-9_.-]{1,100}"))) {
                                     status = getString(R.string.mfp_invalid_input)
@@ -196,7 +219,9 @@ class MfpExperimentActivity : ComponentActivity() {
                                 web.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
                             }, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_scroll_test_button)) }
                             TextButton(onClick = {
+                                manager.cancelUniqueWork(MfpSyncWorker.NAME)
                                 scrollTest = false
+                                username = ""
                                 web.stopLoading(); web.loadUrl("about:blank")
                                 CookieManager.getInstance().removeAllCookies { CookieManager.getInstance().flush() }
                                 WebStorage.getInstance().deleteAllData(); web.clearCache(true); web.clearHistory()
@@ -223,7 +248,7 @@ class MfpExperimentActivity : ComponentActivity() {
                                         else getString(R.string.mfp_read_failed_details, html.length, count)
                                 }
                         }
-                    }, enabled = loaded && batch?.isActive != true, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_read_day)) }
+                    }, enabled = loaded && !syncing, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.mfp_read_day)) }
                     }
                 }
                 if (historyVisible) AlertDialog(onDismissRequest = { historyVisible = false },
@@ -238,46 +263,17 @@ class MfpExperimentActivity : ComponentActivity() {
                         val account = username
                         val last = LocalDate.parse(date)
                         controlsVisible = false; scrollTest = false; status = ""
-                        batch = scope.launch {
-                            var saved = 0
-                            try {
-                                for (offset in 0..29) {
-                                    ensureActive()
-                                    val day = last.minusDays(offset.toLong()).toString()
-                                    date = day
-                                    batchProgress = getString(R.string.mfp_batch_progress, offset + 1, saved, day)
-                                    val url = "https://www.myfitnesspal.com/food/diary/$account?date=$day"
-                                    loaded = false; failed = false
-                                    web.loadUrl(url)
-                                    withTimeout(45_000) {
-                                        while (!loaded && !failed) delay(250)
-                                        check(!failed) { getString(R.string.mfp_batch_failed) }
-                                        delay(1500)
-                                    }
-                                    val page = web.url.orEmpty()
-                                    check(isMfpDiaryPage(page)) { getString(R.string.mfp_wrong_page) }
-                                    val html = withTimeout(10_000) {
-                                        suspendCancellableCoroutine<String> { continuation ->
-                                            web.evaluateJavascript(MFP_DIARY_SCRIPT) { result ->
-                                                if (continuation.isActive) continuation.resume(runCatching { JSONTokener(result).nextValue() as? String }.getOrNull().orEmpty())
-                                            }
-                                        }
-                                    }
-                                    check(web.url == page) { getString(R.string.mfp_wrong_page) }
-                                    val data = parseMfpDiary(html, page, day)
-                                    check(historyStore.save(account, data)) { getString(R.string.mfp_save_failed) }
-                                    saved++
-                                    batchProgress = getString(R.string.mfp_batch_progress, offset + 1, saved, day)
-                                    delay(2500)
-                                }
-                                status = getString(R.string.mfp_batch_done, saved)
-                            } catch (cancelled: CancellationException) {
-                                status = getString(R.string.mfp_batch_stopped, saved)
-                                throw cancelled
-                            } catch (_: Exception) {
-                                status = getString(R.string.mfp_batch_stopped, saved) + " " + getString(R.string.mfp_batch_failed)
-                            }
-                        }
+                        preferences.edit().putString("username", account).apply()
+                        val request = androidx.work.OneTimeWorkRequestBuilder<MfpSyncWorker>()
+                            .addTag("mfp-start:${System.currentTimeMillis()}")
+                            .setInputData(androidx.work.workDataOf("account" to account, "end" to last.toString(), "agent" to web.settings.userAgentString, "generation" to historyStore.generation()))
+                            .setConstraints(androidx.work.Constraints.Builder().setRequiredNetworkType(androidx.work.NetworkType.CONNECTED).build())
+                            .setBackoffCriteria(androidx.work.BackoffPolicy.EXPONENTIAL, 30, java.util.concurrent.TimeUnit.SECONDS)
+                            .build()
+                        manager.enqueueUniqueWork(MfpSyncWorker.NAME, androidx.work.ExistingWorkPolicy.KEEP, request)
+                        controlsVisible = true
+                        syncing = true
+
                     }) { Text(stringResource(R.string.mfp_batch_start)) } },
                     dismissButton = { TextButton(onClick = { batchConfirm = false }) { Text(stringResource(R.string.mfp_close)) } })
                 preview?.let { data ->

@@ -84,3 +84,35 @@ Switching account does not combine histories. Clear session also clears this
 history. The old single-snapshot prototype is not silently attributed to an
 account or migrated. This is a website experiment, not an official MFP API or
 background synchronization; verify the first batch on the phone.
+
+## 0.20.0: native background download experiment
+
+Supersedes the foreground-only 30-day approach above. The bottom **MFP** tab
+shows saved summaries and sync status. The account screen remembers the username
+(and migrates the last imported account) and opens its diary using the existing
+WebView session. Login is only needed when that website session expires.
+
+The confirmed batch now uses a unique WorkManager network-constrained task,
+fetching only diary HTML through OkHttp. It reads the existing WebView cookie
+for the exact HTTPS `www.myfitnesspal.com` diary URL, sends it only to that host,
+and applies that host's Set-Cookie response through CookieManager. Redirects
+are disabled; a login/challenge response stops the import rather than bypassing
+it. Cookies are not copied into preferences, work input, reports, or logs.
+Only username, selected date, user agent, and clear-generation are work inputs.
+No images, ads, scripts, or styles are downloaded by this batch. HTML is bounded
+to 2 MB and sanitized before the existing date-checked parser reads it.
+
+Work continues independently of the Activity and screen lock. Android may defer
+it under Doze, power restrictions, or loss of network; no precise completion time
+is promised. Each committed day advances a durable checkpoint for the same work
+ID; retries after IO errors, 429 or 5xx resume there (up to three retries, with
+exponential backoff). Other HTTP/parser/auth failures require user attention.
+There is a 350 ms pause between requests, and only one batch is allowed at once.
+Stop cancels that task. Clearing the session cancels it and invalidates its
+storage generation so an in-flight response cannot restore deleted history.
+The manual WebView one-day reader remains available if native access is refused.
+
+Local automated tests cover native HTML sanitization, multiple meals, and date
+mismatch/login rejection. Actual background access and lock-screen behavior
+need a phone test with an authenticated account; no live account is available
+in the build environment.

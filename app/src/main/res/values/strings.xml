@@ -257,9 +257,9 @@
   <string name="nutrition_date">Date</string>
   <string name="nutrition_food_info">Food information</string>
   <string name="nutrition_time">Time</string>
-  <string name="mfp_experiment">MyFitnessPal — direct access test</string>
-  <string name="mfp_experiment_settings_note">Experiment: website sign-in and one-day diary reading. Not automatic synchronization.</string>
-  <string name="mfp_experiment_note">Sign in only on the MyFitnessPal website. Native code does not read passwords or cookies. WebView manages the session on this device until cleared. External Google/Apple sign-in is not supported in this test.</string>
+  <string name="mfp_experiment">MyFitnessPal</string>
+  <string name="mfp_experiment_settings_note">Sign in once through the website and import diary history in the background. Also available from the MFP tab.</string>
+  <string name="mfp_experiment_note">Sign in on the MyFitnessPal website. The app remembers your username and uses the website session for background diary downloads. Passwords are not extracted. Clear session removes cookies, username and imported history.</string>
   <string name="mfp_external_blocked">External navigation blocked. Use MyFitnessPal website sign-in; CAPTCHA is not bypassed.</string>
   <string name="mfp_date">Date YYYY-MM-DD</string>
   <string name="mfp_username">MFP username</string>
@@ -287,7 +287,7 @@
   <string name="mfp_loading_slow">Loading is taking longer than expected. Use Day and reading to reload the website or clear the session.</string>
   <string name="mfp_website_tab">Website</string>
   <string name="mfp_controls_tab">Day and reading</string>
-  <string name="mfp_controls_help">After signing in, choose a date and enter your MFP username (not email). Open day returns to the website. Once loaded, tap Read this day below the page.</string>
+  <string name="mfp_controls_help">Enter your MFP username (not email). It is remembered on this phone. Use the website to sign in if needed. Read 30 days downloads the selected date and previous 29 in the background; Open day and Read this day remain available for manual reading.</string>
   <string name="mfp_scroll_test_button">Test WebView scrolling</string>
   <string name="mfp_scroll_test_local">Local scroll test — not MyFitnessPal</string>
   <string name="mfp_scroll_test_bottom">You reached the bottom — WebView scrolling works</string>
@@ -299,11 +299,20 @@
   <string name="mfp_meal_group">%1$s · %2$d foods</string>
     <string name="mfp_batch_start">Read and save 30 days</string>
     <string name="mfp_batch_stop">Stop</string>
-    <string name="mfp_batch_consent">Confirm the username belongs to your signed-in account. This reads the selected date and previous 29 days and saves all recognized meals on this phone. Keep this screen open. Saved daily totals will be included in the report you review before sharing with ChatGPT. Switching accounts keeps their histories separate.</string>
+    <string name="mfp_batch_consent">Confirm this username is your signed-in account. The app will use the website session to download diary HTML only, without loading images or ads. Session cookies are sent only to www.myfitnesspal.com and are not copied into history, reports or logs. You can close this screen or lock the phone. Android schedules the task; interrupted reads resume from their saved checkpoint.</string>
     <string name="mfp_batch_progress">Day %1$d/30 · saved %2$d · %3$s</string>
     <string name="mfp_batch_done">Completed: %1$d days saved.</string>
     <string name="mfp_batch_stopped">Stopped. Saved %1$d days; existing history is preserved.</string>
     <string name="mfp_batch_failed">Check login, selected date and diary page, then try again. An unrecognized page is not saved as an empty day.</string>
 <string name="mfp_history">Saved history · last 30 days</string>
 <string name="mfp_history_empty">No saved days in this period.</string>
+<string name="mfp_background_progress">Imported %1$d/30 days · %2$s</string>
+<string name="mfp_background_failed">Direct read stopped (%1$s). Saved days are preserved. Check website sign-in; you can still use the manual one-day reader.</string>
+<string name="mfp_tab_help">Your MyFitnessPal diary and nutrition history. Sign in once through the website, then import 30 days in the background. Android may defer work while conserving power.</string>
+<string name="mfp_manage">Account and synchronization</string>
+<string name="mfp_state_waiting">Waiting for Android / network</string>
+<string name="mfp_state_running">Downloading</string>
+<string name="mfp_state_done">Complete</string>
+<string name="mfp_state_failed">Stopped with an error</string>
+<string name="mfp_state_cancelled">Cancelled</string>
 </resources>

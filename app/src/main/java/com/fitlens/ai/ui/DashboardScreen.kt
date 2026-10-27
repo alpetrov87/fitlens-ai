@@ -1,5 +1,7 @@
 package com.fitlens.ai.ui
 
+import androidx.lifecycle.repeatOnLifecycle
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
@@ -69,6 +71,7 @@ fun DashboardScreen(
                 listOf(Triple("home", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_092), Icons.Default.Home),
                     Triple("calendar", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.ui_034), Icons.Default.DateRange),
                     Triple("runner", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.ui_038), Icons.Default.Insights),
+                    Triple("mfp", "MFP", Icons.Default.Restaurant),
                     Triple("settings", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.ui_000), Icons.Default.Settings)).forEach { (key, title, icon) ->
                     NavigationBarItem(selected = page == key, onClick = { page = key },
                         icon = { Icon(icon, contentDescription = null) }, label = { Text(title) })
@@ -100,6 +103,7 @@ fun DashboardScreen(
             if (garminBusy) LinearProgressIndicator(Modifier.fillMaxWidth())
             pageState.SaveableStateProvider(page) {
                 when (page) {
+                    "mfp" -> MfpScreen()
                     "runner" -> RunnerProfilesScreen()
                     "calendar" -> CalendarScreen(calendar, onAddEvent, onImportEventLink, onDeleteEvent, onRetryCalendar, catalogue, onLoadRaceCalendar)
                     "settings" -> SettingsScreen(garminConnected, garminBusy, onConnectGarmin, onSyncGarmin,
@@ -329,4 +333,71 @@ private fun ActivityCard(activity: GarminActivity) {
 private fun DashboardPreview() {
     FitLensTheme { DashboardScreen(DashboardState.Ready(Dashboard(ActivitySummary(0, 0, 0.0),
         NutritionSummary(0, 0, 0, 0, 0))), null, onRefresh = {}, onImport = {}, onClearImports = {}) }
+}
+
+@Composable
+private fun MfpScreen() {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    var history by remember { mutableStateOf("") }
+    var syncStatus by remember { mutableStateOf("") }
+    var account by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var confirm by remember { mutableStateOf(false) }
+    val screenLifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(context) {
+        val manager = androidx.work.WorkManager.getInstance(context)
+        screenLifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+            while (true) {
+                val info = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    manager.getWorkInfosForUniqueWork(MfpSyncWorker.NAME).get().maxByOrNull { item -> item.tags.firstOrNull { it.startsWith("mfp-start:") }?.substringAfter(':')?.toLongOrNull() ?: 0L }
+                }
+                account = context.getSharedPreferences("mfp_experiment", android.content.Context.MODE_PRIVATE).getString("username", MfpHistoryStore(context).account()).orEmpty()
+                busy = info != null && !info.state.isFinished
+                history = MfpHistoryStore(context).report(language = Locale.getDefault().language)
+                syncStatus = info?.let {
+                    val done = if (it.state == androidx.work.WorkInfo.State.SUCCEEDED) 30 else it.progress.getInt("done", it.outputData.getInt("done", 0))
+                    context.getString(R.string.mfp_background_progress, done, mfpWorkState(context, it.state)) +
+                        if (it.state == androidx.work.WorkInfo.State.FAILED) "\n" + context.getString(R.string.mfp_background_failed, it.outputData.getString("error").orEmpty()) else ""
+                }.orEmpty()
+                kotlinx.coroutines.delay(1500)
+            }
+        }
+    }
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Text("MyFitnessPal", style = MaterialTheme.typography.headlineMedium)
+        Text(androidx.compose.ui.res.stringResource(R.string.mfp_tab_help))
+        Button(onClick = { context.startActivity(android.content.Intent(context, com.fitlens.ai.MfpExperimentActivity::class.java)) }, modifier = Modifier.fillMaxWidth()) {
+            Text(androidx.compose.ui.res.stringResource(R.string.mfp_manage))
+        }
+        if (account.isNotBlank()) {
+            Text("MyFitnessPal · $account", style = MaterialTheme.typography.titleMedium)
+        }
+        Button(onClick = { confirm = true }, enabled = !busy && account.matches(Regex("[A-Za-z0-9_.-]{1,100}")), modifier = Modifier.fillMaxWidth()) {
+            Text(androidx.compose.ui.res.stringResource(R.string.mfp_batch_start))
+        }
+        if (busy) {
+            OutlinedButton(onClick = { androidx.work.WorkManager.getInstance(context).cancelUniqueWork(MfpSyncWorker.NAME) }) {
+                Text(androidx.compose.ui.res.stringResource(R.string.mfp_batch_stop))
+            }
+        }
+        if (syncStatus.isNotBlank()) {
+            Text(syncStatus)
+        }
+        Text(history.ifBlank { context.getString(R.string.mfp_history_empty) })
+    }
+    if (confirm) AlertDialog(onDismissRequest = { confirm = false },
+        title = { Text(androidx.compose.ui.res.stringResource(R.string.mfp_batch_start)) },
+        text = { Text(androidx.compose.ui.res.stringResource(R.string.mfp_batch_consent)) },
+        confirmButton = { TextButton(onClick = {
+            confirm = false
+            val request = androidx.work.OneTimeWorkRequestBuilder<MfpSyncWorker>()
+                .addTag("mfp-start:${System.currentTimeMillis()}")
+                .setInputData(androidx.work.workDataOf("account" to account, "end" to LocalDate.now().toString(),
+                    "agent" to android.webkit.WebSettings.getDefaultUserAgent(context), "generation" to MfpHistoryStore(context).generation()))
+                .setConstraints(androidx.work.Constraints.Builder().setRequiredNetworkType(androidx.work.NetworkType.CONNECTED).build())
+                .setBackoffCriteria(androidx.work.BackoffPolicy.EXPONENTIAL, 30, java.util.concurrent.TimeUnit.SECONDS).build()
+            androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(MfpSyncWorker.NAME, androidx.work.ExistingWorkPolicy.KEEP, request)
+            busy = true
+        }) { Text(androidx.compose.ui.res.stringResource(R.string.mfp_batch_start)) } },
+        dismissButton = { TextButton(onClick = { confirm = false }) { Text(androidx.compose.ui.res.stringResource(R.string.mfp_close)) } })
 }

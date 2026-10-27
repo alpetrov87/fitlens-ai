@@ -257,9 +257,9 @@
   <string name="nutrition_date">Дата</string>
   <string name="nutrition_food_info">Информация за храната</string>
   <string name="nutrition_time">Час</string>
-  <string name="mfp_experiment">MyFitnessPal — директен тест</string>
-  <string name="mfp_experiment_settings_note">Експеримент: вход в сайта и прочит на един ден. Не е автоматична синхронизация.</string>
-  <string name="mfp_experiment_note">Влез само в сайта на MyFitnessPal. Тестът не чете паролата или cookies в native код. Сесията се управлява от WebView и остава на устройството до изчистване. Външен Google/Apple вход не се поддържа в този тест.</string>
+  <string name="mfp_experiment">MyFitnessPal</string>
+  <string name="mfp_experiment_settings_note">Влез веднъж през сайта и прочети историята във фонов режим. Достъпно и от таб MFP.</string>
+  <string name="mfp_experiment_note">Влез през сайта на MyFitnessPal. Приложението помни потребителя и използва сесията за фонов прочит на дневника. Пароли не се извличат. Изчистването на сесията премахва бисквитките, потребителя и прочетената история.</string>
   <string name="mfp_external_blocked">Външната навигация е блокирана. Използвай входа на самия MyFitnessPal; не заобикаляме CAPTCHA.</string>
   <string name="mfp_date">Дата YYYY-MM-DD</string>
   <string name="mfp_username">MFP потребителско име</string>
@@ -287,7 +287,7 @@
   <string name="mfp_loading_slow">Зареждането се бави. В „Ден и прочит“ можеш да презаредиш сайта или да изчистиш сесията.</string>
   <string name="mfp_website_tab">Сайт</string>
   <string name="mfp_controls_tab">Ден и прочит</string>
-  <string name="mfp_controls_help">След входа избери дата и въведи MFP потребителското име (не имейл). „Отвори деня“ връща към сайта. След зареждане натисни „Прочети този ден“ под страницата.</string>
+  <string name="mfp_controls_help">Въведи MFP потребителското име (не имейл). То се запомня на телефона. Влез през сайта, ако е необходимо. Прочитът за 30 дни изтегля избраната дата и предходните 29 във фонов режим; „Отвори деня“ и „Прочети този ден“ остават за ръчен прочит.</string>
   <string name="mfp_scroll_test_button">Тест на скрола в WebView</string>
   <string name="mfp_scroll_test_local">Локален тест на скрола — не е MyFitnessPal</string>
   <string name="mfp_scroll_test_bottom">Стигна до края — скролът работи в WebView</string>
@@ -299,11 +299,20 @@
   <string name="mfp_meal_group">%1$s · %2$d храни</string>
     <string name="mfp_batch_start">Прочети и запази 30 дни</string>
     <string name="mfp_batch_stop">Спри</string>
-    <string name="mfp_batch_consent">Потвърди, че потребителското име е на твоя вписан профил. Ще прочетем избрания ден и предходните 29 и ще запазим всички разпознати хранения на телефона. Остави екрана отворен. Дневните обобщения ще се включват в текста, който преглеждаш преди изпращане към ChatGPT. Историите на различни профили се пазят отделно.</string>
+    <string name="mfp_batch_consent">Потвърди, че това е твоят вписан профил. Приложението ще използва сесията от сайта, за да изтегля само HTML дневника, без картинки и реклами. Сесийните бисквитки се изпращат само към www.myfitnesspal.com и не се копират в историята, отчетите или логовете. Можеш да затвориш екрана или да заключиш телефона. Android управлява задачата; прекъснатият прочит продължава от запазената позиция.</string>
     <string name="mfp_batch_progress">Ден %1$d/30 · запазени %2$d · %3$s</string>
     <string name="mfp_batch_done">Готово: запазени %1$d дни.</string>
     <string name="mfp_batch_stopped">Спряно. Запазени %1$d дни; наличната история е запазена.</string>
     <string name="mfp_batch_failed">Провери входа, избраната дата и дневника и опитай отново. Неразпозната страница не се записва като празен ден.</string>
 <string name="mfp_history">Запазена история · последните 30 дни</string>
 <string name="mfp_history_empty">Няма запазени дни за този период.</string>
+<string name="mfp_background_progress">Прочетени %1$d/30 дни · %2$s</string>
+<string name="mfp_background_failed">Директният прочит спря (%1$s). Запазените дни остават. Провери входа в сайта; ръчният прочит на ден остава достъпен.</string>
+<string name="mfp_tab_help">Твоят MyFitnessPal дневник и история на храненето. Влез веднъж през сайта, след което прочети 30 дни във фонов режим. Android може да отложи задачата при пестене на батерия.</string>
+<string name="mfp_manage">Профил и синхронизация</string>
+<string name="mfp_state_waiting">Изчаква Android / мрежа</string>
+<string name="mfp_state_running">Изтегляне</string>
+<string name="mfp_state_done">Готово</string>
+<string name="mfp_state_failed">Спряно с грешка</string>
+<string name="mfp_state_cancelled">Отменено</string>
 </resources>

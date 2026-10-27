@@ -8,14 +8,22 @@ import java.time.LocalDate
 /** Private, per-account dated snapshots. Failed reads never replace successful data. */
 internal class MfpHistoryStore(context: Context) {
     private val prefs = context.getSharedPreferences("mfp_history", Context.MODE_PRIVATE)
-    fun save(account: String, data: MfpDiaryPreview): Boolean {
+    fun account(): String = prefs.getString("active_account", "").orEmpty()
+    fun generation(): Int = prefs.getInt("generation", 0)
+    fun save(account: String, data: MfpDiaryPreview, expectedGeneration: Int? = null): Boolean = synchronized(lock) {
+        if (expectedGeneration != null && expectedGeneration != generation()) return false
         if (!account.matches(Regex("[A-Za-z0-9_.-]{1,100}"))) return false
         LocalDate.parse(data.date)
         val snapshot = mfpSnapshot(data)
         return prefs.edit().putString("active_account", account.lowercase(java.util.Locale.ROOT))
             .putString("${account.lowercase(java.util.Locale.ROOT)}:${data.date}", snapshot.toString()).commit()
     }
-    fun clear() { prefs.edit().clear().apply() }
+    fun clear() = synchronized(lock) {
+        val next = generation() + 1
+        prefs.edit().clear().putInt("generation", next).commit()
+        Unit
+    }
+    private companion object { val lock = Any() }
     fun report(today: LocalDate = LocalDate.now(), language: String): String {
         val account = prefs.getString("active_account", null) ?: return ""
         val days = (29 downTo 0).mapNotNull { offset ->
