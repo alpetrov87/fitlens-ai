@@ -19,7 +19,7 @@ class WorkoutRepository(private val storage: WorkoutStorage) {
         require(raw.length <= 8_000_000) { "Workout storage too large" }
         val root = JSONObject(raw)
         val version = root.getInt("storageVersion")
-        require(version in 0..1) { "Unsupported workout storage version; original data preserved" }
+        require(root.getDouble("storageVersion") == version.toDouble() && version in 0..1) { "Unsupported workout storage version; original data preserved" }
         val seeded = root.optJSONArray("seeded") ?: JSONArray()
         val records = root.getJSONArray("workouts")
         val workouts = (0 until records.length()).map { i ->
@@ -43,8 +43,9 @@ class WorkoutRepository(private val storage: WorkoutStorage) {
                 .put("garminId", w.garminId).put("lastAttempt", w.lastSyncAttempt).put("error", w.error)
                 .put("uploaded", w.uploadedFingerprint).put("pending", w.pendingFingerprint)
         }
-        check(storage.write(JSONObject().put("storageVersion", 1).put("seeded", JSONArray(library.seeded.toList()))
-            .put("workouts", JSONArray(records)).toString())) { "Cannot save workouts" }
+        val encoded = JSONObject().put("storageVersion", 1).put("seeded", JSONArray(library.seeded.toList())).put("workouts", JSONArray(records)).toString()
+        require(encoded.length <= 8_000_000) { "Workout storage full" }
+        check(storage.write(encoded)) { "Cannot save workouts" }
     }
     fun seedTemplates() = synchronized(lock) {
         val library = load()
@@ -66,6 +67,6 @@ class WorkoutRepository(private val storage: WorkoutStorage) {
     }
     fun delete(id: String) = synchronized(lock) { val library = load(); library.workouts.removeAll { it.id == id }; persist(library) }
     fun duplicate(id: String): Workout = synchronized(lock) { all().first { it.id == id }.duplicate().also(::save) }
-    fun importJson(raw: String): Workout = WorkoutJson.decode(raw).duplicate(WorkoutJson.decode(raw).name).also(::save)
+    fun importJson(raw: String): Workout = WorkoutJson.decode(raw).let { it.duplicate(it.name) }.also(::save)
     companion object { private val lock = Any() }
 }

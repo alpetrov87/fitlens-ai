@@ -28,7 +28,7 @@ object WorkoutJson {
             else when (c) { '"' -> quoted = true; '{', '[' -> { depth++; require(depth <= 24) { "JSON too deep" } }; '}', ']' -> depth-- }
         }
         val o = JSONObject(raw)
-        require(o.getInt("schemaVersion") == VERSION) { "Unsupported schema version" }
+        require(exactInt(o, "schemaVersion") == VERSION) { "Unsupported schema version" }
         val w = Workout(id = o.getString("id"), name = o.getString("name"), description = o.getString("description"),
             sport = WorkoutSport.valueOf(o.getString("sport")), equipment = o.getString("equipment"),
             steps = readSteps(o.getJSONArray("steps"), 0), isTemplate = o.getBoolean("isTemplate"),
