@@ -8,6 +8,7 @@ android {
     compileSdk = 35
     defaultConfig {
         applicationId = "com.fitlens.ai"
+        manifestPlaceholders["bairAppLabel"] = "@string/app_name"
         minSdk = 26
         targetSdk = 35
         versionCode = System.getenv("FITLENS_VERSION_CODE")?.toInt() ?: 31
@@ -26,7 +27,7 @@ android {
     if (System.getenv("BAIR_WORKOUT_TEST_BUILD") == "true") {
         buildTypes.getByName("debug") {
             applicationIdSuffix = ".workoutstest"
-            resValue("string", "app_name", "bAIr Workouts Test")
+            manifestPlaceholders["bairAppLabel"] = "bAIr Workouts Test"
         }
     }
     buildFeatures { compose = true }
