@@ -29,10 +29,10 @@ object GarminWorkoutMapping {
         "hip_circles" to GarminExercise("HIP_STABILITY", "HIP_CIRCLES"),
     )
 }
-class GarminWorkoutProvider : WorkoutSyncProvider {
-    override fun authentication() = WorkoutConnection.SETUP_REQUIRED
-    override fun connect() = WorkoutConnection.SETUP_REQUIRED
-    override fun disconnect() = Unit // No backend session or Garmin credentials have been created.
+class GarminWorkoutProvider(private val transport: WorkoutUploadTransport? = null) : WorkoutSyncProvider {
+    override fun authentication() = transport?.authentication() ?: WorkoutConnection.SETUP_REQUIRED
+    override fun connect() = authentication()
+    override fun disconnect() { transport?.disconnect() }
     override fun compatibility(workout: Workout): WorkoutCompatibility {
         val issues = workout.validate().toMutableList()
         if (workout.sport != WorkoutSport.STRENGTH) issues += "sport"
@@ -100,6 +100,9 @@ class GarminWorkoutProvider : WorkoutSyncProvider {
 /** Boundary for a future authenticated trusted backend. No username/password transport on Android. */
 interface WorkoutUploadTransport {
     fun authentication(): WorkoutConnection
+    fun identity(): String? = null
+    fun disconnect() {}
+    fun lookup(requestKey: String): JSONObject? = null
     fun create(payload: JSONObject, requestKey: String): JSONObject
     fun update(id: String, payload: JSONObject, requestKey: String): JSONObject
 }
@@ -108,31 +111,54 @@ enum class UploadMode { CREATE_NEW, UPDATE_EXISTING }
 class WorkoutSyncCoordinator(private val repository: WorkoutRepository, private val transport: WorkoutUploadTransport) {
     private companion object { val uploadLock = Any() }
     private val provider = GarminWorkoutProvider()
+    private fun contentFingerprint(workout: Workout) = MessageDigest.getInstance("SHA-256").digest(WorkoutJson.encode(workout).toByteArray()).joinToString("") { "%02x".format(it) }
     fun send(id: String, mode: UploadMode, allowGeneric: Boolean): Workout = synchronized(uploadLock) {
         val w = repository.all().first { it.id == id }
         val payload = provider.payload(w, allowGeneric)
-        val fingerprint = MessageDigest.getInstance("SHA-256").digest(WorkoutJson.encode(w).toByteArray()).joinToString("") { "%02x".format(it) }
-        if (w.uploadedFingerprint == fingerprint && w.garminId != null) return w
+        val fingerprint = contentFingerprint(w)
         check(w.pendingFingerprint == null) { "Uncertain previous upload; verify Garmin before retrying" }
         val connection = transport.authentication()
         if (connection != WorkoutConnection.CONNECTED) {
             val code = if (connection == WorkoutConnection.EXPIRED) "expired" else "authentication"
-            repository.save(w.copy(syncStatus = WorkoutSyncStatus.SYNC_FAILED, lastSyncAttempt = System.currentTimeMillis(), error = code))
+            repository.modify(id) { it.copy(syncStatus = WorkoutSyncStatus.SYNC_FAILED, lastSyncAttempt = System.currentTimeMillis(), error = code) }
             throw WorkoutRemoteFailure(code)
         }
-        if (mode == UploadMode.UPDATE_EXISTING) require(w.garminId != null)
-        val pending = w.copy(syncStatus = WorkoutSyncStatus.SYNCING, pendingFingerprint = fingerprint, lastSyncAttempt = System.currentTimeMillis(), error = null)
-        repository.save(pending)
+        val identity = transport.identity()
+        if (w.uploadedFingerprint == fingerprint && w.garminId != null && w.uploadedIdentity == identity) return w
+        if (mode == UploadMode.UPDATE_EXISTING) {
+            if (w.garminId == null || w.uploadedIdentity != identity) throw WorkoutRemoteFailure("account_mismatch")
+        }
+        val pending = repository.modify(id) { live ->
+            if (contentFingerprint(live) != fingerprint || live.pendingFingerprint != null) throw WorkoutRemoteFailure("validation")
+            live.copy(syncStatus = WorkoutSyncStatus.SYNCING, pendingFingerprint = fingerprint, pendingIdentity = identity, lastSyncAttempt = System.currentTimeMillis(), error = null)
+        } ?: throw WorkoutRemoteFailure("validation")
         try {
             val response = if (mode == UploadMode.UPDATE_EXISTING) transport.update(w.garminId!!, payload.put("workoutId", w.garminId.toLong()), fingerprint) else transport.create(payload, fingerprint)
             val remoteId = response.opt("workoutId")?.toString()?.takeIf { it.matches(Regex("[1-9][0-9]{0,17}")) } ?: throw WorkoutRemoteFailure("invalid_response")
             if (mode == UploadMode.UPDATE_EXISTING && remoteId != w.garminId) throw WorkoutRemoteFailure("invalid_response")
-            return pending.copy(garminId = remoteId, uploadedFingerprint = fingerprint, pendingFingerprint = null, syncStatus = WorkoutSyncStatus.SYNCED_TO_GARMIN).also(repository::save)
+            return repository.modify(id) { live ->
+                live.copy(garminId = remoteId, uploadedFingerprint = fingerprint, uploadedIdentity = identity, pendingFingerprint = null, pendingIdentity = null,
+                    error = null, syncStatus = if (contentFingerprint(live) == fingerprint) WorkoutSyncStatus.SYNCED_TO_GARMIN else WorkoutSyncStatus.READY_TO_SYNC)
+            } ?: pending.copy(garminId = remoteId, uploadedFingerprint = fingerprint, uploadedIdentity = identity, pendingFingerprint = null, pendingIdentity = null, syncStatus = WorkoutSyncStatus.SYNCED_TO_GARMIN)
         } catch (failure: Exception) {
             val code = (failure as? WorkoutRemoteFailure)?.code ?: "network"
-            val certainRejection = code in setOf("authentication", "expired", "rate_limit", "validation")
-            repository.save(pending.copy(syncStatus = WorkoutSyncStatus.SYNC_FAILED, error = code, pendingFingerprint = if (certainRejection) null else fingerprint))
+            val certainRejection = code in setOf("authentication", "expired", "rate_limit", "validation", "account_mismatch")
+            repository.modify(id) { live -> live.copy(syncStatus = WorkoutSyncStatus.SYNC_FAILED, error = code,
+                pendingFingerprint = if (certainRejection) null else fingerprint, pendingIdentity = if (certainRejection) null else identity) }
             throw WorkoutRemoteFailure(code)
         }
     }
+    fun reconcile(id: String): Workout = synchronized(uploadLock) {
+        val w = repository.all().first { it.id == id }
+        val key = w.pendingFingerprint ?: throw WorkoutRemoteFailure("validation")
+        if (transport.authentication() != WorkoutConnection.CONNECTED) throw WorkoutRemoteFailure("expired")
+        if (transport.identity() != w.pendingIdentity) throw WorkoutRemoteFailure("account_mismatch")
+        val response = transport.lookup(key) ?: throw WorkoutRemoteFailure("uncertain")
+        val remoteId = response.opt("workoutId")?.toString()?.takeIf { it.matches(Regex("[1-9][0-9]{0,17}")) } ?: throw WorkoutRemoteFailure("invalid_response")
+        repository.modify(id) { live ->
+            live.copy(garminId = remoteId, uploadedFingerprint = key, uploadedIdentity = transport.identity(), pendingFingerprint = null, pendingIdentity = null,
+                error = null, syncStatus = if (contentFingerprint(live) == key) WorkoutSyncStatus.SYNCED_TO_GARMIN else WorkoutSyncStatus.READY_TO_SYNC)
+        } ?: throw WorkoutRemoteFailure("validation")
+    }
+
 }

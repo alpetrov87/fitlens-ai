@@ -37,6 +37,8 @@ data class Workout(
     val error: String? = null,
     val uploadedFingerprint: String? = null,
     val pendingFingerprint: String? = null,
+    val uploadedIdentity: String? = null,
+    val pendingIdentity: String? = null,
 )
 data class WorkoutDuration(val seconds: Long, val exact: Boolean)
 fun WorkoutStep.duration(): WorkoutDuration {

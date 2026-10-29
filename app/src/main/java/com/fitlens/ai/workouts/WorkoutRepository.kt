@@ -31,7 +31,9 @@ class WorkoutRepository(private val storage: WorkoutStorage) {
                     syncStatus = if (state == WorkoutSyncStatus.SYNCING) WorkoutSyncStatus.SYNC_FAILED else state,
                     lastSyncAttempt = record.optLong("lastAttempt", 0).takeIf { it > 0 }, error = record.optString("error").takeIf { it.isNotBlank() },
                     uploadedFingerprint = record.optString("uploaded").takeIf { it.isNotBlank() },
-                    pendingFingerprint = record.optString("pending").takeIf { it.isNotBlank() })
+                    pendingFingerprint = record.optString("pending").takeIf { it.isNotBlank() },
+                    uploadedIdentity = record.optString("uploadedIdentity").takeIf { it.isNotBlank() },
+                    pendingIdentity = record.optString("pendingIdentity").takeIf { it.isNotBlank() })
             }
         }
         require(workouts.map { it.id }.distinct().size == workouts.size)
@@ -42,6 +44,7 @@ class WorkoutRepository(private val storage: WorkoutStorage) {
             JSONObject().put("workout", JSONObject(WorkoutJson.encode(w))).put("status", w.syncStatus.name)
                 .put("garminId", w.garminId).put("lastAttempt", w.lastSyncAttempt).put("error", w.error)
                 .put("uploaded", w.uploadedFingerprint).put("pending", w.pendingFingerprint)
+                .put("uploadedIdentity", w.uploadedIdentity).put("pendingIdentity", w.pendingIdentity)
         }
         val encoded = JSONObject().put("storageVersion", 1).put("seeded", JSONArray(library.seeded.toList())).put("workouts", JSONArray(records)).toString()
         require(encoded.length <= 8_000_000) { "Workout storage full" }
@@ -64,6 +67,26 @@ class WorkoutRepository(private val storage: WorkoutStorage) {
         val index = library.workouts.indexOfFirst { it.id == workout.id }
         if (index < 0) { require(library.workouts.size < 200); library.workouts.add(workout) } else library.workouts[index] = workout
         persist(library)
+    }
+    fun modify(id: String, transform: (Workout) -> Workout): Workout? = synchronized(lock) {
+        val library = load()
+        val index = library.workouts.indexOfFirst { it.id == id }
+        if (index < 0) return null
+        val changed = transform(library.workouts[index])
+        require(changed.id == id && changed.validate().isEmpty())
+        library.workouts[index] = changed
+        persist(library)
+        changed
+    }
+    fun saveEdited(workout: Workout, expectedModifiedAt: Long) = synchronized(lock) {
+        val existing = load().workouts.firstOrNull { it.id == workout.id }
+        if (existing == null) save(workout) else {
+            require(existing.modifiedAt == expectedModifiedAt) { "Workout changed during editing" }
+            save(workout.copy(garminId = existing.garminId, uploadedFingerprint = existing.uploadedFingerprint,
+                uploadedIdentity = existing.uploadedIdentity, pendingFingerprint = existing.pendingFingerprint,
+                pendingIdentity = existing.pendingIdentity, lastSyncAttempt = existing.lastSyncAttempt,
+                syncStatus = if (existing.pendingFingerprint != null) existing.syncStatus else if (existing.garminId != null) WorkoutSyncStatus.READY_TO_SYNC else WorkoutSyncStatus.LOCAL_ONLY))
+        }
     }
     fun delete(id: String) = synchronized(lock) { val library = load(); library.workouts.removeAll { it.id == id }; persist(library) }
     fun duplicate(id: String): Workout = synchronized(lock) { all().first { it.id == id }.duplicate().also(::save) }

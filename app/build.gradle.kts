@@ -11,8 +11,8 @@ android {
         manifestPlaceholders["bairAppLabel"] = "@string/app_name"
         minSdk = 26
         targetSdk = 35
-        versionCode = System.getenv("FITLENS_VERSION_CODE")?.toInt() ?: 31
-        versionName = "0.22.0"
+        versionCode = System.getenv("FITLENS_VERSION_CODE")?.toInt() ?: 32
+        versionName = "0.23.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     val persistentKey = System.getenv("FITLENS_KEYSTORE_PATH").takeUnless { System.getenv("BAIR_WORKOUT_TEST_BUILD") == "true" }

@@ -93,11 +93,11 @@ internal fun WorkoutsScreen() {
             Button(onClick = { action {
                 val now = maxOf(System.currentTimeMillis(), draft.createdAt)
                 val updated = draft.copy(modifiedAt = now, syncStatus = if (draft.garminId != null) WorkoutSyncStatus.READY_TO_SYNC else WorkoutSyncStatus.LOCAL_ONLY, error = null)
-                repository.save(updated); selected = updated.id; editing = null
+                repository.saveEdited(updated, draft.modifiedAt); selected = updated.id; editing = null
             } }, enabled = draft.validate().isEmpty()) { Text(stringResource(R.string.w_save)) }
             TextButton(onClick = { discard = true }) { Text(stringResource(R.string.w_cancel)) }
         } else if (integration && current != null) {
-            GarminSetup(current, { integration = false })
+            GarminWorkoutScreen(current, repository, { refresh() }, { integration = false })
         } else if (current != null) {
             TextButton(onClick = { selected = null }) { Text(stringResource(R.string.w_back)) }
             Text(current.name, style = MaterialTheme.typography.headlineSmall)
@@ -240,26 +240,6 @@ private fun NumberField(label: String, value: Int, change: (Int) -> Unit) {
 private fun Choice(label: String, value: String, content: @Composable (close: () -> Unit) -> Unit) {
     var open by remember { mutableStateOf(false) }
     Box { OutlinedButton(onClick = { open = true }) { Text("$label: $value") }; DropdownMenu(expanded = open, onDismissRequest = { open = false }) { content { open = false } } }
-}
-@Composable
-private fun GarminSetup(workout: Workout, close: () -> Unit) {
-    val provider = remember { GarminWorkoutProvider() }
-    val compatibility = remember(workout) { provider.compatibility(workout) }
-    var allowGeneric by remember { mutableStateOf(false) }
-    var preview by remember { mutableStateOf(false) }
-    TextButton(onClick = close) { Text(stringResource(R.string.w_back)) }
-    Text(stringResource(R.string.w_garmin_setup), style = MaterialTheme.typography.headlineSmall)
-    Text(stringResource(R.string.w_garmin_blocker))
-    Text(stringResource(R.string.w_garmin_security), style = MaterialTheme.typography.bodySmall)
-    if (!compatibility.supported) Text(stringResource(R.string.w_unsupported), color = MaterialTheme.colorScheme.error)
-    if (compatibility.genericSteps.isNotEmpty()) {
-        Text(stringResource(R.string.w_generic_warning) + "\n" + compatibility.genericSteps.joinToString("\n"))
-        Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(allowGeneric, { allowGeneric = it }); Text(stringResource(R.string.w_generic_confirm), style = MaterialTheme.typography.bodySmall) }
-    }
-    Button(onClick = { preview = !preview }, enabled = compatibility.supported && (allowGeneric || compatibility.genericSteps.isEmpty())) { Text(stringResource(R.string.w_payload_preview)) }
-    if (preview) Text(provider.payload(workout, allowGeneric).toString(2), style = MaterialTheme.typography.bodySmall)
-    Button(onClick = {}, enabled = false) { Text(stringResource(R.string.w_send_garmin)) }
-    Text(stringResource(R.string.w_watch_unverified), style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable private fun durationText(w: Workout): String {
