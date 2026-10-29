@@ -13,6 +13,8 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    env:
+      BAIR_WORKOUT_TEST_BUILD: ${{ github.ref == 'refs/heads/feature/workout-builder-garmin' || github.head_ref == 'feature/workout-builder-garmin' }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-java@v5
@@ -39,7 +41,10 @@ jobs:
           sdkmanager --licenses <<< "$(printf 'y\n%.0s' {1..100})"
           sdkmanager 'platforms;android-35' 'build-tools;34.0.0' 'platform-tools'
       - uses: gradle/actions/setup-gradle@v4
-      - name: Configure APK version and optional persistent signing
+      - name: Configure APK version
+        run: echo "FITLENS_VERSION_CODE=$((1000 + GITHUB_RUN_NUMBER))" >> "$GITHUB_ENV"
+      - name: Configure optional persistent signing outside workout test builds
+        if: env.BAIR_WORKOUT_TEST_BUILD != 'true'
         env:
           KEYSTORE_BASE64: ${{ secrets.FITLENS_KEYSTORE_BASE64 }}
           STORE_PASSWORD: ${{ secrets.FITLENS_KEYSTORE_PASSWORD }}
@@ -63,10 +68,18 @@ jobs:
           fi
       - name: Build, test and lint
         run: ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+      - name: Record APK provenance
+        env:
+          RUN_BRANCH: ${{ github.head_ref || github.ref_name }}
+          RUN_COMMIT: ${{ github.sha }}
+        run: |
+          printf 'Branch: %s\nCommit: %s\nWorkout test build: %s\n' "$RUN_BRANCH" "$RUN_COMMIT" "$BAIR_WORKOUT_TEST_BUILD" > app/build/outputs/apk/debug/BUILD_INFO.txt
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: fitlens-ai-debug-${{ github.run_number }}
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: ${{ env.BAIR_WORKOUT_TEST_BUILD == 'true' && 'bair-workouts-test' || 'fitlens-ai-debug' }}-${{ github.run_number }}-${{ github.sha }}
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/apk/debug/BUILD_INFO.txt
           if-no-files-found: error
           retention-days: 14

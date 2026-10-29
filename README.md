@@ -193,3 +193,15 @@ separate concerns. WorkManager schedules background Garmin synchronization.
 Make changes on a separate branch and open a pull request targeting `main`.
 See [main-branch protection](docs/MAIN-PROTECTION.md). Publishing an APK artifact
 does not deploy the app.
+
+## Workout Builder (test branch)
+
+`feature/workout-builder-garmin` adds an offline **Workouts** library, editable
+14-minute Bair Strength A/B templates, a structured editor, and versioned JSON
+import/export/sharing. The dedicated CI APK installs as **bAIr Workouts Test**
+alongside the normal app and does not use production signing secrets.
+
+**Garmin upload is not enabled:** the provider/converter and duplicate protection
+are mock-tested, but secure backend authentication and live Garmin/Enduro 3
+verification are unavailable. The UI clearly shows a setup-required state.
+See [implementation, limitations, build and manual test instructions](docs/workout-builder.md).

@@ -10,17 +10,23 @@ android {
         applicationId = "com.fitlens.ai"
         minSdk = 26
         targetSdk = 35
-        versionCode = System.getenv("FITLENS_VERSION_CODE")?.toInt() ?: 18
-        versionName = "0.16.0"
+        versionCode = System.getenv("FITLENS_VERSION_CODE")?.toInt() ?: 31
+        versionName = "0.22.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    val persistentKey = System.getenv("FITLENS_KEYSTORE_PATH")
+    val persistentKey = System.getenv("FITLENS_KEYSTORE_PATH").takeUnless { System.getenv("BAIR_WORKOUT_TEST_BUILD") == "true" }
     if (!persistentKey.isNullOrBlank()) {
         signingConfigs.getByName("debug") {
             storeFile = file(persistentKey)
             storePassword = requireNotNull(System.getenv("FITLENS_KEYSTORE_PASSWORD"))
             keyAlias = requireNotNull(System.getenv("FITLENS_KEY_ALIAS"))
             keyPassword = requireNotNull(System.getenv("FITLENS_KEY_PASSWORD"))
+        }
+    }
+    if (System.getenv("BAIR_WORKOUT_TEST_BUILD") == "true") {
+        buildTypes.getByName("debug") {
+            applicationIdSuffix = ".workoutstest"
+            resValue("string", "app_name", "bAIr Workouts Test")
         }
     }
     buildFeatures { compose = true }
