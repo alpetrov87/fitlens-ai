@@ -207,7 +207,7 @@ private fun StepListEditor(steps: List<WorkoutStep>, change: (List<WorkoutStep>)
                         Choice(stringResource(R.string.w_step_type), kindLabel(step.kind)) { close -> StepKind.entries.filter { it != StepKind.REPEAT }.forEach { kind ->
                             DropdownMenuItem(text = { Text(kindLabel(kind)) }, onClick = { update(step.copy(kind = kind)); close() })
                         } }
-                        Choice(stringResource(R.string.w_exercise), step.exerciseKey) { close -> WorkoutTemplates.exercises.forEach { exercise ->
+                        Choice(stringResource(R.string.w_exercise), step.name) { close -> WorkoutTemplates.exercises.forEach { exercise ->
                             DropdownMenuItem(text = { Text(exercise.name) }, onClick = { update(step.copy(exerciseKey = exercise.key, name = exercise.name, instructions = exercise.instructions)); close() })
                         } }
                         Choice(stringResource(R.string.w_duration_type), unitLabel(step.durationKind)) { close -> DurationKind.entries.forEach { kind ->
