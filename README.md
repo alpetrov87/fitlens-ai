@@ -201,7 +201,8 @@ does not deploy the app.
 import/export/sharing. The dedicated CI APK installs as **bAIr Workouts Test**
 alongside the normal app and does not use production signing secrets.
 
-**Garmin upload is not enabled:** the provider/converter and duplicate protection
-are mock-tested, but secure backend authentication and live Garmin/Enduro 3
-verification are unavailable. The UI clearly shows a setup-required state.
+Garmin sending now uses an optional **personal HTTPS backend**, with console-only
+Garmin sign-in/MFA, encrypted session storage and persistent duplicate protection.
+Deploy and connect your own backend before sending. Real Garmin/Enduro 3
+verification remains unperformed. See [backend setup](backend/workouts/README.md).
 See [implementation, limitations, build and manual test instructions](docs/workout-builder.md).

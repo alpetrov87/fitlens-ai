@@ -322,3 +322,17 @@ Implementation commit: `a44f616919db95db931b7d914d9b75eb36ddb014`.
 No PR has been merged and no production deployment was performed. Later
 metadata/documentation commits may produce additional artifacts; match their
 SHA to `BUILD_INFO.txt` rather than assuming they are the same build.
+
+## 0.23.0 — personal-backend sending (supersedes setup-only behavior above)
+
+Android now has a real HTTPS backend transport and explicit upload confirmation,
+CREATE/UPDATE choices, returned-ID persistence, disconnect and pending-result
+lookup. The standalone single-owner Docker backend performs Garmin SSO/MFA only
+through its trusted console, encrypts its session at rest and provides a durable,
+account-scoped idempotency ledger. No personal backend has been deployed and no
+real Garmin/Enduro 3 success is claimed. The previous setup-only descriptions
+record the original MVP; deployment is now possible using the supplied service.
+
+See [backend setup, exact commands and phone steps](../backend/workouts/README.md).
+The backend pairing token is not a Garmin Personal API key. Existing read-only
+Garmin integration and the separate workout test APK identity remain unchanged.

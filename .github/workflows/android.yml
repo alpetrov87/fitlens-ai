@@ -10,7 +10,24 @@ concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test the single-owner Garmin bridge without credentials
+        run: |
+          python -m pip install -r backend/workouts/requirements-test.txt
+          python -m unittest discover -s backend/workouts/tests -v
+      - name: Build the backend image without deploying it
+        run: docker build -f backend/workouts/Dockerfile -t bair-workouts-ci backend/workouts
+      - name: Smoke-test pinned Garmin client imports without signing in
+        run: docker run --rm --read-only --tmpfs /tmp:noexec,nosuid,size=32m --entrypoint python bair-workouts-ci -m backend.workouts.smoke
   build:
+    needs: backend
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
