@@ -297,3 +297,25 @@ workout visible in Connect, (4) workout visible and correct on Enduro 3.
   corrupt versions are intentionally not overwritten by template seeding.
 - **Update signature failure:** verify you selected the separate test app APK;
   do not uninstall your normal bAIr installation to install this test build.
+
+## Recorded validation results — 2026-10-29
+
+Implementation commit: `a44f616919db95db931b7d914d9b75eb36ddb014`.
+
+| Check | Result |
+| --- | --- |
+| Local `assembleDebug` with `BAIR_WORKOUT_TEST_BUILD=true` | Passed |
+| Local unit tests (existing tests plus workout tests) | 52 tests, 0 failures/errors |
+| Local `lintDebug` | Passed |
+| Two generated payloads validated with upstream `StrengthWorkout` | Passed using researched upstream commit and Pydantic 2.13.4; not a server test |
+| APK manifest inspected with Android `aapt` | `com.fitlens.ai.workoutstest`, label `bAIr Workouts Test`, version `0.22.0`, min SDK 26 |
+| GitHub Actions implementation build | [Run 40946895591 — Success](https://github.com/alpetrov87/fitlens-ai/actions/runs/40946895591) |
+| Published artifact for that implementation commit | `bair-workouts-test-129-a44f616919db95db931b7d914d9b75eb36ddb014` |
+| Phone UI, Android disk persistence and SAF/share flows | Not manually tested; follow checklist above |
+| Real Garmin API upload / visible in Connect / visible on Enduro 3 | Not tested; live upload disabled pending trusted backend |
+| Pull request creation | GitHub GraphQL API returned `Forbidden`; branch push succeeded. Use the compare link below to create one PR. |
+
+[Create the review PR targeting main](https://github.com/alpetrov87/fitlens-ai/compare/main...feature/workout-builder-garmin?expand=1).
+No PR has been merged and no production deployment was performed. Later
+metadata/documentation commits may produce additional artifacts; match their
+SHA to `BUILD_INFO.txt` rather than assuming they are the same build.
