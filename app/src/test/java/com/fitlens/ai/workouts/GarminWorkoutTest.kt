@@ -22,6 +22,14 @@ class GarminWorkoutTest {
             java.io.File(dir, "strength-${index + 1}.json").writeText(provider.payload(workout, true).toString(2))
         }
     }
+    @Test fun repetitionPayloadUsesRepConditionAndUnknownDurationSentinel() {
+        val workout = Workout(name = "Repetition test", steps = listOf(WorkoutTemplates.step("squat").copy(durationKind = DurationKind.REPS, value = 12)))
+        val payload = provider.payload(workout, false)
+        assertEquals(0, payload.getInt("estimatedDurationInSecs"))
+        val step = payload.getJSONArray("workoutSegments").getJSONObject(0).getJSONArray("workoutSteps").getJSONObject(0)
+        assertEquals(10, step.getJSONObject("endCondition").getInt("conditionTypeId"))
+        assertEquals(12, step.getInt("endConditionValue"))
+    }
     @Test fun strengthPayloadHasWarmupsTimedWorkRestAndCorrectRepeat() {
         val payload = provider.payload(sample(), true)
         assertEquals(5, payload.getJSONObject("sportType").getInt("sportTypeId"))

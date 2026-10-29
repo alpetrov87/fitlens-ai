@@ -84,6 +84,9 @@ changes; save before leaving the screen.
 Time-based steps and rests contribute seconds; repeat groups multiply all
 children including the final rest. Rep/distance/lap steps have unknown elapsed
 time, so the UI explicitly shows a lower bound, not an invented exact duration.
+For repetition-based payloads, the required Garmin `estimatedDurationInSecs`
+metadata uses 0 as an unknown-duration sentinel, consistent with upstream
+strength examples; this is not a claim of zero elapsed workout time.
 Those conditions, future heart-rate/pace/power targets and additional local
 sports are modeled independently of Garmin support. The UI currently edits
 step duration conditions but not target zones. Strength time/reps conversion is

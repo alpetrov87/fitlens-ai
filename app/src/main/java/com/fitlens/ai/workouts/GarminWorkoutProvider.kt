@@ -92,7 +92,7 @@ class GarminWorkoutProvider : WorkoutSyncProvider {
         }
         val sport = JSONObject().put("sportTypeId", 5).put("sportTypeKey", "strength_training").put("displayOrder", 5)
         return JSONObject().put("workoutName", workout.name).put("description", workout.description)
-            .put("sportType", sport).apply { if (workout.duration().exact) put("estimatedDurationInSecs", workout.duration().seconds) }
+            .put("sportType", sport).put("estimatedDurationInSecs", if (workout.duration().exact) workout.duration().seconds else 0L)
             .put("workoutSegments", JSONArray().put(JSONObject().put("segmentOrder", 1).put("sportType", sport).put("workoutSteps", steps(workout.steps))))
     }
 }
