@@ -6,3 +6,6 @@ local.properties
 .idea/
 *.jks
 *.keystore
+backend/workouts/private/
+backend/workouts/.env
+**/__pycache__/

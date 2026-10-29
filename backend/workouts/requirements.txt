@@ -1,0 +1,4 @@
+fastapi==0.141.1
+uvicorn==0.52.1
+cryptography==50.0.0
+garminconnect @ git+https://github.com/cyberjunky/python-garminconnect.git@3eee7a4db6c2242967aae1780b8839599ea7dcbb
