@@ -347,4 +347,5 @@
 <string name="mfp_dinner">Dinner</string>
 <string name="mfp_snacks">Snacks</string>
 <string name="mfp_reimport_notice">Earlier imports may contain merged macro percentages. Update the diary to re-read the last 30 days. Older records are excluded from display and ChatGPT reports until re-imported; older dates can be read again from the account screen.</string>
+  <string name="mfp_session_required">MyFitnessPal requires website sign-in or confirmation. Open Sign in, check that your diary is visible, then return and update again. Saved days are preserved.</string>
 </resources>

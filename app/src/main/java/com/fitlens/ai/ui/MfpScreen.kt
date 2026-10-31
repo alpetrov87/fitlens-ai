@@ -46,6 +46,7 @@ internal fun MfpScreen() {
     var account by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var syncStatus by remember { mutableStateOf("") }
+    var loginRequired by remember { mutableStateOf(false) }
     var needsReimport by remember { mutableStateOf(false) }
     var confirm by remember { mutableStateOf(false) }
     var picker by remember { mutableStateOf(false) }
@@ -69,11 +70,13 @@ internal fun MfpScreen() {
                 needsReimport = store.needsReimport(account)
                 val work = result.third
                 busy = work != null && !work.state.isFinished
+                loginRequired = work?.state == WorkInfo.State.FAILED && work.outputData.getString("error") == "login"
                 syncStatus = work?.let {
                     val done = it.progress.getInt("done", it.outputData.getInt("done", 0))
                     val total = it.progress.getInt("total", it.outputData.getInt("total", 30))
                     context.getString(R.string.mfp_sync_progress, done, total, mfpWorkState(context, it.state)) +
-                        if (it.state == WorkInfo.State.FAILED) "\n" + context.getString(R.string.mfp_background_failed, it.outputData.getString("error").orEmpty()) else ""
+                        if (loginRequired) "\n" + context.getString(R.string.mfp_session_required)
+                        else if (it.state == WorkInfo.State.FAILED) "\n" + context.getString(R.string.mfp_background_failed, it.outputData.getString("error").orEmpty()) else ""
                 }.orEmpty()
                 delay(2000)
             }
@@ -108,6 +111,9 @@ internal fun MfpScreen() {
                     Spacer(Modifier.width(8.dp))
                     Text(stringResource(R.string.mfp_update_diary))
                 }
+                if (loginRequired) TextButton(onClick = {
+                    context.startActivity(Intent(context, com.fitlens.ai.MfpExperimentActivity::class.java))
+                }) { Text(stringResource(R.string.mfp_login)) }
                 if (busy) {
                     LinearProgressIndicator(Modifier.fillMaxWidth())
                     TextButton(onClick = { manager.cancelUniqueWork(MfpSyncWorker.NAME) }) { Text(stringResource(R.string.mfp_batch_stop)) }

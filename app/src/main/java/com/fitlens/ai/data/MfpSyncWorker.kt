@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.Request
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import java.time.LocalDate
@@ -41,21 +41,22 @@ class MfpSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorke
                 val url = "https://www.myfitnesspal.com/food/diary/$account?date=$day"
                 val cookie = withContext(Dispatchers.Main) { CookieManager.getInstance().getCookie(url) }.orEmpty()
                 if (cookie.isBlank()) return@withContext failure("login")
-                val request = Request.Builder().url(url).header("Cookie", cookie)
-                    .header("User-Agent", inputData.getString("agent") ?: "Mozilla/5.0")
-                    .header("Accept", "text/html").build()
-                val response = client.newCall(request).execute()
-                val html = response.use {
-                    if (it.code == 429 || it.code >= 500) return@withContext if (runAttemptCount < 3) Result.retry() else failure("http_${it.code}")
-                    if (!it.isSuccessful) return@withContext failure("http_${it.code}")
-                    val updatedCookies = it.headers.values("Set-Cookie")
-                    if (updatedCookies.isNotEmpty()) withContext(Dispatchers.Main) {
-                        val jar = CookieManager.getInstance()
-                        if (!isStopped && store.generation() == generation) {
-                            updatedCookies.forEach { value -> jar.setCookie(url, value) }
+                val response = requestMfpDiary(client, url.toHttpUrl(),
+                    inputData.getString("agent") ?: "Mozilla/5.0",
+                    cookies = { target -> withContext(Dispatchers.Main) {
+                        CookieManager.getInstance().getCookie(target).orEmpty()
+                    } },
+                    saveCookies = { target, values -> withContext(Dispatchers.Main) {
+                        if (!isStopped && store.generation() == generation && values.isNotEmpty()) {
+                            val jar = CookieManager.getInstance()
+                            values.forEach { jar.setCookie(target, it) }
                             jar.flush()
                         }
-                    }
+                    } })
+                val html = response.use {
+                    if (it.code == 429 || it.code >= 500) return@withContext if (runAttemptCount < 3) Result.retry() else failure("http_${it.code}")
+                    if (it.code in 300..399 || it.code in listOf(401, 403)) return@withContext failure("login")
+                    if (!it.isSuccessful) return@withContext failure("http_${it.code}")
                     val body = it.body ?: return@withContext failure("page")
                     // Bound both decompressed bytes and resulting diary table size.
                     val bytes = java.io.ByteArrayOutputStream().use { output ->
