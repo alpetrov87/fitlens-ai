@@ -29,6 +29,25 @@ class MfpDiaryRequestTest {
         assertEquals(2, requests.size)
         assertEquals("session=renewed", requests[1].header("Cookie"))
     }
+    @Test fun todayRedirectWithoutDateRequiresMatchingDateInDocument() = runBlocking {
+        var calls = 0
+        val client = OkHttpClient.Builder().followRedirects(false).addInterceptor { chain ->
+            calls++
+            Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                .code(if (calls == 1) 302 else 200).message("test")
+                .apply { if (calls == 1) header("Location", "/food/diary/example") }
+                .body("".toResponseBody()).build()
+        }.build()
+        requestMfpDiary(client, url, "test", { "session=test" }, { _, _ -> }).use { response ->
+            assertEquals(200, response.code)
+            val finalUrl = response.request.url.toString()
+            assertTrue(isMfpDiaryForDate(finalUrl, "2026-10-31", "2026-10-31"))
+            // Midnight / account timezone differences must never save yesterday as today.
+            assertFalse(isMfpDiaryForDate(finalUrl, "2026-10-31", "2026-10-30"))
+            assertFalse(isMfpDiaryForDate(finalUrl, "2026-10-31"))
+        }
+        assertEquals(2, calls)
+    }
     @Test fun loginExternalInsecureAndWrongDayRedirectsAreNotFollowed() = runBlocking {
         for (target in listOf("/account/login", "https://example.com/food/diary/example?date=2026-10-31",
             "http://myfitnesspal.com/food/diary/example?date=2026-10-31",

@@ -33,7 +33,9 @@ internal suspend fun requestMfpDiary(
                 next.host !in setOf("www.myfitnesspal.com", "myfitnesspal.com") ||
                 next.username.isNotEmpty() || next.password.isNotEmpty() ||
                 next.encodedPath.trimEnd('/') != initialUrl.encodedPath.trimEnd('/') ||
-                next.queryParameterValues("date") != initialUrl.queryParameterValues("date")) return response
+                next.queryParameterValues("date").let { dates ->
+                    dates.isNotEmpty() && dates != initialUrl.queryParameterValues("date")
+                }) return response
             url = next
         } catch (error: Throwable) {
             response.close()

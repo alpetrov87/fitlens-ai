@@ -20,6 +20,22 @@ class MfpNativeDiaryTest {
         assertEquals(listOf("Breakfast", "Lunch"), diary.foods.map { it.meal })
         assertEquals(300.0, diary.totals.getValue("calories"), 0.0)
     }
+    @Test fun canonicalTodayWithoutQueryUsesPageDateAndReadsIncompleteMeals() {
+        val canonical = "https://www.myfitnesspal.com/food/diary/synthetic"
+        val partial = html.replace("<tr><td>Example B</td><td>200</td><td>10</td></tr>", "")
+            .replace("<td>300</td><td>15</td>", "<td>100</td><td>5</td>")
+        val diary = parseMfpDiary(mfpDiaryTables(partial), canonical, "2026-10-27")
+        assertEquals("2026-10-27", diary.date)
+        assertEquals(1, diary.foods.size)
+        assertEquals(100.0, diary.totals.getValue("calories"), 0.0)
+    }
+    @Test(expected = MfpDiaryDateMismatch::class) fun canonicalTodayCannotSaveDifferentServerDay() {
+        parseMfpDiary(mfpDiaryTables(html), "https://www.myfitnesspal.com/food/diary/synthetic", "2026-10-28")
+    }
+    @Test(expected = MfpDiaryDateMismatch::class) fun canonicalDayNeedsDocumentDateEvidence() {
+        parseMfpDiary(mfpDiaryTables(html.replace("value=2026-10-27", "value=")),
+            "https://www.myfitnesspal.com/food/diary/synthetic", "2026-10-27")
+    }
     @Test fun nestedLayoutAndUnrelatedTableDoNotDuplicateFoods() {
         val wrapped = "<table><tr><td>" + html + "</td></tr></table><table><tr><td>Other data</td><td>99</td></tr></table>"
         val sanitized = mfpDiaryTables(wrapped)

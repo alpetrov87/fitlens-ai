@@ -76,6 +76,7 @@ internal fun MfpScreen() {
                     val total = it.progress.getInt("total", it.outputData.getInt("total", 30))
                     context.getString(R.string.mfp_sync_progress, done, total, mfpWorkState(context, it.state)) +
                         if (loginRequired) "\n" + context.getString(R.string.mfp_session_required)
+                        else if (it.state == WorkInfo.State.FAILED && it.outputData.getString("error") == "date_mismatch") "\n" + context.getString(R.string.mfp_date_sync_mismatch)
                         else if (it.state == WorkInfo.State.FAILED) "\n" + context.getString(R.string.mfp_background_failed, it.outputData.getString("error").orEmpty()) else ""
                 }.orEmpty()
                 delay(2000)

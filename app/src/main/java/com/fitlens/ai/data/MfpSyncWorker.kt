@@ -53,6 +53,7 @@ class MfpSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorke
                             jar.flush()
                         }
                     } })
+                val finalUrl = response.request.url.toString()
                 val html = response.use {
                     if (it.code == 429 || it.code >= 500) return@withContext if (runAttemptCount < 3) Result.retry() else failure("http_${it.code}")
                     if (it.code in 300..399 || it.code in listOf(401, 403)) return@withContext failure("login")
@@ -72,7 +73,7 @@ class MfpSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorke
                     if (bytes.size > 2_000_000) return@withContext failure("page")
                     String(bytes, Charsets.UTF_8)
                 }
-                val data = parseMfpDiary(mfpDiaryTables(html), url, day)
+                val data = parseMfpDiary(mfpDiaryTables(html), finalUrl, day)
                 if (isStopped) return@withContext Result.failure()
                 check(MfpHistoryStore(applicationContext).save(account, data, inputData.getInt("generation", -1)))
                 check(checkpoint.edit().putInt(id.toString(), offset + 1).commit())
@@ -82,6 +83,8 @@ class MfpSyncWorker(context: Context, params: WorkerParameters) : CoroutineWorke
             Result.success(workDataOf("done" to dates.size, "total" to dates.size))
         } catch (cancelled: kotlinx.coroutines.CancellationException) {
             throw cancelled
+        } catch (_: MfpDiaryDateMismatch) {
+            failure("date_mismatch")
         } catch (_: java.io.IOException) {
             if (runAttemptCount < 3) Result.retry() else failure("network")
         } catch (_: Exception) { failure("page") }
