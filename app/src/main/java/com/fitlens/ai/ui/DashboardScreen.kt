@@ -321,6 +321,7 @@ private fun ActivityCard(activity: GarminActivity) {
                 activity.averageHeartRate?.let { Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_014, it)) }
                 activity.maxHeartRate?.let { Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_015, it)) }
                 activity.elevationGainMeters?.let { Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_016, it.toInt())) }
+                if (activity.wellness.isNotEmpty()) Text(com.fitlens.ai.data.wellnessText(activity.wellness, java.util.Locale.getDefault().language == "bg"), style = MaterialTheme.typography.bodySmall)
                 Text("Garmin ID: ${activity.activityId}", style = MaterialTheme.typography.bodySmall)
             }
         }

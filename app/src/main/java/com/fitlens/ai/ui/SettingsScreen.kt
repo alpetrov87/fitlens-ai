@@ -35,7 +35,6 @@ internal fun SettingsScreen(
             Text(if (connected) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_066) else com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_067),
                 color = MaterialTheme.colorScheme.primary)
             if (connected) {
-                GarminMetricsTest(enabled = !busy && !historyBusy)
                 Button(onClick = onSync, enabled = !busy && !historyBusy, modifier = Modifier.fillMaxWidth()) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_002)) }
                 OutlinedButton(onClick = onSyncHistory, enabled = !busy && !historyBusy, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(18.dp))

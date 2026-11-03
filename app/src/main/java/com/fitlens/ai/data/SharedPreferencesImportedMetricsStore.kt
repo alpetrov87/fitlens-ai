@@ -170,13 +170,13 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
 
     private fun GarminRecoveryDay.toJson() = JSONObject().put("date", date)
         .put("sleepMinutes", sleepMinutes.jsonValue()).put("hrvLastNightMs", hrvLastNightMs.jsonValue())
-        .put("hrvStatus", hrvStatus ?: JSONObject.NULL)
+        .put("hrvStatus", hrvStatus ?: JSONObject.NULL).put("wellness", JSONObject(wellness))
 
     private fun JSONObject.toRecovery() = GarminRecoveryDay(getString("date"), optNullableInt("sleepMinutes"),
-        optNullableInt("hrvLastNightMs"), optString("hrvStatus").takeIf(String::isNotBlank))
+        optNullableInt("hrvLastNightMs"), optString("hrvStatus").takeIf { it.isNotBlank() && it != "null" }, readWellness(optJSONObject("wellness")))
 
     private fun GarminActivity.toJson() = JSONObject()
-        .put("activityId", activityId).put("name", name).put("activityTypeKey", activityTypeKey)
+        .put("wellness", JSONObject(wellness)).put("activityId", activityId).put("name", name).put("activityTypeKey", activityTypeKey)
         .put("startTimeLocal", startTimeLocal).put("durationSeconds", durationSeconds.jsonValue())
         .put("distanceMeters", distanceMeters.jsonValue()).put("calories", calories.jsonValue())
         .put("steps", steps.jsonValue()).put("averageHeartRate", averageHeartRate.jsonValue())
@@ -189,6 +189,7 @@ class SharedPreferencesImportedMetricsStore(context: Context) : ImportedMetricsS
         calories = optNullableInt("calories"), steps = optNullableInt("steps"),
         averageHeartRate = optNullableInt("averageHeartRate"), maxHeartRate = optNullableInt("maxHeartRate"),
         elevationGainMeters = optNullableDouble("elevationGainMeters"),
+        wellness = readWellness(optJSONObject("wellness")),
     )
 
     private companion object {

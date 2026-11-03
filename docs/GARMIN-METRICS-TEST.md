@@ -70,3 +70,29 @@ help paragraph, and is capped at 120,000 characters. Dates and numeric fitness
 values are personal data; copying is explicit. Android 13+ receives the sensitive
 clipboard flag. This does not prevent another application from reading content
 you choose to paste. The app does not automatically share or persist the report.
+
+## 0.22.0 — normal synchronization replaces the probe
+
+The test button and test UI have been removed. Settings' normal Garmin sync
+(including scheduled/launch sync) now requests 30-day sleep/HRV, stress and Body
+Battery, plus fitness age. The saved typed/allowlisted numeric metrics appear in
+Progress → Garmin Recovery, with latest available dates and expandable history.
+Activity training effect/load/Body Battery changes are saved from activity lists
+and shown on activity cards. Use 30-day history sync to backfill activities.
+
+The existing private SharedPreferences JSON gains an optional `wellness` map on
+recovery days and activities. Missing maps load as empty; old records remain
+compatible. Partial recovery responses merge with previous fields/days rather
+than deleting measurements. Disconnect/clear still deletes Garmin data.
+
+The reviewable BG/English ChatGPT report now includes dated daily metrics and
+per-activity training effect/load. Normal sharing confirmation remains in place.
+No VO₂ max, readiness score, acute load or medical interpretation is invented.
+Body Battery uses the valid reading with latest timestamp (not array order),
+and is explicitly historical. Fitness age is dated by retrieval, not an asserted
+measurement date. Ambiguous averageSpO2HRSleep is deliberately excluded.
+
+Phone check: normal sync → Progress → Garmin card and history → prepare ChatGPT
+report and inspect the added metrics before sharing. Check offline after restart.
+Real server schemas beyond the user-provided diagnostic samples still require
+phone verification. Existing MFP features are unchanged.

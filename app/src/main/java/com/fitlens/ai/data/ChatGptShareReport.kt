@@ -46,16 +46,19 @@ object ChatGptShareReport {
             activity.averageHeartRate?.let { append(" | среден пулс $it bpm") }
             activity.maxHeartRate?.let { append(" | максимален пулс $it bpm") }
             activity.elevationGainMeters?.let { append(" | изкачване ${it.round(0)} m") }
+            if (activity.wellness.isNotEmpty()) append(" | " + wellnessText(activity.wellness, true))
             appendLine()
         }
         appendLine()
-        appendLine("СЪН И HRV")
+        appendLine("СЪН, HRV И GARMIN ПОКАЗАТЕЛИ")
+        appendLine("Последното Body Battery е измерване за посочения ден, не текущо ниво. Натоварването е за отделната активност, не остро натоварване. Няма потвърдени VO₂ max/Training Readiness. Фитнес възрастта е прочетена на посочената дата.")
         if (recovery.isEmpty()) appendLine("Няма налични обобщения за сън и HRV.") else {
             recovery.sortedBy { it.date }.forEach { day ->
                 append("- ${day.date}")
                 day.sleepMinutes?.let { append(" | сън ${it / 60} ч ${it % 60} мин") }
                 day.hrvLastNightMs?.let { append(" | HRV $it ms") }
                 day.hrvStatus?.takeIf(String::isNotBlank)?.let { append(" | HRV статус ${it.clean()}") }
+                if (day.wellness.isNotEmpty()) append(" | " + wellnessText(day.wellness, true))
                 appendLine()
             }
         }
@@ -90,15 +93,18 @@ object ChatGptShareReport {
             a.averageHeartRate?.let { append(" | average HR $it bpm") }
             a.maxHeartRate?.let { append(" | max HR $it bpm") }
             a.elevationGainMeters?.let { append(" | ascent ${it.round(0)} m") }
+            if (a.wellness.isNotEmpty()) append(" | " + wellnessText(a.wellness, false))
             appendLine()
         }
-        appendLine("SLEEP AND HRV")
+        appendLine("SLEEP, HRV AND GARMIN METRICS")
+        appendLine("Last Body Battery is a dated reading, not a live level. Load is per activity, not acute load. VO₂ max/Training Readiness are unverified. Fitness age is retrieved on the stated date.")
         if (recovery.isEmpty()) appendLine("No sleep or HRV summaries available.")
         recovery.sortedBy { it.date }.forEach { d ->
             append("- ${d.date}")
             d.sleepMinutes?.let { append(" | sleep ${it / 60} h ${it % 60} min") }
             d.hrvLastNightMs?.let { append(" | HRV $it ms") }
             d.hrvStatus?.let { append(" | HRV status ${it.clean()}") }
+            if (d.wellness.isNotEmpty()) append(" | " + wellnessText(d.wellness, false))
             appendLine()
         }
         append("These are summaries, without full telemetry, training zones, injuries or subjective fatigue. Provider ratings may not be comparable; links may require login.")

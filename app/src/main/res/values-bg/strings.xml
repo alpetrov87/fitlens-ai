@@ -356,4 +356,10 @@
   <string name="gp_empty">Няма разпознати числови показатели в този отговор. Това не доказва, че в Garmin няма данни.</string>
   <string name="gp_copy">Копирай целия резултат</string>
   <string name="gp_copied">Копирано</string>
+  <string name="gw_title">Garmin · Възстановяване</string>
+  <string name="gw_note">Последни налични стойности с дати. Последното Body Battery е историческо измерване, не текущо ниво. Фитнес възрастта е с дата на прочит. Историята влиза в отчета за ChatGPT, който преглеждаш.</string>
+  <string name="gw_empty">Няма запазени измервания. Пусни Garmin синхронизация от Настройки.</string>
+  <string name="gw_history">История за 30 дни</string>
+  <string name="gw_hide">Скрий историята</string>
+<string name="gw_unavailable">Няма данни</string>
 </resources>

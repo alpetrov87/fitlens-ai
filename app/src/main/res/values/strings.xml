@@ -356,4 +356,10 @@
   <string name="gp_empty">No matching numeric metrics in this response. This does not prove that Garmin has no data.</string>
   <string name="gp_copy">Copy full report</string>
   <string name="gp_copied">Copied</string>
+  <string name="gw_title">Garmin · Recovery</string>
+  <string name="gw_note">Latest available values with their dates. Last Body Battery is a historical reading, not live. Fitness age uses retrieval date. Full history is included in the ChatGPT report you review.</string>
+  <string name="gw_empty">No saved measurements. Run Garmin synchronization in Settings.</string>
+  <string name="gw_history">30-day history</string>
+  <string name="gw_hide">Hide history</string>
+<string name="gw_unavailable">No data</string>
 </resources>

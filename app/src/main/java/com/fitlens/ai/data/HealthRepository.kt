@@ -51,6 +51,7 @@ data class GarminActivity(
     val averageHeartRate: Int?,
     val maxHeartRate: Int?,
     val elevationGainMeters: Double?,
+    val wellness: Map<String, Double> = emptyMap(),
 )
 
 data class GarminRecoveryDay(
@@ -58,6 +59,7 @@ data class GarminRecoveryDay(
     val sleepMinutes: Int? = null,
     val hrvLastNightMs: Int? = null,
     val hrvStatus: String? = null,
+    val wellness: Map<String, Double> = emptyMap(),
 )
 
 data class GarminTrainingHistory(val activities: List<GarminActivity>, val recovery: List<GarminRecoveryDay>)
@@ -167,6 +169,7 @@ class DefaultHealthRepository(
                 sleepMinutes = day.sleepMinutes ?: previous?.sleepMinutes,
                 hrvLastNightMs = day.hrvLastNightMs ?: previous?.hrvLastNightMs,
                 hrvStatus = day.hrvStatus ?: previous?.hrvStatus,
+                wellness = previous?.wellness.orEmpty() + day.wellness,
             )))
         }
     }
@@ -183,6 +186,7 @@ class DefaultHealthRepository(
                 sleepMinutes = day.sleepMinutes ?: previous?.sleepMinutes,
                 hrvLastNightMs = day.hrvLastNightMs ?: previous?.hrvLastNightMs,
                 hrvStatus = day.hrvStatus ?: previous?.hrvStatus,
+                wellness = previous?.wellness.orEmpty() + day.wellness,
             )))
         }
     }
@@ -200,7 +204,14 @@ class DefaultHealthRepository(
         val start = end.minusDays(days.toLong() - 1)
         val history = api.fetchTrainingHistory(start.toString(), end.toString())
         store.replaceGarminActivitiesBetween(start.toString(), end.toString(), history.activities)
-        store.replaceGarminRecoveryBetween(start.toString(), end.toString(), history.recovery)
+        val previous = store.recoveryBetween(start.toString(), end.toString()).associateBy { it.date }.toMutableMap()
+        history.recovery.forEach { day ->
+            val old = previous[day.date]
+            previous[day.date] = day.copy(sleepMinutes = day.sleepMinutes ?: old?.sleepMinutes,
+                hrvLastNightMs = day.hrvLastNightMs ?: old?.hrvLastNightMs,
+                hrvStatus = day.hrvStatus ?: old?.hrvStatus, wellness = old?.wellness.orEmpty() + day.wellness)
+        }
+        store.replaceGarminRecoveryBetween(start.toString(), end.toString(), previous.values.toList())
         return history
     }
 

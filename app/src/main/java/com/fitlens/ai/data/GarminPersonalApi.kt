@@ -85,7 +85,14 @@ class GarminPersonalApi(
         fun addSleep(item: JSONObject) {
             val date = item.optString("calendarDate").takeIf(String::isNotBlank) ?: return
             recovery[date] = (recovery[date] ?: GarminRecoveryDay(date)).copy(
-                sleepMinutes = item.optNullableDouble("sleepTimeSeconds")?.div(60)?.toInt())
+                sleepMinutes = item.optNullableDouble("sleepTimeSeconds")?.div(60)?.toInt(),
+                wellness = buildMap {
+                    item.optJSONObject("sleepScores")?.optJSONObject("overall")?.let { wellnessValue(it, "value") }?.let { put("sleepScore", it) }
+                    listOf("deep", "light", "rem", "awake").forEach { stage ->
+                        wellnessValue(item, "${stage}SleepSeconds")?.let { put("${stage}Minutes", it / 60) }
+                    }
+                    wellnessValue(item, "avgSleepStress")?.let { put("sleepStress", it) }
+                })
         }
         when (sleep) {
             is JSONArray -> for (i in 0 until sleep.length()) sleep.optJSONObject(i)?.let(::addSleep)
@@ -101,75 +108,36 @@ class GarminPersonalApi(
             val date = item.optString("calendarDate").takeIf(String::isNotBlank) ?: continue
             recovery[date] = (recovery[date] ?: GarminRecoveryDay(date)).copy(
                 hrvLastNightMs = item.optNullableDouble("lastNightAvg")?.toInt(),
-                hrvStatus = item.optString("status").takeIf(String::isNotBlank))
+                hrvStatus = item.optString("status").takeIf { it.isNotBlank() && it != "null" },
+                wellness = recovery[date]?.wellness.orEmpty() + buildMap {
+                    wellnessValue(item, "weeklyAvg")?.let { put("hrvWeekly", it) }
+                    wellnessValue(item, "lastNight5MinHigh")?.let { put("hrvHigh", it) }
+                })
         }
+        fun addMetrics(date: String, metrics: Map<String, Double>) {
+            if (date !in startDate..endDate || runCatching { LocalDate.parse(date) }.isFailure || metrics.isEmpty()) return
+            val old = recovery[date] ?: GarminRecoveryDay(date)
+            recovery[date] = old.copy(wellness = old.wellness + metrics)
+        }
+        val stress = optionalRecovery { getJson(token,
+            "$BASE_URL/usersummary-service/stats/stress/daily/$startDate/$endDate", "stress") } as? JSONArray
+        if (stress != null) for (i in 0 until stress.length()) {
+            val day = stress.optJSONObject(i) ?: continue
+            val value = day.optJSONObject("values")?.let { wellnessValue(it, "overallStressLevel") }
+            if (value != null) addMetrics(day.optString("calendarDate", day.optString("date")), mapOf("stress" to value))
+        }
+        val battery = optionalRecovery { getJson(token,
+            "$BASE_URL/wellness-service/wellness/bodyBattery/reports/daily?startDate=$startDate&endDate=$endDate", "Body Battery") } as? JSONArray
+        if (battery != null) for (i in 0 until battery.length()) {
+            val day = battery.optJSONObject(i) ?: continue
+            addMetrics(day.optString("date", day.optString("calendarDate")), bodyBatteryLevels(day))
+        }
+        val age = optionalRecovery { getJson(token,
+            "$BASE_URL/fitnessage-service/fitnessage/v2/$endDate", "fitness age") } as? JSONObject
+        if (age != null) addMetrics(endDate, buildMap {
+            listOf("fitnessAge", "achievableFitnessAge").forEach { name -> wellnessValue(age, name)?.let { put(name, it) } }
+        })
         return recovery.values.sortedBy(GarminRecoveryDay::date)
-    }
-
-    /** Explicit, read-only experiment; never persists raw Garmin responses. */
-    internal suspend fun probeMetrics(): List<GarminProbeResult> = withContext(Dispatchers.IO) {
-        val key = keyStore.load() ?: error("missing_key")
-        val token = exchangeKey(key)
-        val today = LocalDate.now()
-        val results = mutableListOf<GarminProbeResult>()
-        val probeClient = client.newBuilder().followRedirects(false).followSslRedirects(false)
-            .retryOnConnectionFailure(false).build()
-        var stopped = false
-        val probeContext = kotlin.coroutines.coroutineContext
-        fun probe(label: String, path: String): Any? {
-            probeContext.ensureActive()
-            if (stopped) return null
-            try {
-                val request = Request.Builder().url("$BASE_URL$path")
-                    .header("Authorization", "Bearer $token").get().build()
-                return probeClient.newCall(request).execute().use { response ->
-                    if (!response.isSuccessful) {
-                        results.add(GarminProbeResult(label, response.code))
-                        if (response.code in listOf(401, 403, 429)) stopped = true
-                        return@use null
-                    }
-                    val body = response.body ?: run {
-                        results.add(GarminProbeResult(label, response.code)); return@use null
-                    }
-                    val text = body.byteStream().use { stream ->
-                        val out = java.io.ByteArrayOutputStream()
-                        val buffer = ByteArray(8192)
-                        while (out.size() <= 2_000_000) {
-                            val count = stream.read(buffer, 0, minOf(buffer.size, 2_000_001 - out.size()))
-                            if (count < 0) break
-                            out.write(buffer, 0, count)
-                        }
-                        require(out.size() <= 2_000_000)
-                        out.toString("UTF-8")
-                    }
-                    val json = if (text.isBlank()) null else if (text.trimStart().startsWith("[")) JSONArray(text) else JSONObject(text)
-                    results.add(GarminProbeResult(label, response.code, garminProbeFields(json)))
-                    json
-                }
-            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
-            } catch (_: Exception) { results.add(GarminProbeResult(label, 0)); return null }
-        }
-        probe("Daily summary $today", "/usersummary-service/usersummary/daily?calendarDate=$today")
-        probe("Fitness age $today", "/fitnessage-service/fitnessage/v2/$today")
-        probe("Sleep $today", "/sleep-service/sleep/dailySleep?date=$today")
-        probe("HRV $today", "/hrv-service/hrv/$today")
-        probe("Sleep summaries ${today.minusDays(29)} → $today",
-            "/sleep-service/sleep/dailySleepSummariesByDate?startDate=${today.minusDays(29)}&endDate=$today")
-        probe("HRV summaries ${today.minusDays(29)} → $today",
-            "/hrv-service/hrv/daily/${today.minusDays(29)}/$today")
-        probe("Stress ${today.minusDays(6)} → $today", "/usersummary-service/stats/stress/daily/${today.minusDays(6)}/$today")
-        probe("Body Battery ${today.minusDays(6)} → $today", "/wellness-service/wellness/bodyBattery/reports/daily?startDate=${today.minusDays(6)}&endDate=$today")
-        val activities = probe("Recent activities ${today.minusDays(89)} → $today",
-            "/activitylist-service/activities/search/activities?start=0&limit=50&sortOrder=desc&startDate=${today.minusDays(89)}&endDate=$today") as? JSONArray
-        if (activities != null) for ((index, item) in garminProbeActivities(activities).withIndex()) {
-            kotlin.coroutines.coroutineContext.ensureActive()
-            val id = item.optLong("activityId", 0)
-            val date = item.optString("startTimeLocal").take(10).takeIf {
-                it.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))
-            }.orEmpty()
-            if (id > 0) probe("Activity details ${index + 1} $date", "/activity-service/activity/$id")
-        }
-        results
     }
 
     fun disconnect() = keyStore.clear()
@@ -203,7 +171,7 @@ class GarminPersonalApi(
         } catch (_: IllegalArgumentException) { nutritionStatus = "unavailable"; null
         } catch (_: org.json.JSONException) { nutritionStatus = "unavailable"; null }
         return GarminDayData(summary.copy(garminNutritionJson = nutrition?.json,
-            garminNutritionStatus = nutritionStatus), activities, fetchRecovery(token, date, date))
+            garminNutritionStatus = nutritionStatus), activities, fetchRecovery(token, LocalDate.parse(date).minusDays(29).toString(), date))
     }
 
     private fun fetchActivities(token: String, startDate: String, endDate: String): List<GarminActivity> {
@@ -269,6 +237,12 @@ class GarminPersonalApi(
             averageHeartRate = optNullableDouble("averageHR")?.toInt(),
             maxHeartRate = optNullableDouble("maxHR")?.toInt(),
             elevationGainMeters = optNullableDouble("elevationGain"),
+            wellness = buildMap {
+                listOf("aerobicTrainingEffect" to "aerobic", "anaerobicTrainingEffect" to "anaerobic", "activityTrainingLoad" to "trainingLoad").forEach { (source, key) ->
+                    wellnessValue(this@toGarminActivity, source)?.let { put(key, it) }
+                }
+                optNullableDouble("differenceBodyBattery")?.takeIf { it.isFinite() }?.let { put("batteryImpact", it) }
+            },
         )
     }
 
