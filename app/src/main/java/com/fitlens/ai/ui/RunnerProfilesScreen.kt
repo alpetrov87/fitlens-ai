@@ -28,7 +28,6 @@ internal fun RunnerProfilesScreen() {
     val store = remember { RunnerProfileStore(context) }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_038), style = MaterialTheme.typography.headlineMedium)
-        GarminWellnessCard()
         Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_140))
         Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_141),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -362,4 +362,5 @@
   <string name="gw_history">30-day history</string>
   <string name="gw_hide">Hide history</string>
 <string name="gw_unavailable">No data</string>
+<string name="gw_home_note">Latest available measurements, dated below. Stress: higher means more stress. Body Battery is the last recorded level for that date, not live.</string>
 </resources>

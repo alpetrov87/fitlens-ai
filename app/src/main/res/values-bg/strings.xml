@@ -362,4 +362,5 @@
   <string name="gw_history">История за 30 дни</string>
   <string name="gw_hide">Скрий историята</string>
 <string name="gw_unavailable">Няма данни</string>
+<string name="gw_home_note">Последни налични измервания с дата. По-висок стрес означава повече стрес. Body Battery е последното записано ниво за датата, не текущо.</string>
 </resources>

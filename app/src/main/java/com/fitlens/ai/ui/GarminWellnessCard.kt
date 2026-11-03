@@ -35,23 +35,44 @@ internal fun GarminWellnessCard() {
         }
     }
     InfoCard(stringResource(R.string.gw_title), Icons.Default.Watch) {
-        Text(stringResource(R.string.gw_note), style = MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.gw_home_note), style = MaterialTheme.typography.bodySmall)
         if (days.isEmpty()) Text(stringResource(R.string.gw_empty)) else {
             days.firstOrNull { it.sleepMinutes != null }?.let { day ->
                 Text("${if (bg) "Сън" else "Sleep"}: ${day.sleepMinutes!! / 60}h ${day.sleepMinutes % 60}min · ${day.date}")
             }
             days.firstOrNull { it.hrvLastNightMs != null }?.let { day -> Text("HRV: ${day.hrvLastNightMs} ms · ${day.date}") }
-            wellnessMetrics.filterKeys { it !in setOf("aerobic", "anaerobic", "trainingLoad", "batteryImpact") }.forEach { (key, _) ->
-                days.firstOrNull { key in it.wellness }?.let { day ->
-                    Text("${wellnessText(mapOf(key to day.wellness.getValue(key)), bg)} · ${day.date}", style = MaterialTheme.typography.bodyMedium)
-                } ?: Text("${if (bg) wellnessMetrics.getValue(key).bg else wellnessMetrics.getValue(key).en}: ${stringResource(R.string.gw_unavailable)}", style = MaterialTheme.typography.bodySmall)
+            listOf("sleepScore", "stress", "batteryLast").forEach { key ->
+                val definition = wellnessMetrics.getValue(key)
+                val day = days.firstOrNull { key in it.wellness }
+                val value = day?.wellness?.get(key)
+                Column(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text(if (bg) definition.bg else definition.en, style = MaterialTheme.typography.labelLarge,
+                            modifier = Modifier.weight(1f))
+                        Text(value?.let { "${it.toInt()} / 100" } ?: stringResource(R.string.gw_unavailable),
+                            style = MaterialTheme.typography.labelLarge)
+                    }
+                    if (value != null) {
+                        LinearProgressIndicator(progress = { (value / 100).toFloat().coerceIn(0f, 1f) },
+                            modifier = Modifier.fillMaxWidth(),
+                            color = if (key == "stress") MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary)
+                        Text(day?.date.orEmpty(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
             }
             TextButton(onClick = { expanded = !expanded }) { Text(stringResource(if (expanded) R.string.gw_hide else R.string.gw_history)) }
-            if (expanded) days.forEach { day ->
+            if (expanded) {
+                wellnessMetrics.filterKeys { it !in setOf("sleepScore", "stress", "batteryLast", "aerobic", "anaerobic", "trainingLoad", "batteryImpact") }.forEach { (key, definition) ->
+                    val day = days.firstOrNull { key in it.wellness }
+                    Text(day?.let { "${wellnessText(mapOf(key to it.wellness.getValue(key)), bg)} · ${it.date}" }
+                        ?: "${if (bg) definition.bg else definition.en}: ${stringResource(R.string.gw_unavailable)}", style = MaterialTheme.typography.bodySmall)
+                }
+                days.forEach { day ->
                 HorizontalDivider()
                 Text(day.date, style = MaterialTheme.typography.titleSmall)
                 Text(listOfNotNull(day.sleepMinutes?.let { "${if (bg) "Сън" else "Sleep"}: $it min" },
                     day.hrvLastNightMs?.let { "HRV: $it ms" }, wellnessText(day.wellness, bg).takeIf { it.isNotBlank() }).joinToString("\n"), style = MaterialTheme.typography.bodySmall)
+                }
             }
         }
     }

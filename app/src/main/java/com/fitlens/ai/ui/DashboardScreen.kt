@@ -171,17 +171,10 @@ private fun HomeScreen(
                             StatValue("${data.activity.activeMinutes}", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_096))
                             StatValue("%.1f".format(data.activity.distanceKm), com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_097))
                         }
-                        HorizontalDivider()
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                            val sleep = data.recovery?.sleepMinutes
-                            StatValue(sleep?.let { com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_020, it / 60, it % 60) } ?: "—", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_098))
-                            StatValue(data.recovery?.hrvLastNightMs?.let { "$it ms" } ?: "—", "HRV")
-                        }
-                        if (data.recovery == null) Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_019),
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
 
                     }
                 }
+                GarminWellnessCard()
                 InfoCard(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_099), Icons.Default.Restaurant) {
                     if (data.garminNutrition != null) {
                         if (data.garminNutritionStatus == "unavailable") Text(androidx.compose.ui.res.stringResource(R.string.nutrition_cached), style = MaterialTheme.typography.bodySmall)

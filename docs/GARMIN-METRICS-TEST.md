@@ -96,3 +96,13 @@ Phone check: normal sync → Progress → Garmin card and history → prepare Ch
 report and inspect the added metrics before sharing. Check offline after restart.
 Real server schemas beyond the user-provided diagnostic samples still require
 phone verification. Existing MFP features are unchanged.
+
+### 0.22.1 — Home bars
+
+The Garmin card moves from Progress to Home, below steps. Sleep score, daily
+stress and last dated Body Battery use their native 0–100 scales as bars.
+Higher stress explicitly means more stress; no readiness score is inferred.
+Sleep duration and HRV retain their real units without an invented 100-point
+scale. Additional metrics and dated history expand in the same card. Prompt,
+persistence and synchronization are unchanged. Duplicate today-only sleep/HRV
+values in the steps card have been removed in favor of the dated latest values.
