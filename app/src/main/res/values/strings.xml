@@ -349,4 +349,9 @@
 <string name="mfp_reimport_notice">Earlier imports may contain merged macro percentages. Update the diary to re-read the last 30 days. Older records are excluded from display and ChatGPT reports until re-imported; older dates can be read again from the account screen.</string>
   <string name="mfp_session_required">MyFitnessPal requires website sign-in or confirmation. Open Sign in, check that your diary is visible, then return and update again. Saved days are preserved.</string>
   <string name="mfp_date_sync_mismatch">MyFitnessPal returned a different diary date. Nothing was saved for the requested day. Check the date and timezone in MyFitnessPal; you can read the selected day from the website.</string>
+  <string name="gp_title">Test Garmin metrics</string>
+  <string name="gp_running">Checking Garmin…</string>
+  <string name="gp_help">Read-only experiment. Shows selected numeric fields, not all returned data. No key or raw response is included. VO₂ max, load and recovery availability is not guaranteed. Values retain Garmin field names and units; this is not a readiness score. Results remain only on this screen.</string>
+  <string name="gp_failed">Request failed. Check connection and Garmin key.</string>
+  <string name="gp_empty">No matching numeric metrics in this response. This does not prove that Garmin has no data.</string>
 </resources>

@@ -1,0 +1,49 @@
+# Garmin metrics experiment — MFP branch, 0.21.4
+
+This read-only test uses the existing encrypted Personal API key. It does not
+require a backend, change MFP behavior, overwrite saved metrics, or include its
+results in the ChatGPT report.
+
+## Phone test / Проверка
+
+1. Install the APK from the `experiment/mfp-direct-diary` workflow artifact.
+2. Open **Настройки → Garmin → Тест на Garmin показатели** (English:
+   Settings → Garmin → Test Garmin metrics). Configure your existing Personal API
+   key on the phone first if Garmin is not connected. Never send the key in chat.
+3. Stay on the Settings screen while it runs. There are at most 12 sequential
+   data requests, plus token exchange. The test can take several minutes with
+   slow responses; navigating away cancels the coroutine between requests.
+4. Inspect the HTTP codes and selected numeric field names/values. You can select
+   the text to copy it if you choose; no automatic upload or sharing occurs.
+5. Report which sources returned VO₂ max / training effect / load / recovery.
+   Review the displayed fitness values before sharing: they are personal data.
+
+HTTP 200 with no matching fields only means the selected numeric extractor did
+not find a match. It is not proof of absent Garmin data. HTTP 204 can mean an
+empty result. 401/403 indicates access refusal; 429 indicates request limiting.
+The probe stops further requests after 401/403/429. HTTP 0 represents a local
+network, decoding, or size-limit failure. Raw provider errors are never shown.
+
+## Sources and limits
+
+Verified request paths in Garmin's official example client:
+https://github.com/garmin/connect-personal-api-python/blob/main/src/garmin_personal_api/client.py
+
+The probe requests daily summary, fitness age, detailed daily sleep, daily HRV,
+7-day stress and Body Battery, and at most five recent activities and their
+activity details (30-day search). It does not guess unsupported Training
+Readiness / VO₂ max endpoints or use unofficial username/password login.
+
+Only numeric fields whose keys match selected fitness concepts are displayed.
+Strings (including names, tokens, status labels), activity IDs, full JSON and
+session data are excluded. Nested traversal is capped at depth 10, five array
+entries, 100 results per response, and 2 MB per HTTP body. Units and technical
+field names retain Garmin's meaning; there is no invented conversion or score.
+HTTP redirects and automatic network retries are disabled for the probe.
+
+Results live only in Compose state until leaving the screen/process. No report,
+response file, logs, preferences or analytics are written. Existing Personal API
+key handling is unchanged. A successful mocked/unit test or APK build does not
+verify real API availability: the phone test with the user's own account is
+required. This experiment intentionally does not implement persistent metric
+history or claim Training Readiness/VO₂ max support before response validation.

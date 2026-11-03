@@ -1,5 +1,6 @@
 package com.fitlens.ai.data
 
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -103,6 +104,65 @@ class GarminPersonalApi(
                 hrvStatus = item.optString("status").takeIf(String::isNotBlank))
         }
         return recovery.values.sortedBy(GarminRecoveryDay::date)
+    }
+
+    /** Explicit, read-only experiment; never persists raw Garmin responses. */
+    internal suspend fun probeMetrics(): List<GarminProbeResult> = withContext(Dispatchers.IO) {
+        val key = keyStore.load() ?: error("missing_key")
+        val token = exchangeKey(key)
+        val today = LocalDate.now()
+        val results = mutableListOf<GarminProbeResult>()
+        val probeClient = client.newBuilder().followRedirects(false).followSslRedirects(false)
+            .retryOnConnectionFailure(false).build()
+        var stopped = false
+        val probeContext = kotlin.coroutines.coroutineContext
+        fun probe(label: String, path: String): Any? {
+            probeContext.ensureActive()
+            if (stopped) return null
+            try {
+                val request = Request.Builder().url("$BASE_URL$path")
+                    .header("Authorization", "Bearer $token").get().build()
+                return probeClient.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        results.add(GarminProbeResult(label, response.code))
+                        if (response.code in listOf(401, 403, 429)) stopped = true
+                        return@use null
+                    }
+                    val body = response.body ?: run {
+                        results.add(GarminProbeResult(label, response.code)); return@use null
+                    }
+                    val text = body.byteStream().use { stream ->
+                        val out = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(8192)
+                        while (out.size() <= 2_000_000) {
+                            val count = stream.read(buffer, 0, minOf(buffer.size, 2_000_001 - out.size()))
+                            if (count < 0) break
+                            out.write(buffer, 0, count)
+                        }
+                        require(out.size() <= 2_000_000)
+                        out.toString("UTF-8")
+                    }
+                    val json = if (text.isBlank()) null else if (text.trimStart().startsWith("[")) JSONArray(text) else JSONObject(text)
+                    results.add(GarminProbeResult(label, response.code, garminProbeFields(json)))
+                    json
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
+            } catch (_: Exception) { results.add(GarminProbeResult(label, 0)); return null }
+        }
+        probe("Daily summary", "/usersummary-service/usersummary/daily?calendarDate=$today")
+        probe("Fitness age", "/fitnessage-service/fitnessage/v2/$today")
+        probe("Sleep", "/sleep-service/sleep/dailySleep?date=$today")
+        probe("HRV", "/hrv-service/hrv/$today")
+        probe("Stress (7 days)", "/usersummary-service/stats/stress/daily/${today.minusDays(6)}/$today")
+        probe("Body Battery (7 days)", "/wellness-service/wellness/bodyBattery/reports/daily?startDate=${today.minusDays(6)}&endDate=$today")
+        val activities = probe("Recent activities (30 days)",
+            "/activitylist-service/activities/search/activities?start=0&limit=5&startDate=${today.minusDays(29)}&endDate=$today") as? JSONArray
+        if (activities != null) for (index in 0 until minOf(5, activities.length())) {
+            kotlin.coroutines.coroutineContext.ensureActive()
+            val id = activities.optJSONObject(index)?.optLong("activityId", 0) ?: 0
+            if (id > 0) probe("Activity details ${index + 1}", "/activity-service/activity/$id")
+        }
+        results
     }
 
     fun disconnect() = keyStore.clear()
