@@ -149,18 +149,25 @@ class GarminPersonalApi(
             } catch (cancelled: kotlinx.coroutines.CancellationException) { throw cancelled
             } catch (_: Exception) { results.add(GarminProbeResult(label, 0)); return null }
         }
-        probe("Daily summary", "/usersummary-service/usersummary/daily?calendarDate=$today")
-        probe("Fitness age", "/fitnessage-service/fitnessage/v2/$today")
-        probe("Sleep", "/sleep-service/sleep/dailySleep?date=$today")
-        probe("HRV", "/hrv-service/hrv/$today")
-        probe("Stress (7 days)", "/usersummary-service/stats/stress/daily/${today.minusDays(6)}/$today")
-        probe("Body Battery (7 days)", "/wellness-service/wellness/bodyBattery/reports/daily?startDate=${today.minusDays(6)}&endDate=$today")
-        val activities = probe("Recent activities (30 days)",
-            "/activitylist-service/activities/search/activities?start=0&limit=5&startDate=${today.minusDays(29)}&endDate=$today") as? JSONArray
-        if (activities != null) for (index in 0 until minOf(5, activities.length())) {
+        probe("Daily summary $today", "/usersummary-service/usersummary/daily?calendarDate=$today")
+        probe("Fitness age $today", "/fitnessage-service/fitnessage/v2/$today")
+        probe("Sleep $today", "/sleep-service/sleep/dailySleep?date=$today")
+        probe("HRV $today", "/hrv-service/hrv/$today")
+        probe("Sleep summaries ${today.minusDays(29)} → $today",
+            "/sleep-service/sleep/dailySleepSummariesByDate?startDate=${today.minusDays(29)}&endDate=$today")
+        probe("HRV summaries ${today.minusDays(29)} → $today",
+            "/hrv-service/hrv/daily/${today.minusDays(29)}/$today")
+        probe("Stress ${today.minusDays(6)} → $today", "/usersummary-service/stats/stress/daily/${today.minusDays(6)}/$today")
+        probe("Body Battery ${today.minusDays(6)} → $today", "/wellness-service/wellness/bodyBattery/reports/daily?startDate=${today.minusDays(6)}&endDate=$today")
+        val activities = probe("Recent activities ${today.minusDays(89)} → $today",
+            "/activitylist-service/activities/search/activities?start=0&limit=50&sortOrder=desc&startDate=${today.minusDays(89)}&endDate=$today") as? JSONArray
+        if (activities != null) for ((index, item) in garminProbeActivities(activities).withIndex()) {
             kotlin.coroutines.coroutineContext.ensureActive()
-            val id = activities.optJSONObject(index)?.optLong("activityId", 0) ?: 0
-            if (id > 0) probe("Activity details ${index + 1}", "/activity-service/activity/$id")
+            val id = item.optLong("activityId", 0)
+            val date = item.optString("startTimeLocal").take(10).takeIf {
+                it.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))
+            }.orEmpty()
+            if (id > 0) probe("Activity details ${index + 1} $date", "/activity-service/activity/$id")
         }
         results
     }

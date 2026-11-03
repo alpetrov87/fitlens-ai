@@ -354,4 +354,6 @@
   <string name="gp_help">Read-only experiment. Shows selected numeric fields, not all returned data. No key or raw response is included. VO₂ max, load and recovery availability is not guaranteed. Values retain Garmin field names and units; this is not a readiness score. Results remain only on this screen.</string>
   <string name="gp_failed">Request failed. Check connection and Garmin key.</string>
   <string name="gp_empty">No matching numeric metrics in this response. This does not prove that Garmin has no data.</string>
+  <string name="gp_copy">Copy full report</string>
+  <string name="gp_copied">Copied</string>
 </resources>

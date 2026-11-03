@@ -47,3 +47,26 @@ key handling is unchanged. A successful mocked/unit test or APK build does not
 verify real API availability: the phone test with the user's own account is
 required. This experiment intentionally does not implement persistent metric
 history or claim Training Readiness/VO₂ max support before response validation.
+
+## 0.21.5 — extended test and one-tap copy
+
+Supersedes the earlier limits above: sleep and HRV summaries cover 30 days;
+activity search covers 90 days, with the latest 50 results requested and up to
+12 detail requests prioritizing running/cycling. This does not promise all
+activities in that period or a VO₂ max measurement. There are at most 21 data
+requests plus token exchange. Existing access/rate-limit stopping rules apply.
+
+The numeric extractor now reads up to 30 entries per array and 1000 matching
+fields per response. ISO dates in records appear in paths, and generic values
+inside recognized fitness containers are included. Technical index fields are
+excluded. Where `bodyBatteryValuesArray` contains timestamp/level pairs, the
+report summarizes minimum, maximum and last valid level from up to 3000 pairs;
+missing/sentinel readings are excluded. Last means server array order, not a
+verified current Body Battery level. Event impacts remain separate fields.
+
+Use **Копирай целия резултат / Copy full report** in the result dialog. The
+clipboard report uses section headings and line breaks, omits the introductory
+help paragraph, and is capped at 120,000 characters. Dates and numeric fitness
+values are personal data; copying is explicit. Android 13+ receives the sensitive
+clipboard flag. This does not prevent another application from reading content
+you choose to paste. The app does not automatically share or persist the report.

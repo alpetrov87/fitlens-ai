@@ -20,12 +20,13 @@ import kotlinx.coroutines.launch
 internal fun GarminMetricsTest(enabled: Boolean) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var copied by remember { mutableStateOf(false) }
     var running by remember { mutableStateOf(false) }
     var visible by remember { mutableStateOf(false) }
     var results by remember { mutableStateOf<List<GarminProbeResult>>(emptyList()) }
     var failed by remember { mutableStateOf(false) }
     OutlinedButton(onClick = {
-        running = true; failed = false; results = emptyList()
+        running = true; failed = false; results = emptyList(); copied = false
         scope.launch {
             try {
                 results = GarminPersonalApi(GarminPersonalKeyStore(context)).probeMetrics()
@@ -46,15 +47,21 @@ internal fun GarminMetricsTest(enabled: Boolean) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(stringResource(R.string.gp_help))
                     if (failed) Text(stringResource(R.string.gp_failed))
-                    results.forEach { result ->
-                        Text(result.source, style = MaterialTheme.typography.titleSmall)
-                        Text(if (result.status == 0) stringResource(R.string.gp_failed) else "HTTP ${result.status}")
-                        if (result.status in 200..299) {
-                            Text(result.fields.joinToString("\n").ifBlank { context.getString(R.string.gp_empty) },
-                                style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
+                    Text(com.fitlens.ai.data.garminProbeReport(results, context.getString(R.string.gp_empty)),
+                        style = MaterialTheme.typography.bodySmall)
+
                 }
             }
+        }, dismissButton = {
+            TextButton(enabled = results.isNotEmpty(), onClick = {
+                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                val clip = android.content.ClipData.newPlainText("Garmin metrics",
+                    com.fitlens.ai.data.garminProbeReport(results, context.getString(R.string.gp_empty)))
+                if (android.os.Build.VERSION.SDK_INT >= 33) clip.description.extras = android.os.PersistableBundle().apply {
+                    putBoolean("android.content.extra.IS_SENSITIVE", true)
+                }
+                clipboard.setPrimaryClip(clip)
+                copied = true
+            }) { Text(stringResource(if (copied) R.string.gp_copied else R.string.gp_copy)) }
         }, confirmButton = { TextButton(onClick = { visible = false }) { Text(stringResource(R.string.mfp_close)) } })
 }
