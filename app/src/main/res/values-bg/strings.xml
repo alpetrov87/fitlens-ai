@@ -363,4 +363,11 @@
   <string name="gw_hide">Скрий историята</string>
 <string name="gw_unavailable">Няма данни</string>
 <string name="gw_home_note">Последни налични измервания с дата. По-висок стрес означава повече стрес. Body Battery е последното записано ниво за датата, не текущо.</string>
+  <string name="mh_title">Хранене</string>
+  <string name="mh_missing">За днес още няма прочетен MFP дневник. Обнови или отвори дневника. Старите дни остават в MFP.</string>
+  <string name="mh_failed">Обновяването спря. Запазените данни остават; отвори MFP за подробности.</string>
+  <string name="mh_diary">Отвори хранителния дневник</string>
+  <string name="mh_garmin_backup">Резервни данни за хранене от Garmin</string>
+  <string name="home_summary">Обобщение</string>
+  <string name="home_minutes">мин</string>
 </resources>

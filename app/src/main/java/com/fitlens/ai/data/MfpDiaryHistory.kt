@@ -22,5 +22,5 @@ internal fun readMfpSnapshot(raw: String): MfpDiaryPreview {
     return MfpDiaryPreview(date, (0 until foods.length()).map { index ->
         val food = foods.getJSONObject(index)
         MfpFoodPreview(food.getString("meal"), food.getString("food"), nutrients(food.getJSONObject("nutrients")))
-    }, nutrients(json.getJSONObject("totals")))
+    }, nutrients(json.getJSONObject("totals")), nutrients(json.optJSONObject("goals") ?: JSONObject()))
 }

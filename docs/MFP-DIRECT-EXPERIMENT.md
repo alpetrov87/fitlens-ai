@@ -201,3 +201,34 @@ Cookies се вземат от WebView за всяка стъпка; отгов�
 закуска, различна дата и липсваща дата в страницата. Това проверява
 поддържаните HTTP/HTML случаи със синтетични данни; реалното поведение на
 MyFitnessPal с потребителска сесия остава за проверка на телефона.
+
+### 0.23.0 — compact Home and primary MFP nutrition
+
+Home's food card now reads the selected MFP account's current-day validated
+snapshot. Its side refresh icon confirms and enqueues the existing incremental
+WorkManager sync, with the same unique work name, generation guard, authenticated
+WebView cookies and checkpoints as the MFP tab. Refresh progress/errors are shown;
+login opens the existing site flow. The full diary remains accessible from the
+card. Missing today never substitutes yesterday, Garmin values or sample data.
+Macro fields prefer daily totals, falling back to food sums only for absent
+fields. They are never added together.
+
+Garmin nutrition remains available in a collapsed, explicitly separate backup
+section. It is not assumed equal to MFP, and neither source is summed into the
+other. The primary calorie bar uses an explicitly parsed MFP daily goal only;
+old snapshots without goals remain readable and show no goal/progress until
+reimported. Goals are an optional addition to the existing snapshot schema.
+The existing ChatGPT nutrition history and Garmin reports remain unchanged.
+
+The approved compact concept is applied: one-row steps, a 2×2 wellness overview,
+and compact MFP nutrition. A common wellness date is shown only when available
+metrics agree; otherwise each metric keeps its actual date. Sleep scores use the
+same day's sleep record, HRV retains milliseconds and has no invented 100-point
+scale. Missing data stays unknown. Dark/light theme and existing bear assets are
+retained; the generated concept illustration is not an app asset.
+
+Phone checks: refresh from Home with a valid session, inspect today's calories
+and all macros against MFP, open full diary, verify no today/old-day substitution,
+check the separate Garmin backup, restart/offline behavior, expired-login action,
+empty/partial days, large system font and light/dark themes. Real MFP responses
+and visual layout on a physical phone still require user verification.

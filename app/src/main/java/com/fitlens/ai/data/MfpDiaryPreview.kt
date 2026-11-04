@@ -7,7 +7,7 @@ import java.time.LocalDate
 internal const val MFP_DIARY_PARSER_VERSION = 2
 
 internal data class MfpFoodPreview(val meal: String, val name: String, val nutrients: Map<String, Double>)
-internal data class MfpDiaryPreview(val date: String, val foods: List<MfpFoodPreview>, val totals: Map<String, Double>)
+internal data class MfpDiaryPreview(val date: String, val foods: List<MfpFoodPreview>, val totals: Map<String, Double>, val goals: Map<String, Double> = emptyMap())
 
 internal fun isMfpPage(url: String): Boolean = runCatching {
     val uri = URI(url)
@@ -69,6 +69,7 @@ internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPre
         row.children().filter { it.tagName() in listOf("td", "th") }.map { key(it.text()) }
     }.firstOrNull { columns -> columns.drop(1).count { it != null } >= 2 }.orEmpty()
     var totals: Map<String, Double> = emptyMap()
+    var goals: Map<String, Double> = emptyMap()
     for (row in rows) {
         val cells = row.children().filter { it.tagName() == "td" || it.tagName() == "th" }
         val headerKeys = cells.map { key(it.text()) }
@@ -81,6 +82,9 @@ internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPre
             meal = cells.firstOrNull()?.text().orEmpty()
             if (headerKeys.drop(1).count { it != null } >= 2) headers = headerKeys
         } else if (row.hasClass("total") || firstText in listOf("totals", "total", "общо", "your daily goal", "remaining")) {
+            if (firstText == "your daily goal") goals = cells.mapIndexedNotNull { i, cell ->
+                headers.getOrNull(i)?.let { k -> number(mfpNutrientCellText(cell))?.let { k to it } }
+            }.toMap()
             if (!row.hasClass("alt") && !row.hasClass("remaining") && firstText !in listOf("your daily goal", "remaining") && totals.isEmpty()) {
                 totals = cells.mapIndexedNotNull { i, cell -> headers.getOrNull(i)?.let { k -> number(mfpNutrientCellText(cell))?.let { k to it } } }.toMap()
             }
@@ -93,7 +97,7 @@ internal fun parseMfpDiary(html: String, url: String, date: String): MfpDiaryPre
         }
     }
     require(headers.any { it != null } && (totals.isNotEmpty() || foods.isNotEmpty())) { "No recognized nutrition fields" }
-    return MfpDiaryPreview(date, foods, totals)
+    return MfpDiaryPreview(date, foods, totals, goals)
 }
 
 /** MFP keeps gram values and macro percentages in adjacent spans in the same cell. */

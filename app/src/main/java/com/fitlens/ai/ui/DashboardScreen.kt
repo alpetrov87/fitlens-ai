@@ -110,7 +110,7 @@ fun DashboardScreen(
                         onDisconnectGarmin, onImport, onClearImports, historyBusy, historyCount, onSyncHistory)
                     else -> HomeScreen(state, garminConnected, garminBusy, calendar.events, onSyncGarmin,
                         onRefresh, { page = "settings" }, { page = "calendar" }, historyBusy,
-                        reportBusy, shareReport, onPrepareChatGptReport, onOpenChatGpt, onDismissShareReport)
+                        reportBusy, shareReport, onPrepareChatGptReport, onOpenChatGpt, onDismissShareReport, { page = "mfp" })
                 }
             }
         }
@@ -122,24 +122,20 @@ private fun HomeScreen(
     state: DashboardState, connected: Boolean, busy: Boolean, events: List<CalendarEvent>,
     onSync: () -> Unit, onRefresh: () -> Unit, onSettings: () -> Unit, onCalendar: () -> Unit,
     historyBusy: Boolean, reportBusy: Boolean, shareReport: String?,
-    onPrepareReport: (CalendarEvent?) -> Unit, onOpenChatGpt: (String) -> Unit, onDismissShareReport: () -> Unit,
+    onPrepareReport: (CalendarEvent?) -> Unit, onOpenChatGpt: (String) -> Unit, onDismissShareReport: () -> Unit, onMfp: () -> Unit,
 ) {
+    var showGarminNutrition by rememberSaveable { mutableStateOf(false) }
     var eventMenu by remember { mutableStateOf(false) }
     var selectedEventId by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp)
-        .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-        Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_015), style = MaterialTheme.typography.headlineMedium)
-        Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())),
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        if (connected) {
-            FilledTonalButton(onClick = onSync, enabled = !busy && !historyBusy, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.Sync, contentDescription = null, Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp)); Text(if (busy) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_094) else com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.ui_002))
-            }
-        } else {
-            FilledTonalButton(onClick = onSettings, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Default.Link, contentDescription = null, Modifier.size(20.dp))
-                Spacer(Modifier.width(8.dp)); Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_016))
+        .padding(bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())),
+                style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f))
+            IconButton(onClick = if (connected) onSync else onSettings, enabled = !busy && !historyBusy) {
+                Icon(if (connected) Icons.Default.Sync else Icons.Default.Link,
+                    contentDescription = androidx.compose.ui.res.stringResource(if (connected) R.string.ui_002 else R.string.ui_016))
             }
         }
         when (state) {
@@ -149,53 +145,36 @@ private fun HomeScreen(
             }
             is DashboardState.Ready -> {
                 val data = state.dashboard
-                Box(Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(
-                    MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.surface,
-                )), MaterialTheme.shapes.large)) {
-                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Icon(Icons.Default.DirectionsWalk, contentDescription = null)
-                            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_018), style = MaterialTheme.typography.labelLarge)
+                Card(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Icon(Icons.Default.DirectionsWalk, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text("%,d".format(data.activity.steps), style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                            Text(com.fitlens.ai.data.LocalizedText.get(R.string.steps), style = MaterialTheme.typography.labelSmall)
+                            data.activityDate?.let { Text(it, style = MaterialTheme.typography.labelSmall) }
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-                            Surface(shape = androidx.compose.foundation.shape.CircleShape,
-                                color = MaterialTheme.colorScheme.primaryContainer) {
-                                Icon(Icons.Default.DirectionsWalk, null, tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(24.dp).size(36.dp))
-                            }
-                            Text("%,d".format(data.activity.steps), style = MaterialTheme.typography.displayMedium)
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text("%.1f km".format(data.activity.distanceKm), style = MaterialTheme.typography.titleMedium)
+                            Text("${data.activity.activeMinutes} ${androidx.compose.ui.res.stringResource(R.string.home_minutes)}", style = MaterialTheme.typography.labelMedium)
                         }
-                        Text("${com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.steps)} · ${data.activityOrigin.label()}${data.activityDate?.let { " · $it" }.orEmpty()}",
-                            style = MaterialTheme.typography.bodyMedium)
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                            StatValue("${data.activity.activeMinutes}", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_096))
-                            StatValue("%.1f".format(data.activity.distanceKm), com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_097))
-                        }
-
                     }
                 }
                 GarminWellnessCard()
-                InfoCard(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_099), Icons.Default.Restaurant) {
+                MfpHomeCard(onOpenDiary = onMfp)
+                TextButton(onClick = { showGarminNutrition = !showGarminNutrition }, contentPadding = PaddingValues(0.dp)) {
+                    Text(androidx.compose.ui.res.stringResource(R.string.mh_garmin_backup))
+                    Icon(if (showGarminNutrition) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null)
+                }
+                if (showGarminNutrition) InfoCard("Garmin · " + com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_099), Icons.Default.Restaurant) {
                     if (data.garminNutrition != null) {
                         if (data.garminNutritionStatus == "unavailable") Text(androidx.compose.ui.res.stringResource(R.string.nutrition_cached), style = MaterialTheme.typography.bodySmall)
                         GarminNutritionContent(data.garminNutrition)
                     } else {
-                        if (data.garminNutritionStatus != null) Text(androidx.compose.ui.res.stringResource(
-                            if (data.garminNutritionStatus == "unavailable") R.string.nutrition_unavailable else R.string.nutrition_empty),
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("${data.nutrition.calories} kcal", style = MaterialTheme.typography.headlineMedium)
-                        Text("${data.nutritionOrigin.label()}${data.nutritionDate?.let { " · $it" }.orEmpty()}",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_010, data.nutrition.calorieGoal))
-                        LinearProgressIndicator(progress = { (data.nutrition.calories.toFloat() / data.nutrition.calorieGoal.coerceAtLeast(1)).coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth())
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            StatValue("${data.nutrition.proteinGrams} g", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_100))
-                            StatValue("${data.nutrition.carbsGrams} g", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_101))
-                            StatValue("${data.nutrition.fatGrams} g", com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_102))
-                        }
-                        if (data.garminCaloriesConsumed != null && data.nutritionOrigin != MetricOrigin.GARMIN_PERSONAL_API) {
-                            Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_011, data.garminCaloriesConsumed))
+                        Text(androidx.compose.ui.res.stringResource(R.string.nutrition_unavailable), style = MaterialTheme.typography.bodySmall)
+                        data.garminCaloriesConsumed?.let {
+                            Text(com.fitlens.ai.data.LocalizedText.format(R.string.dynamic_011, it))
                         }
                     }
                 }

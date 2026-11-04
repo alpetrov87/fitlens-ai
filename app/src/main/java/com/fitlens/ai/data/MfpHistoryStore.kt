@@ -62,6 +62,6 @@ internal class MfpHistoryStore(context: Context) {
 internal fun mfpSnapshot(data: MfpDiaryPreview): JSONObject {
         val rows = JSONArray()
         data.foods.forEach { rows.put(JSONObject().put("meal", it.meal).put("food", it.name).put("nutrients", JSONObject(it.nutrients))) }
-        val snapshot = JSONObject().put("parserVersion", MFP_DIARY_PARSER_VERSION).put("date", data.date).put("totals", JSONObject(data.totals)).put("foods", rows)
+        val snapshot = JSONObject().put("parserVersion", MFP_DIARY_PARSER_VERSION).put("date", data.date).put("totals", JSONObject(data.totals)).put("foods", rows).put("goals", JSONObject(data.goals))
         return snapshot
 }

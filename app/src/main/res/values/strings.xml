@@ -363,4 +363,11 @@
   <string name="gw_hide">Hide history</string>
 <string name="gw_unavailable">No data</string>
 <string name="gw_home_note">Latest available measurements, dated below. Stress: higher means more stress. Body Battery is the last recorded level for that date, not live.</string>
+  <string name="mh_title">Nutrition</string>
+  <string name="mh_missing">No imported MFP diary for today. Refresh or open the diary. Older days remain in MFP.</string>
+  <string name="mh_failed">Diary refresh stopped. Saved data is preserved; open MFP for details.</string>
+  <string name="mh_diary">Open food diary</string>
+  <string name="mh_garmin_backup">Garmin nutrition · backup data</string>
+  <string name="home_summary">Overview</string>
+  <string name="home_minutes">min</string>
 </resources>
