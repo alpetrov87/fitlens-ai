@@ -106,3 +106,12 @@ Sleep duration and HRV retain their real units without an invented 100-point
 scale. Additional metrics and dated history expand in the same card. Prompt,
 persistence and synchronization are unchanged. Duplicate today-only sleep/HRV
 values in the steps card have been removed in favor of the dated latest values.
+
+### 0.22.2 — compact Home presentation
+
+Removed the repeated explanatory paragraph from the Home card. Sleep and HRV
+use compact dated summaries with icons. Metric bars are 12 dp high with rounded
+ends and theme-derived tracks; sleep, stress and Body Battery have distinct
+icons. Dates, native scales, expandable history, synchronization and the
+ChatGPT report are unchanged. This is a presentation change; no health score
+or threshold was introduced.
