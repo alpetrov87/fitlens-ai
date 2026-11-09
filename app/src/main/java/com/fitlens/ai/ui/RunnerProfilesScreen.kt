@@ -81,16 +81,19 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
     }
 
     InfoCard(initial.provider, Icons.Default.Person) {
+        if (initial.provider == "UTMB") Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.utmb_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (!editing) {
             val indicators = saved.score.split(" · ").filter(String::isNotBlank)
             Text(indicators.firstOrNull() ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_145), style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary)
             if (initial.provider == "ITRA") EnduranceCards(saved.score)
-            indicators.drop(1).filterNot { it.startsWith("ITRA ") }.forEach { indicator -> Text(indicator, style = MaterialTheme.typography.bodyLarge) }
+            if (initial.provider == "UTMB") UtmbIndexCards(saved.score)
+            indicators.drop(1).filterNot { it.startsWith("ITRA ") || initial.provider == "UTMB" }.forEach { indicator -> Text(indicator, style = MaterialTheme.typography.bodyLarge) }
             if (saved.updated.isNotBlank()) Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_000, saved.updated), style = MaterialTheme.typography.labelMedium)
             Text(saved.source, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             val raceRows = saved.results.lineSequence().filter(String::isNotBlank).toList()
+            if (initial.provider != "UTMB" || raceRows.isNotEmpty()) {
             Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_001, raceRows.size), style = MaterialTheme.typography.titleMedium)
             if (raceRows.isEmpty()) Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_146))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -103,6 +106,7 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
                     }
                 }
             }
+            }
             Button(onClick = { refresh() }, enabled = !busy && saved.url.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
                 Text(if (busy) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_147) else com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_148))
             }
@@ -110,7 +114,7 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
                 url = saved.url; score = saved.score; results = saved.results; source = saved.source; message = null; editing = true
             }, enabled = !busy) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_039)) }
         } else {
-            OutlinedTextField(url, { url = it.take(500); source = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_149) }, enabled = !busy,
+            OutlinedTextField(url, { if (initial.provider == "UTMB" && it.take(500) != url) { score = ""; results = "" }; url = it.take(500); source = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_149) }, enabled = !busy,
                 label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_040)) }, modifier = Modifier.fillMaxWidth())
             OutlinedButton(onClick = { refresh() }, enabled = !busy && url.isNotBlank()) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_041)) }
             OutlinedTextField(score, { score = it.take(120); source = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_150) }, enabled = !busy,
@@ -124,7 +128,7 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
             TextButton(onClick = { editing = false; message = null }, enabled = !busy) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_014)) }
         }
         TextButton(onClick = {
-            val target = saved.url.ifBlank { if (initial.provider == "BTR") "https://www.my-btr.com/" else "https://itra.run/" }
+            val target = saved.url.ifBlank { when (initial.provider) { "BTR" -> "https://www.my-btr.com/"; "UTMB" -> "https://utmb.world/utmb-index"; else -> "https://itra.run/" } }
             runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target))) }
                 .onFailure { message = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_153) }
         }) { Text(com.fitlens.ai.data.LocalizedText.format(com.fitlens.ai.R.string.dynamic_002, initial.provider)) }
@@ -156,6 +160,23 @@ private fun EnduranceCards(score: String) {
                     }
                 }
                 if (points.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun UtmbIndexCards(score: String) {
+    listOf("20K", "50K", "100K", "100M").chunked(2).forEach { categories ->
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            categories.forEach { category ->
+                val value = Regex("(?:^| · )$category: ([0-9]+|—)(?: · |$)").find(score)?.groupValues?.get(1) ?: "—"
+                Surface(Modifier.weight(1f), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer) {
+                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(category, style = MaterialTheme.typography.labelLarge)
+                        Text(value, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                }
             }
         }
     }

@@ -370,4 +370,7 @@
   <string name="mh_garmin_backup">Garmin nutrition · backup data</string>
   <string name="home_summary">Overview</string>
   <string name="home_minutes">min</string>
+<string name="utmb_note">Public UTMB profile: overall Index and 20K / 50K / 100K / 100M. — means unavailable. UTMB Index differs from ITRA and Running Stones. Refresh reads the public page; it is not an official API integration.</string>
+<string name="utmb_unavailable">No supported UTMB profile data found. The page may require JavaScript or have changed. Saved values are preserved.</string>
+<string name="utmb_imported">Read UTMB category indexes from the public profile. Missing categories are shown as —. Verify the values before saving.</string>
 </resources>

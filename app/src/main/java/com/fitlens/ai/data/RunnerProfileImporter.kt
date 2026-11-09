@@ -13,12 +13,22 @@ data class RunnerProfileImport(val score: String?, val results: String?, val mes
 /** Imports publicly visible data only; never supplies login cookies or probes private APIs. */
 class RunnerProfileImporter {
     suspend fun import(provider: String, url: String): RunnerProfileImport = withContext(Dispatchers.IO) {
-        require(provider in listOf("BTR", "ITRA"))
-        val domain = if (provider == "ITRA") "itra.run" else "my-btr.com"
+        require(provider in listOf("BTR", "ITRA", "UTMB"))
+        val domain = runnerProfileDomain(provider)
         val page = runCatching { url.trim().toHttpUrl() }.getOrElse { error("Въведи пълен HTTPS профилен линк.") }
         require(page.isHttps && page.username.isEmpty() && page.password.isEmpty() && url.length <= 500 &&
             (page.host == domain || page.host.endsWith(".$domain"))) { "Използвай HTTPS профилен линк от $domain." }
         val downloader = EventLinkImporter()
+        if (provider == "UTMB") {
+            val slug = utmbProfileSlug(url)
+            val runnerId = slug.substringBefore('.')
+            val html = downloader.download(page, domain, allowedPath = { path ->
+                utmbSlugFromPath(path)?.substringBefore('.') == runnerId
+            })
+            val result = parseUtmbProfile(html, slug)
+            require(result.score != null) { "${LocalizedText.get(com.fitlens.ai.R.string.utmb_unavailable)}" }
+            return@withContext result.copy(message = LocalizedText.get(com.fitlens.ai.R.string.utmb_imported))
+        }
         var fallbackFailure: Throwable? = null
         val btrId = if (provider == "BTR") BTR_PROFILE_PATH.matchEntire(page.encodedPath)?.groupValues?.get(1) else null
         var extracted = if (btrId != null) {

@@ -370,4 +370,7 @@
   <string name="mh_garmin_backup">Резервни данни за хранене от Garmin</string>
   <string name="home_summary">Обобщение</string>
   <string name="home_minutes">мин</string>
+<string name="utmb_note">Публичен UTMB профил: общ Index и 20K / 50K / 100K / 100M. — означава липсващ индекс. UTMB Index е различен от ITRA и Running Stones. Обновяването чете публичната страница; това не е официална API интеграция.</string>
+<string name="utmb_unavailable">Не намерих поддържани данни за UTMB профил. Страницата може да изисква JavaScript или да е променена. Запазените стойности остават.</string>
+<string name="utmb_imported">Прочетени са UTMB индексите по категории от публичния профил. Липсващите категории са с —. Провери стойностите преди запис.</string>
 </resources>

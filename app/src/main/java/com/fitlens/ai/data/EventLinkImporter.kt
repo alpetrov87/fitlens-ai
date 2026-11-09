@@ -56,9 +56,10 @@ class EventLinkImporter {
         )
     }
 
-    internal fun download(start: HttpUrl, allowedDomain: String? = null, allowJson: Boolean = false): String {
+    internal fun download(start: HttpUrl, allowedDomain: String? = null, allowJson: Boolean = false, allowedPath: ((String) -> Boolean)? = null): String {
         var current = start
         repeat(MAX_REDIRECTS + 1) { redirectCount ->
+            require(allowedPath?.invoke(current.encodedPath) != false) { "Профилът препраща към друг бегач или неподдържана страница." }
             require(allowedDomain == null || current.host == allowedDomain || current.host.endsWith(".$allowedDomain")) {
                 "Профилът препраща извън сайта на доставчика."
             }
