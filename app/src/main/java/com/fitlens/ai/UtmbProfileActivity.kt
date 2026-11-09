@@ -2,6 +2,8 @@ package com.fitlens.ai
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
+import android.os.Message
 import android.net.Uri
 import android.os.Bundle
 import android.webkit.*
@@ -17,6 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.delay
 import com.fitlens.ai.data.*
 import com.fitlens.ai.ui.FitLensTheme
 import org.json.JSONTokener
@@ -42,9 +47,18 @@ class UtmbProfileActivity : ComponentActivity() {
                     var reading by remember { mutableStateOf(false) }
                     var preview by remember { mutableStateOf<UtmbBrowserPreview?>(null) }
                     var checked by remember { mutableStateOf(false) }
+                    var popup by remember { mutableStateOf<WebView?>(null) }
+                    var help by remember { mutableStateOf(false) }
+                    var thirdPartyCookies by remember { mutableStateOf(false) }
+                    var pageFinished by remember { mutableIntStateOf(0) }
+                    var copied by remember { mutableStateOf(false) }
+                    val diagnostics = remember { UtmbWebDiagnostics() }
                     val web = remember {
                         WebView(this@UtmbProfileActivity).apply {
+                            layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
                             settings.javaScriptEnabled = true
+                            settings.setSupportMultipleWindows(true)
+                            settings.javaScriptCanOpenWindowsAutomatically = false
                             settings.domStorageEnabled = true
                             settings.allowFileAccess = false
                             settings.allowContentAccess = false
@@ -56,7 +70,41 @@ class UtmbProfileActivity : ComponentActivity() {
                             settings.displayZoomControls = false
                             CookieManager.getInstance().setAcceptCookie(true)
                             CookieManager.getInstance().setAcceptThirdPartyCookies(this, false)
+                            val parent = this
                             webChromeClient = object : WebChromeClient() {
+                                override fun onCreateWindow(view: WebView, isDialog: Boolean, isUserGesture: Boolean, resultMsg: Message): Boolean {
+                                    if (!isUserGesture || popup != null) {
+                                        diagnostics.record(UtmbWebEvent.POPUP_BLOCKED, view.url.orEmpty())
+                                        message = getString(R.string.utmb_popup_blocked); return false
+                                    }
+                                    val child = WebView(this@UtmbProfileActivity).apply {
+                                        layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
+                                        settings.javaScriptEnabled = true; settings.domStorageEnabled = true
+                                        settings.setSupportMultipleWindows(true)
+                                        settings.allowFileAccess = false; settings.allowContentAccess = false
+                                        settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+                                        settings.safeBrowsingEnabled = true
+                                        settings.useWideViewPort = true; settings.loadWithOverviewMode = true
+                                        webViewClient = parent.webViewClient; webChromeClient = parent.webChromeClient
+                                        CookieManager.getInstance().setAcceptThirdPartyCookies(this, thirdPartyCookies)
+                                    }
+                                    diagnostics.record(UtmbWebEvent.POPUP, view.url.orEmpty())
+                                    popup = child
+                                    (resultMsg.obj as WebView.WebViewTransport).webView = child
+                                    resultMsg.sendToTarget(); return true
+                                }
+                                override fun onCloseWindow(window: WebView) {
+                                    if (window === popup) {
+                                        popup = null; window.destroy()
+                                        currentUrl = parent.url.orEmpty(); host = Uri.parse(currentUrl).host.orEmpty()
+                                        loaded = isUtmbBrowserProfile(currentUrl, expected)
+                                    }
+                                }
+                                override fun onConsoleMessage(event: ConsoleMessage): Boolean {
+                                    if (event.messageLevel() == ConsoleMessage.MessageLevel.ERROR)
+                                        diagnostics.record(UtmbWebEvent.JS_ERROR, event.sourceId().orEmpty())
+                                    return true
+                                }
                                 override fun onProgressChanged(view: WebView, value: Int) { progress = value }
                             }
                             webViewClient = object : WebViewClient() {
@@ -64,31 +112,52 @@ class UtmbProfileActivity : ComponentActivity() {
                                     if (!request.isForMainFrame) return false
                                     val uri = request.url
                                     val allowed = uri.scheme == "https" && uri.userInfo == null && uri.port in listOf(-1,443)
-                                    if (!allowed) message = getString(R.string.utmb_web_navigation)
+                                    if (!allowed) {
+                                        diagnostics.record(UtmbWebEvent.BLOCKED, uri.toString())
+                                        message = getString(R.string.utmb_web_navigation)
+                                    }
                                     return !allowed
                                 }
                                 override fun onPageStarted(view: WebView, url: String?, icon: android.graphics.Bitmap?) {
                                     failed = false; loaded = false; preview = null; reading = false; currentUrl = url.orEmpty()
                                     host = Uri.parse(url.orEmpty()).host.orEmpty()
+                                    diagnostics.record(UtmbWebEvent.START, url.orEmpty())
                                 }
                                 override fun onPageFinished(view: WebView, url: String?) {
                                     currentUrl = url.orEmpty(); loaded = !failed && isUtmbBrowserProfile(currentUrl, expected)
+                                    diagnostics.record(UtmbWebEvent.FINISH, url.orEmpty())
+                                    pageFinished++
                                     CookieManager.getInstance().flush()
                                 }
                                 override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                                    diagnostics.record(UtmbWebEvent.NETWORK, request.url.toString(), error.errorCode)
                                     if (request.isForMainFrame) { failed = true; loaded = false; message = getString(R.string.utmb_web_failed) }
                                 }
                                 override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, response: WebResourceResponse) {
+                                    diagnostics.record(UtmbWebEvent.HTTP, request.url.toString(), response.statusCode)
                                     if (request.isForMainFrame) { failed = true; loaded = false; message = getString(R.string.utmb_web_failed) + " HTTP ${response.statusCode}" }
                                 }
                                 override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: android.net.http.SslError) {
+                                    diagnostics.record(UtmbWebEvent.TLS, error.url.orEmpty())
                                     handler.cancel(); failed = true; loaded = false; message = getString(R.string.utmb_web_failed)
                                 }
                             }
                         }
                     }
-                    DisposableEffect(web) { onDispose { web.stopLoading(); web.destroy() } }
+                    DisposableEffect(web) { onDispose { popup?.stopLoading(); popup?.destroy(); web.stopLoading(); web.destroy() } }
                     LaunchedEffect(web) { web.loadUrl(profileUrl) }
+                    LaunchedEffect(pageFinished) {
+                        if (pageFinished == 0) return@LaunchedEffect
+                        delay(8000)
+                        val active = popup ?: web
+                        val before = active.url.orEmpty()
+                        active.evaluateJavascript("(function(){return Boolean(document.body && document.body.innerText.trim().length<20 && document.querySelectorAll('button,input[type=submit],a').length===0)})()") { blank ->
+                            if (blank == "true" && active.url == before) {
+                                diagnostics.record(UtmbWebEvent.BLANK, before)
+                                message = getString(R.string.utmb_blank_help)
+                            }
+                        }
+                    }
                     BackHandler { if (web.canGoBack()) web.goBack() else finish() }
                     Column(Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -101,11 +170,12 @@ class UtmbProfileActivity : ComponentActivity() {
                         Row {
                             TextButton(onClick = { if (web.canGoBack()) web.goBack() }) { Text(stringResource(R.string.utmb_web_back)) }
                             TextButton(onClick = { message = ""; web.loadUrl(profileUrl) }) { Text(stringResource(R.string.utmb_web_profile)) }
+                            TextButton(onClick = { help = true }) { Text(stringResource(R.string.utmb_help)) }
                         }
                         if (progress < 100) LinearProgressIndicator(Modifier.fillMaxWidth())
                         if (message.isNotBlank()) Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                         AndroidView(factory = { web }, modifier = Modifier.fillMaxWidth().weight(1f))
-                        Button(enabled = loaded && !reading, modifier = Modifier.fillMaxWidth(), onClick = {
+                        Button(enabled = loaded && popup == null && !reading, modifier = Modifier.fillMaxWidth(), onClick = {
                             val page = web.url.orEmpty()
                             if (!isUtmbBrowserProfile(page, expected)) return@Button
                             reading = true; message = ""
@@ -121,6 +191,57 @@ class UtmbProfileActivity : ComponentActivity() {
                             }
                         }) { Text(stringResource(R.string.utmb_web_read)) }
                     }
+                    popup?.let { child ->
+                        Dialog(onDismissRequest = {
+                            popup = null; child.stopLoading(); child.destroy()
+                            currentUrl = web.url.orEmpty(); host = Uri.parse(currentUrl).host.orEmpty()
+                            loaded = isUtmbBrowserProfile(currentUrl, expected)
+                        }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+                            Surface(Modifier.fillMaxSize()) {
+                                Column(Modifier.fillMaxSize().systemBarsPadding().imePadding().padding(12.dp)) {
+                                    Text("HTTPS · $host", style = MaterialTheme.typography.labelSmall)
+                                    Row {
+                                        TextButton(onClick = { help = true }) { Text(stringResource(R.string.utmb_help)) }
+                                        TextButton(onClick = {
+                                            popup = null; child.stopLoading(); child.destroy()
+                                            currentUrl = web.url.orEmpty(); host = Uri.parse(currentUrl).host.orEmpty()
+                                            loaded = isUtmbBrowserProfile(currentUrl, expected)
+                                        }) { Text(stringResource(R.string.mfp_close)) }
+                                    }
+                                    if (message.isNotBlank()) Text(message, style = MaterialTheme.typography.bodySmall)
+                                    if (progress < 100) LinearProgressIndicator(Modifier.fillMaxWidth())
+                                    AndroidView(factory = { child }, modifier = Modifier.fillMaxWidth().weight(1f))
+                                }
+                            }
+                        }
+                    }
+                    if (help) AlertDialog(onDismissRequest = { help = false },
+                        title = { Text(stringResource(R.string.utmb_help)) },
+                        text = {
+                            Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
+                                Text(stringResource(R.string.utmb_help_text))
+                                Row {
+                                    Checkbox(thirdPartyCookies, { enabled ->
+                                        thirdPartyCookies = enabled
+                                        CookieManager.getInstance().setAcceptThirdPartyCookies(web, enabled)
+                                        popup?.let { CookieManager.getInstance().setAcceptThirdPartyCookies(it, enabled) }
+                                        diagnostics.record(UtmbWebEvent.COOKIES, (popup ?: web).url.orEmpty(), if (enabled) 1 else 0)
+                                    })
+                                    Text(stringResource(R.string.utmb_login_cookies))
+                                }
+                                TextButton(onClick = { help = false; message = ""; (popup ?: web).reload() }) { Text(stringResource(R.string.utmb_reload)) }
+                                TextButton(onClick = {
+                                    runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(profileUrl))) }
+                                        .onFailure { message = getString(R.string.utmb_web_failed) }
+                                }) { Text(stringResource(R.string.utmb_external_browser)) }
+                                TextButton(onClick = {
+                                    val report = diagnostics.report(WebView.getCurrentWebViewPackage()?.versionName.orEmpty(), thirdPartyCookies)
+                                    val clip = android.content.ClipData.newPlainText("UTMB diagnostics", report)
+                                    (getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager).setPrimaryClip(clip)
+                                    copied = true
+                                }) { Text(stringResource(if (copied) R.string.gp_copied else R.string.utmb_copy_diagnostics)) }
+                            }
+                        }, confirmButton = { TextButton(onClick = { help = false }) { Text(stringResource(R.string.mfp_close)) } })
                     preview?.let { data ->
                         val previous = RunnerProfileStore(this@UtmbProfileActivity).all().first { it.provider == "UTMB" }
                         val sameRunner = runCatching { utmbProfileSlug(previous.url).substringBefore('.') == expected.substringBefore('.') }.getOrDefault(false)

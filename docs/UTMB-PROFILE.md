@@ -103,3 +103,36 @@ access and per-race import remain unverified until the user's phone test.
 Automated tests use synthetic snapshots and validate origin/ID checks, limits,
 field selection and conservative cache handling. JS syntax/fixtures are also
 checked locally. Do not send login passwords, tokens or MFA codes in chat.
+
+## 0.24.2 — blank sign-in page troubleshooting
+
+The user reported that bAIr controls remained visible while website content
+became white. That does not prove a protection challenge: scripts, cookies or
+popup handling can cause the same symptom. This release adds a visible in-app
+child window for a user-initiated website sign-in popup, preserving normal
+window/opener behavior instead of redirecting it into the parent or losing it.
+One popup is allowed; automatic or additional popups are rejected with a message.
+HTTPS-only navigation and cancelled TLS errors apply to child windows as well.
+Profile extraction remains disabled while the popup is open.
+
+**Помощ при вход / Sign-in help** appears in the main and popup toolbars. It
+provides reload, optional third-party cookies limited to these UTMB WebViews,
+external-browser comparison, and a copyable safe diagnostic report. This option
+is off by default, is not set globally and does not affect the MFP WebView.
+Changing it requires reloading the website. Existing website cookies may remain;
+use the website logout to end an account session. No blanket cookie deletion or
+credential export is performed.
+
+Diagnostics retain at most 20 enum event names, numeric status/error codes and
+hostnames. Paths, userinfo, query/fragment values, OAuth codes, console text,
+HTML, input values and cookies are never included. JS console errors are counted
+as fixed events without capturing their messages. A delayed blank-page probe
+returns only a boolean from body-length/control-count checks, never page text.
+This is a heuristic, not proof of a block. Update Android System WebView/Chrome,
+try the site sign-in again, then copy diagnostics if it still fails.
+
+Opening the original public profile in the system browser is for comparison;
+browser cookies/sign-in cannot be imported into bAIr. No user-agent spoofing,
+TLS bypass, CAPTCHA solving, MFA bypass or anti-bot workaround is added. Real
+UTMB SSO/popup behavior remains a phone test. Synthetic unit tests verify that
+copied diagnostics omit sensitive URL components and bound the event history.

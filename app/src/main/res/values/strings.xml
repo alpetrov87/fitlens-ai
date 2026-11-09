@@ -388,4 +388,12 @@
 <string name="utmb_web_confirm">I checked the profile and data</string>
 <string name="utmb_web_source">Opened UTMB profile; missing fields may retain earlier saved values</string>
 <string name="utmb_web_saved">UTMB data saved. It is included in your ChatGPT report.</string>
+<string name="utmb_help">Sign-in help</string>
+<string name="utmb_help_text">A blank page can mean an unloaded script, a separate sign-in window, a cookie requirement, or an embedded-browser restriction. Update Android System WebView and Chrome. If needed, allow sign-in cookies below and reload. Open in browser is only a comparison: browser sign-in is NOT transferred back to bAIr. Diagnostics contain hostnames and error codes, not passwords, cookies, page text or complete URLs.</string>
+<string name="utmb_login_cookies">Allow cookies from the connected sign-in site (this screen only)</string>
+<string name="utmb_reload">Reload page</string>
+<string name="utmb_external_browser">Compare in browser</string>
+<string name="utmb_copy_diagnostics">Copy sign-in diagnostics</string>
+<string name="utmb_blank_help">The website appears empty after loading. Open Sign-in help to reload or copy diagnostics.</string>
+<string name="utmb_popup_blocked">The website tried to open an automatic or additional window. Use its sign-in button again or see Sign-in help.</string>
 </resources>

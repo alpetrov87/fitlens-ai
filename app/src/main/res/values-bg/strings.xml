@@ -388,4 +388,12 @@
 <string name="utmb_web_confirm">Проверих профила и данните</string>
 <string name="utmb_web_source">Отворен UTMB профил; липсващи полета може да са запазени от предишен прочит</string>
 <string name="utmb_web_saved">UTMB данните са запазени. Включват се в отчета за ChatGPT.</string>
+<string name="utmb_help">Помощ при вход</string>
+<string name="utmb_help_text">Белият екран може да е от незареден скрипт, отделен прозорец за вход, изискване за cookies или ограничение за вградени браузъри. Обнови Android System WebView и Chrome. При нужда разреши cookies за вход отдолу и презареди. Отварянето в браузър е само за сравнение: входът там НЕ се прехвърля в bAIr. Диагностиката съдържа домейни и кодове за грешки, не пароли, cookies, текст от страницата или пълни адреси.</string>
+<string name="utmb_login_cookies">Разреши cookies от свързания сайт за вход (само за този екран)</string>
+<string name="utmb_reload">Презареди страницата</string>
+<string name="utmb_external_browser">Провери в браузър</string>
+<string name="utmb_copy_diagnostics">Копирай диагностика на входа</string>
+<string name="utmb_blank_help">Страницата изглежда празна след зареждането. Отвори „Помощ при вход“, за да презаредиш или копираш диагностика.</string>
+<string name="utmb_popup_blocked">Сайтът опита да отвори автоматичен или допълнителен прозорец. Натисни отново бутона за вход в сайта или отвори „Помощ при вход“.</string>
 </resources>

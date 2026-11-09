@@ -10,8 +10,8 @@ android {
         applicationId = "com.fitlens.ai"
         minSdk = 26
         targetSdk = 35
-        versionCode = System.getenv("FITLENS_VERSION_CODE")?.toInt() ?: 40
-        versionName = "0.24.1"
+        versionCode = System.getenv("FITLENS_VERSION_CODE")?.toInt() ?: 41
+        versionName = "0.24.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     val persistentKey = System.getenv("FITLENS_KEYSTORE_PATH")
