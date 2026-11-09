@@ -396,4 +396,7 @@
 <string name="utmb_copy_diagnostics">Копирай диагностика на входа</string>
 <string name="utmb_blank_help">Страницата изглежда празна след зареждането. Отвори „Помощ при вход“, за да презаредиш или копираш диагностика.</string>
 <string name="utmb_popup_blocked">Сайтът опита да отвори автоматичен или допълнителен прозорец. Натисни отново бутона за вход в сайта или отвори „Помощ при вход“.</string>
+<string name="utmb_overall">Общ UTMB Index</string>
+<string name="utmb_missing_index">Няма наличен индекс</string>
+<string name="utmb_open_race">Отвори състезанието</string>
 </resources>

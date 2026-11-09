@@ -61,6 +61,8 @@ jobs:
           else
             echo "::warning::Persistent signing is not configured. This APK may require uninstalling an older debug build."
           fi
+      - name: Check UTMB browser extraction fixtures
+        run: node scripts/test-utmb-browser.cjs
       - name: Build, test and lint
         run: ./gradlew --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
       - name: Upload debug APK

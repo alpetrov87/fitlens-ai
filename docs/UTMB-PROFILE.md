@@ -136,3 +136,44 @@ browser cookies/sign-in cannot be imported into bAIr. No user-agent spoofing,
 TLS bypass, CAPTCHA solving, MFA bypass or anti-bot workaround is added. Real
 UTMB SSO/popup behavior remains a phone test. Synthetic unit tests verify that
 copied diagnostics omit sensitive URL components and bound the event history.
+
+## 0.25.0 — styled Index and per-race scores
+
+The user confirmed that website sign-in works on their phone after 0.24.2.
+This release keeps that login/popup/cookie flow and changes only extraction,
+result presentation and conservative local merging.
+
+Progress now displays a navy/cyan overall UTMB Index card and 20K/50K/100K/100M
+category tiles with yellow/orange/green/red accents. Missing values show an
+unavailable state, never a manufactured zero. The layout adapts the supplied
+wide desktop reference to a full-width hero plus a two-column phone grid.
+
+From the selected signed-in profile, the read script inspects visible official
+UTMB race links and their bounded row ancestors. A per-race score must come
+from an explicitly labeled UTMB Score/Index table column, aligned div header,
+visible score label or accessibility label. It is never guessed from ranking,
+finish time, category Index, the overall Index, or an arbitrary last number.
+Duplicate links to the same race do not cause the row to be discarded. Locked
+or unrecognized scores remain unknown; race title, read date/year, duration,
+distance and the official race URL are retained where available. No fetch of
+other runners or extraction from a race winner row is performed.
+
+Each result has a separate horizontal card, like BTR/ITRA, with a prominent
+**UTMB Score** badge and a link to its race page. New structured browser fields
+are validated then stored as readable lines in the existing profile results
+field, keeping old records compatible and ChatGPT reports readable. The same
+saved rows are included in the existing reviewed prompt, preserving the
+semantic distinction between overall/category Index and per-race Score.
+
+Repeat/paginated reads merge by official race URL. A missing per-race score
+cannot replace a previously saved numeric score. The preview shows the merged
+result before confirmation. The existing limits remain: at most 30 stored rows
+and 4000 characters, with newer imported rows preferred when space is limited.
+This is a bounded snapshot, not a guarantee of full account history. Open each
+page/tab in the website and read it before saving if results are paginated.
+
+Tests use synthetic browser DOM fixtures (table headers, duplicate anchors,
+explicit score cards, locked values and off-site links), Kotlin field validation,
+cache merging, category parsing and prompt inclusion. The improved per-race
+selectors and visual appearance still require a phone test with the actual
+signed-in UTMB profile. If a layout is unsupported, it must not invent a score.

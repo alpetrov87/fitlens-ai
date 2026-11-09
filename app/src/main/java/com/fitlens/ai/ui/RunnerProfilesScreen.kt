@@ -9,6 +9,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -97,12 +103,12 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
         }
     }
 
-    InfoCard(initial.provider, Icons.Default.Person) {
-        if (initial.provider == "UTMB") Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.utmb_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    InfoCard(initial.provider, if (initial.provider == "UTMB") Icons.Default.Terrain else Icons.Default.Person) {
+        if (initial.provider == "UTMB" && editing) Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.utmb_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
         if (!editing) {
             val indicators = saved.score.split(" · ").filter(String::isNotBlank)
-            Text(indicators.firstOrNull() ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_145), style = MaterialTheme.typography.headlineSmall,
+            if (initial.provider != "UTMB") Text(indicators.firstOrNull() ?: com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_145), style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.primary)
             if (initial.provider == "ITRA") EnduranceCards(saved.score)
             if (initial.provider == "UTMB") UtmbIndexCards(saved.score)
@@ -115,7 +121,7 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
             if (raceRows.isEmpty()) Text(com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_146))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(raceRows) { result ->
-                    Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(24.dp)) {
+                    if (initial.provider == "UTMB") UtmbRaceResultCard(result) else Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = RoundedCornerShape(24.dp)) {
                         Column(Modifier.width(260.dp).padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                             Icon(Icons.Default.EmojiEvents, null, tint = MaterialTheme.colorScheme.primary)
                             Text(result, style = MaterialTheme.typography.bodyLarge)
@@ -184,17 +190,68 @@ private fun EnduranceCards(score: String) {
 
 @Composable
 private fun UtmbIndexCards(score: String) {
-    listOf("20K", "50K", "100K", "100M").chunked(2).forEach { categories ->
+    Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp))
+        .background(Brush.linearGradient(listOf(Color(0xFF004B75), Color(0xFF030A35)))).padding(20.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                Surface(color = Color(0xFF061433)) { Text("UTMB", Modifier.padding(horizontal = 7.dp, vertical = 3.dp), color = Color.White, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold) }
+                Surface(color = Color(0xFF00C4ED)) { Text("INDEX", Modifier.padding(horizontal = 7.dp, vertical = 3.dp), color = Color(0xFF030A35), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold) }
+            }
+            Text(utmbIndexValue(score, "UTMB Index")?.toString() ?: "—", color = Color.White,
+                fontSize = 54.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace)
+            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.utmb_overall), color = Color(0xFFBDEAF5), style = MaterialTheme.typography.labelMedium)
+        }
+        Icon(Icons.Default.Terrain, null, modifier = Modifier.size(60.dp), tint = Color(0xFFBDEAF5).copy(alpha = 0.35f))
+    }
+    val colors = listOf(Color(0xFFF0FF00), Color(0xFFFF7100), Color(0xFF82D852), Color(0xFFFF343C))
+    listOf("20K", "50K", "100K", "100M").withIndex().chunked(2).forEach { categories ->
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            categories.forEach { category ->
-                val value = Regex("(?:^| · )$category: ([0-9]+|—)(?: · |$)").find(score)?.groupValues?.get(1) ?: "—"
-                Surface(Modifier.weight(1f), shape = RoundedCornerShape(16.dp), color = MaterialTheme.colorScheme.primaryContainer) {
-                    Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(category, style = MaterialTheme.typography.labelLarge)
-                        Text(value, style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            categories.forEach { (index, category) ->
+                val value = utmbIndexValue(score, category)
+                Surface(Modifier.weight(1f), shape = RoundedCornerShape(16.dp),
+                    color = if (value == null) MaterialTheme.colorScheme.surfaceVariant else colors[index].copy(alpha = 0.12f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, if (value == null) MaterialTheme.colorScheme.outlineVariant else colors[index].copy(alpha = 0.7f))) {
+                    Column(Modifier.padding(14.dp).heightIn(min = 110.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Surface(color = colors[index], shape = RoundedCornerShape(4.dp)) {
+                                Text(category, Modifier.padding(horizontal = 7.dp, vertical = 3.dp), color = Color(0xFF030A35), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
+                            }
+                            Icon(Icons.Default.Terrain, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurface)
+                        }
+                        if (value != null) Text(value.toString(), style = MaterialTheme.typography.headlineLarge, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+                        else {
+                            Icon(Icons.Default.Lock, null, Modifier.size(26.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.utmb_missing_index), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun UtmbRaceResultCard(raw: String) {
+    val result = utmbRaceCardData(raw)
+    val context = LocalContext.current
+    Surface(Modifier.width(276.dp), color = MaterialTheme.colorScheme.surfaceVariant, shape = RoundedCornerShape(22.dp)) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(Icons.Default.EmojiEvents, null, tint = MaterialTheme.colorScheme.primary)
+                result.date?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
+            }
+            Text(result.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Surface(color = Color(0xFF04153D), shape = RoundedCornerShape(14.dp)) {
+                Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("UTMB Score", color = Color(0xFF92DBED), style = MaterialTheme.typography.labelLarge)
+                    Text(result.score?.toString() ?: "—", color = Color.White, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium)
+                }
+            }
+            if (result.details.isNotBlank()) Text(result.details, style = MaterialTheme.typography.bodyMedium)
+            result.url?.let { url -> TextButton(onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }.onFailure { android.widget.Toast.makeText(context, com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_153), android.widget.Toast.LENGTH_SHORT).show() } }) {
+                Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.utmb_open_race))
+            } }
         }
     }
 }

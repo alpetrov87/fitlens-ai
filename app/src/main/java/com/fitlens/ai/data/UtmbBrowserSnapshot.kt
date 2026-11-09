@@ -45,6 +45,11 @@ internal fun parseUtmbBrowserSnapshot(raw: String, page: String, expectedSlug: S
     } else null
     val rows = root.optJSONArray("rows") ?: JSONArray()
     val retained = mutableListOf<String>()
+    val races = root.optJSONArray("races") ?: JSONArray()
+    for (i in 0 until minOf(races.length(), 30)) {
+        val row = races.optJSONObject(i)?.let(::utmbRaceRow) ?: continue
+        if (retained.sumOf { it.length + 1 } + row.length <= 4000 && row !in retained) retained.add(row)
+    }
     for (i in 0 until minOf(rows.length(), 30)) {
         val text = (rows.opt(i) as? String)?.replace(Regex("[\\r\\n\\t]+"), " ")?.trim()?.take(600) ?: continue
         if (text.isNotBlank() && retained.sumOf { it.length + 1 } + text.length <= 4000 && text !in retained) retained.add(text)
@@ -84,26 +89,71 @@ internal val UTMB_BROWSER_SCRIPT = """(function(){
         }
     }
     for(const [key,values] of visible) if(values.size===1) found.set(key,Array.from(values)[0]);
-    const rows=[];
-    const links=Array.from(document.querySelectorAll('a[href*="/utmb-index/races/"]')).filter(a=>a.getClientRects().length).slice(0,100);
-    for(const link of links) {
-        let node=link;
-        for(let i=0;node && i<6;i++,node=node.parentElement) {
-            const text=(node.innerText || '').replace(/\s+/g,' ').trim();
-            if(text.length>900) break;
-            if(node.querySelectorAll('a[href*="/utmb-index/races/"]').length>1) break;
-            const table=node.closest('table,[role=table]');
-            const header=table ? Array.from(table.querySelectorAll('th,[role=columnheader]')).map(x=>x.innerText).join(' | ').slice(0,250) : '';
-            const hasScore=/utmb.*(?:score|index)|performance.*index|race.*score/i.test(text+' '+header);
-            if(hasScore && /\b20\d{2}\b/.test(text) && /\b\d{1,3}:\d{2}(?::\d{2})?\b/.test(text)) {
-                const row=(header ? header+' — ' : '')+text;
-                if(row.length<=600 && !rows.includes(row) && rows.join('\n').length+row.length<4000) rows.push(row);
-                break;
+    const races=new Map();
+    const norm=x=>(x || '').replace(/\s+/g,' ').trim();
+    const scoreLabel=t=>/^(?:UTMB[®\s]*(?:SCORE|INDEX)|RACE SCORE|PERFORMANCE INDEX)${'$'}/i.test(norm(t));
+    const raceScoreLabel=t=>/^(?:UTMB[®\s]*SCORE|RACE SCORE)${'$'}/i.test(norm(t));
+    const integer=t=>/^[1-9]\d{0,3}${'$'}/.test(norm(t)) && valid(Number(norm(t))) ? Number(norm(t)) : null;
+    const labelFor=el=>norm((el.innerText || '')+' '+(el.getAttribute('aria-label') || '')+' '+(el.getAttribute('title') || '')+' '+Array.from(el.querySelectorAll('img[alt]')).map(i=>i.alt).join(' '));
+    const isScoreHeader=el=>[el.innerText,el.getAttribute('aria-label'),el.getAttribute('title'),...Array.from(el.querySelectorAll('img[alt]')).map(i=>i.alt),labelFor(el)].some(scoreLabel);
+    const raceUrl=a=>{
+        try {
+            const u=new URL(a.href,document.baseURI);
+            if(u.protocol!=='https:' || !['utmb.world','www.utmb.world'].includes(u.hostname) || u.username || u.password || (u.port && u.port!=='443')) return null;
+            if(!/^\/(?:[a-z]{2}\/)?(?:utmb-index\/)?races\/[^/]+\/?${'$'}/.test(u.pathname)) return null;
+            return u.origin+u.pathname;
+        } catch(e) { return null; }
+    };
+    const scoreIn=node=>{
+        const table=node.closest('table,[role=table]');
+        const row=node.closest('tr,[role=row]') || node;
+        if(table) {
+            const heads=Array.from(table.querySelectorAll('th,[role=columnheader]'));
+            const col=heads.findIndex(isScoreHeader);
+            const cells=Array.from(row.querySelectorAll('td,[role=cell]'));
+            if(col>=0 && col<cells.length) { const n=integer(cells[col].innerText); if(n!==null) return n; }
+        }
+        for(const el of Array.from(node.querySelectorAll('[title],[aria-label],[data-label],span,p,div')).slice(0,300)) {
+            if(!el.getClientRects().length) continue;
+            const text=norm(el.innerText);
+            const direct=text.match(/^(?:UTMB[®\s]*SCORE|RACE SCORE)\s*[:=]?\s*([1-9]\d{0,3})${'$'}/i);
+            if(direct && valid(Number(direct[1]))) return Number(direct[1]);
+            const attr=norm((el.getAttribute('title') || '')+' '+(el.getAttribute('aria-label') || '')+' '+(el.getAttribute('data-label') || ''));
+            if([attr,el.getAttribute('title'),el.getAttribute('aria-label'),el.getAttribute('data-label')].some(raceScoreLabel)) { const n=integer(text); if(n!==null) return n; }
+        }
+        // Next.js div grids can have a separate header row with aligned cells.
+        const parent=node.parentElement;
+        if(parent && node.children.length>1) {
+            for(const header of Array.from(parent.children).slice(0,10)) {
+                if(header===node || header.children.length!==node.children.length) continue;
+                const col=Array.from(header.children).findIndex(isScoreHeader);
+                if(col>=0) { const n=integer(node.children[col].innerText); if(n!==null) return n; }
             }
         }
-        if(rows.length>=30) break;
+        return null;
+    };
+    const links=Array.from(document.querySelectorAll('a[href*="/races/"]')).filter(a=>a.getClientRects().length && raceUrl(a)).slice(0,150);
+    for(const link of links) {
+        const url=raceUrl(link), title=norm(link.innerText).slice(0,160);
+        if(!title) continue;
+        let best=null, node=link;
+        for(let i=0;node && i<9;i++,node=node.parentElement) {
+            const text=norm(node.innerText);
+            if(text.length>2000) break;
+            const urls=new Set(Array.from(node.querySelectorAll('a[href*="/races/"]')).map(raceUrl).filter(Boolean));
+            if(urls.size>1) break;
+            const date=text.match(/\b(20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[/.-]\d{1,2}[/.-]20\d{2}|20\d{2})\b/);
+            const times=text.match(/\b\d{1,3}:[0-5]\d(?::[0-5]\d)?\b/g) || [];
+            if(!date || times.length===0) continue;
+            const score=scoreIn(node);
+            const distance=text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\s*(?:km|км)\b/i);
+            best={title,date:date[1],score,time:times.length===1?times[0]:'',distance:distance?distance[0]:'',url};
+            if(score!==null || node===link.closest('tr,[role=row]')) break;
+        }
+        if(best && (!races.has(url) || races.get(url).score===null)) races.set(url,best);
+        if(races.size>=30) break;
     }
-    return JSON.stringify({indexes:Array.from(found,([piCategory,index])=>({piCategory,index})),rows});
+    return JSON.stringify({indexes:Array.from(found,([piCategory,index])=>({piCategory,index})),races:Array.from(races.values()),rows:[]});
 })();"""
 
 internal fun mergeUtmbCategoryScore(previous: String, incoming: String?): String? {

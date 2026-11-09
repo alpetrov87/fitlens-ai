@@ -396,4 +396,7 @@
 <string name="utmb_copy_diagnostics">Copy sign-in diagnostics</string>
 <string name="utmb_blank_help">The website appears empty after loading. Open Sign-in help to reload or copy diagnostics.</string>
 <string name="utmb_popup_blocked">The website tried to open an automatic or additional window. Use its sign-in button again or see Sign-in help.</string>
+<string name="utmb_overall">Overall UTMB Index</string>
+<string name="utmb_missing_index">Index unavailable</string>
+<string name="utmb_open_race">Open race</string>
 </resources>

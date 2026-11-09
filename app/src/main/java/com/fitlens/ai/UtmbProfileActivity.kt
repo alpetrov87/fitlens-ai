@@ -246,7 +246,7 @@ class UtmbProfileActivity : ComponentActivity() {
                         val previous = RunnerProfileStore(this@UtmbProfileActivity).all().first { it.provider == "UTMB" }
                         val sameRunner = runCatching { utmbProfileSlug(previous.url).substringBefore('.') == expected.substringBefore('.') }.getOrDefault(false)
                         val previewScore = mergeUtmbCategoryScore(previous.score.takeIf { sameRunner }.orEmpty(), data.score).orEmpty()
-                        val previewResults = data.results ?: previous.results.takeIf { sameRunner }.orEmpty()
+                        val previewResults = mergeUtmbRaceRows(previous.results.takeIf { sameRunner }.orEmpty(), data.results).orEmpty()
                         AlertDialog(onDismissRequest = { preview = null }, title = { Text(stringResource(R.string.utmb_web_preview)) },
                             text = {
                                 Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
