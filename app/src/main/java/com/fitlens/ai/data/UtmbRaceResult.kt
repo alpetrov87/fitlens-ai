@@ -53,8 +53,8 @@ internal fun mergeUtmbRaceRows(previous: String, incoming: String?): String? {
         if (old != null && replace && parsed.score == null && utmbRaceCardData(old).score != null) return
         rows.remove(key); rows[key] = row
     }
-    previous.lineSequence().take(30).forEach { add(it, false) }
-    incoming.orEmpty().lineSequence().take(30).forEach { add(it, true) }
+    previous.lineSequence().take(30).toList().asReversed().forEach { add(it, false) }
+    incoming.orEmpty().lineSequence().take(30).toList().asReversed().forEach { add(it, true) }
     val kept = mutableListOf<String>()
     rows.values.toList().asReversed().forEach { row ->
         if (kept.size < 30 && kept.sumOf { it.length + 1 } + row.length <= 4000) kept.add(row)

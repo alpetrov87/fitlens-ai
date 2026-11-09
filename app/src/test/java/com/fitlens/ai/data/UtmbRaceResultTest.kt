@@ -55,4 +55,9 @@ class UtmbRaceResultTest {
         assertNull(utmbIndexValue("50K: 0", "50K"))
         assertNull(utmbRaceCardData("2026 Example | place 237 | 7:33:47").score)
     }
+    @Test fun mergePreservesTheOrderOfTheReadPage() {
+        val first = utmbRaceRow(race())!!
+        val second = utmbRaceRow(race(400).put("url", "https://utmb.world/utmb-index/races/456.another.2026"))!!
+        assertEquals(listOf(first, second), mergeUtmbRaceRows("", "$first\n$second")!!.lines())
+    }
 }
