@@ -105,7 +105,7 @@ internal val UTMB_BROWSER_SCRIPT = """(function(){
         } catch(e) { return null; }
     };
     const scoreIn=node=>{
-        const table=node.closest('table,[role=table]');
+        const table=node.closest('table,[role=table],[role=grid]');
         const row=node.closest('tr,[role=row]') || node;
         if(table) {
             const heads=Array.from(table.querySelectorAll('th,[role=columnheader]'));
@@ -144,8 +144,9 @@ internal val UTMB_BROWSER_SCRIPT = """(function(){
             if(urls.size>1) break;
             const date=text.match(/\b(20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[/.-]\d{1,2}[/.-]20\d{2}|20\d{2})\b/);
             const times=text.match(/\b\d{1,3}:[0-5]\d(?::[0-5]\d)?\b/g) || [];
-            if(!date || times.length===0) continue;
+            if(!date) continue;
             const score=scoreIn(node);
+            if(times.length===0 && score===null) continue;
             const distance=text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\s*(?:km|км)\b/i);
             best={title,date:date[1],score,time:times.length===1?times[0]:'',distance:distance?distance[0]:'',url};
             if(score!==null || node===link.closest('tr,[role=row]')) break;
@@ -153,7 +154,65 @@ internal val UTMB_BROWSER_SCRIPT = """(function(){
         if(best && (!races.has(url) || races.get(url).score===null)) races.set(url,best);
         if(races.size>=30) break;
     }
-    return JSON.stringify({indexes:Array.from(found,([piCategory,index])=>({piCategory,index})),races:Array.from(races.values()),rows:[]});
+    // Accessible tables/grids can render race names as buttons or plain cells, with no anchor.
+    const tables=Array.from(document.querySelectorAll('table,[role=table],[role=grid]')).slice(0,30);
+    let tableRows=0;
+    for(const table of tables) {
+        const heads=Array.from(table.querySelectorAll('th,[role=columnheader]'));
+        const texts=h=>[h.innerText,h.getAttribute('title'),h.getAttribute('aria-label'),labelFor(h)].map(norm);
+        const nameCol=heads.findIndex(h=>texts(h).some(t=>/^(?:race(?: name)?|event(?: name)?|course|épreuve|състезание)${'$'}/i.test(norm(t))));
+        const dateCol=heads.findIndex(h=>texts(h).some(t=>/^(?:date|race date|дата)${'$'}/i.test(norm(t))));
+        const scoreCol=heads.findIndex(isScoreHeader);
+        if(nameCol<0 || dateCol<0 || scoreCol<0) continue;
+        for(const row of Array.from(table.querySelectorAll('tr,[role=row]')).slice(0,100)) {
+            if(!row.getClientRects().length) continue;
+            const cells=Array.from(row.querySelectorAll('td,[role=cell]'));
+            if(cells.length<=Math.max(nameCol,dateCol,scoreCol)) continue;
+            tableRows++;
+            const title=norm(cells[nameCol].innerText).slice(0,160);
+            const date=norm(cells[dateCol].innerText).match(/\b(20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[/.-]\d{1,2}[/.-]20\d{2}|20\d{2})\b/);
+            const text=norm(row.innerText), times=text.match(/\b\d{1,3}:[0-5]\d(?::[0-5]\d)?\b/g) || [];
+            const score=integer(cells[scoreCol].innerText);
+            if(!title || !date || (!times.length && score===null)) continue;
+            const link=Array.from(row.querySelectorAll('a[href*="/races/"]')).find(a=>raceUrl(a));
+            const url=link?raceUrl(link):'';
+            const distance=text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\s*(?:km|км)\b/i);
+            const key=url || date[1]+'|'+title+'|'+(distance?distance[0]:'');
+            const next={title,date:date[1],score,time:times.length===1?times[0]:'',distance:distance?distance[0]:'',url};
+            if(!races.has(key) || races.get(key).score===null) races.set(key,next);
+            if(races.size>=30) break;
+        }
+    }
+    // Responsive Next.js div tables often have neither links nor ARIA roles.
+    const headerTexts=h=>[h.innerText,h.getAttribute('title'),h.getAttribute('aria-label'),labelFor(h)].map(norm);
+    for(const header of Array.from(document.querySelectorAll('div,section,header')).slice(0,4000)) {
+        const heads=Array.from(header.children);
+        if(heads.length<3 || heads.length>16 || !header.parentElement) continue;
+        const nameCol=heads.findIndex(h=>headerTexts(h).some(t=>/^(?:race(?: name)?|event(?: name)?|course|épreuve|състезание)${'$'}/i.test(t)));
+        const dateCol=heads.findIndex(h=>headerTexts(h).some(t=>/^(?:date|race date|year|дата|année)${'$'}/i.test(t)));
+        const scoreCol=heads.findIndex(h=>isScoreHeader(h) || headerTexts(h).some(t=>/^score${'$'}/i.test(t)));
+        if(nameCol<0 || dateCol<0 || scoreCol<0) continue;
+        const scopes=[header.parentElement,header.parentElement.parentElement].filter(Boolean);
+        const siblings=Array.from(new Set(scopes.flatMap(e=>Array.from(e.children))));
+        const candidates=[...siblings,...siblings.flatMap(e=>Array.from(e.children)),...siblings.flatMap(e=>Array.from(e.children).flatMap(x=>Array.from(x.children)))];
+        for(const row of candidates.slice(0,300)) {
+            if(row===header || row.children.length<heads.length || row.children.length>heads.length+2 || !row.getClientRects().length) continue;
+            const cells=Array.from(row.children), title=norm(cells[nameCol].innerText).slice(0,160);
+            const date=norm(cells[dateCol].innerText).match(/\b(20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[/.-]\d{1,2}[/.-]20\d{2}|20\d{2})\b/);
+            const text=norm(row.innerText), times=text.match(/\b\d{1,3}:[0-5]\d(?::[0-5]\d)?\b/g) || [];
+            const score=integer(cells[scoreCol].innerText);
+            if(!title || !date || (!times.length && score===null) || text.length>2000) continue;
+            tableRows++;
+            const link=Array.from(row.querySelectorAll('a[href*="/races/"]')).find(a=>raceUrl(a)), url=link?raceUrl(link):'';
+            const distance=text.match(/\b\d{1,4}(?:[.,]\d{1,2})?\s*(?:km|км)\b/i);
+            const key=url || date[1]+'|'+title+'|'+(distance?distance[0]:'');
+            const next={title,date:date[1],score,time:times.length===1?times[0]:'',distance:distance?distance[0]:'',url};
+            if(!races.has(key) || races.get(key).score===null) races.set(key,next);
+            if(races.size>=30) break;
+        }
+        if(races.size>=30) break;
+    }
+    return JSON.stringify({indexes:Array.from(found,([piCategory,index])=>({piCategory,index})),races:Array.from(races.values()).slice(0,30),rows:[],diagnostics:{raceLinks:links.length,tableRows}});
 })();"""
 
 internal fun mergeUtmbCategoryScore(previous: String, incoming: String?): String? {
@@ -162,4 +221,26 @@ internal fun mergeUtmbCategoryScore(previous: String, incoming: String?): String
     fun value(score: String, label: String): String? = Regex("(?:^| · )${Regex.escape(label)}: ([1-9][0-9]{0,3})(?= · |${'$'})")
         .find(score)?.groupValues?.get(1)
     return labels.joinToString(" · ") { label -> "$label: ${value(incoming, label) ?: value(previous, label) ?: "—"}" }
+}
+
+
+/** Scroll only after an explicit read request; do not click account actions or fetch private endpoints. */
+internal val UTMB_RESULTS_SCROLL_SCRIPT = """(function(){
+    const titles=Array.from(document.querySelectorAll('h2,h3,h4'));
+    const heading=titles.find(e=>e.getClientRects().length && /^(?:race results|results|résultats|race history|състезания|резултати)${'$'}/i.test((e.innerText || '').trim()));
+    if(heading) heading.scrollIntoView({block:'start',behavior:'instant'});
+})();"""
+
+internal val UTMB_RESULTS_NEXT_SCROLL_SCRIPT = """(function(){
+    const candidates=Array.from(document.querySelectorAll('main,section,div')).slice(0,3000).filter(e=>{
+        const style=getComputedStyle(e);
+        return e.getClientRects().length && /auto|scroll/.test(style.overflowY) && e.clientHeight>150 && e.scrollHeight>e.clientHeight+10;
+    }).sort((a,b)=>b.clientHeight-a.clientHeight);
+    if(candidates[0]) candidates[0].scrollTop+=Math.max(150,candidates[0].clientHeight*0.8);
+})();"""
+
+internal fun utmbReadCounts(raw: String): Pair<Int, Int> {
+    require(raw.length <= 60_000)
+    fun count(key: String): Int = Regex("\"$key\"\\s*:\\s*([0-9]{1,5})(?![0-9])").find(raw)?.groupValues?.get(1)?.toIntOrNull()?.coerceIn(0,10000) ?: 0
+    return count("raceLinks") to count("tableRows")
 }

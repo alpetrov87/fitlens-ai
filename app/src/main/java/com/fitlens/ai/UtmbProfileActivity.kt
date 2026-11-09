@@ -21,7 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
+import kotlin.coroutines.resume
 import com.fitlens.ai.data.*
 import com.fitlens.ai.ui.FitLensTheme
 import org.json.JSONTokener
@@ -45,6 +46,11 @@ class UtmbProfileActivity : ComponentActivity() {
                     var progress by remember { mutableIntStateOf(0) }
                     var message by remember { mutableStateOf("") }
                     var reading by remember { mutableStateOf(false) }
+                    var scanning by remember { mutableStateOf(false) }
+                    var readingDetails by remember { mutableStateOf("") }
+                    var readId by remember { mutableIntStateOf(0) }
+                    var readJob by remember { mutableStateOf<Job?>(null) }
+                    val scope = rememberCoroutineScope()
                     var preview by remember { mutableStateOf<UtmbBrowserPreview?>(null) }
                     var checked by remember { mutableStateOf(false) }
                     var popup by remember { mutableStateOf<WebView?>(null) }
@@ -119,6 +125,7 @@ class UtmbProfileActivity : ComponentActivity() {
                                     return !allowed
                                 }
                                 override fun onPageStarted(view: WebView, url: String?, icon: android.graphics.Bitmap?) {
+                                    readId++; readJob?.cancel(); scanning = false
                                     failed = false; loaded = false; preview = null; reading = false; currentUrl = url.orEmpty()
                                     host = Uri.parse(url.orEmpty()).host.orEmpty()
                                     diagnostics.record(UtmbWebEvent.START, url.orEmpty())
@@ -144,7 +151,7 @@ class UtmbProfileActivity : ComponentActivity() {
                             }
                         }
                     }
-                    DisposableEffect(web) { onDispose { popup?.stopLoading(); popup?.destroy(); web.stopLoading(); web.destroy() } }
+                    DisposableEffect(web) { onDispose { readJob?.cancel(); popup?.stopLoading(); popup?.destroy(); web.stopLoading(); web.destroy() } }
                     LaunchedEffect(web) { web.loadUrl(profileUrl) }
                     LaunchedEffect(pageFinished) {
                         if (pageFinished == 0) return@LaunchedEffect
@@ -175,21 +182,74 @@ class UtmbProfileActivity : ComponentActivity() {
                         if (progress < 100) LinearProgressIndicator(Modifier.fillMaxWidth())
                         if (message.isNotBlank()) Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                         AndroidView(factory = { web }, modifier = Modifier.fillMaxWidth().weight(1f))
-                        Button(enabled = loaded && popup == null && !reading, modifier = Modifier.fillMaxWidth(), onClick = {
-                            val page = web.url.orEmpty()
-                            if (!isUtmbBrowserProfile(page, expected)) return@Button
-                            reading = true; message = ""
-                            web.evaluateJavascript(UTMB_BROWSER_SCRIPT) { raw ->
-                                reading = false
-                                if (web.url != page || !isUtmbBrowserProfile(web.url.orEmpty(), expected)) {
-                                    message = getString(R.string.utmb_web_wrong); return@evaluateJavascript
-                                }
-                                val json = runCatching { JSONTokener(raw).nextValue() as? String }.getOrNull()
-                                runCatching { parseUtmbBrowserSnapshot(json.orEmpty(), page, expected) }
-                                    .onSuccess { preview = it; checked = false }
-                                    .onFailure { message = getString(R.string.utmb_web_empty) }
+                        if (scanning) Text(stringResource(R.string.utmb_read_scanning), style = MaterialTheme.typography.bodySmall)
+                        Button(enabled = loaded && popup == null, modifier = Modifier.fillMaxWidth(), onClick = {
+                            if (reading) { readId++; readJob?.cancel(); reading = false; scanning = false; return@Button }
+                            if (!isUtmbBrowserProfile(web.url.orEmpty(), expected)) return@Button
+                            val id = ++readId
+                            reading = true; message = ""; readingDetails = ""
+                            readJob = scope.launch {
+                                var linksFound = 0; var tableRowsFound = 0
+                                try {
+                                    suspend fun capture(): UtmbBrowserPreview? {
+                                        ensureActive()
+                                        val page = web.url.orEmpty()
+                                        check(isUtmbBrowserProfile(page, expected))
+                                        val raw = web.utmbEvaluate(UTMB_BROWSER_SCRIPT)
+                                        check(web.url == page && isUtmbBrowserProfile(web.url.orEmpty(), expected))
+                                        val json = runCatching { JSONTokener(raw).nextValue() as? String }.getOrNull().orEmpty()
+                                        require(json.length <= 60_000)
+                                        val counts = utmbReadCounts(json)
+                                        linksFound = maxOf(linksFound, counts.first)
+                                        tableRowsFound = maxOf(tableRowsFound, counts.second)
+                                        return runCatching { parseUtmbBrowserSnapshot(json, page, expected) }.getOrNull()
+                                    }
+                                    fun combine(old: UtmbBrowserPreview?, next: UtmbBrowserPreview?): UtmbBrowserPreview? {
+                                        if (next == null) return old
+                                        if (old == null) return next
+                                        val score = mergeUtmbCategoryScore(old.score.orEmpty(), next.score)
+                                        val rows = mergeUtmbRaceRows(old.results.orEmpty(), next.results)
+                                        val count = listOf("UTMB Index", "20K", "50K", "100K", "100M").count { utmbIndexValue(score.orEmpty(), it) != null }
+                                        return UtmbBrowserPreview(score, rows, count, rows?.lineSequence()?.count() ?: 0)
+                                    }
+                                    var result = capture()
+                                    if (result?.rows == null || result.rows == 0) {
+                                        scanning = true
+                                        web.utmbEvaluate(UTMB_RESULTS_SCROLL_SCRIPT)
+                                        delay(700)
+                                        var unchanged = 0; var bottom = 0
+                                        for (step in 0 until 12) {
+                                            ensureActive()
+                                            val previousRows = result?.rows ?: 0
+                                            result = combine(result, capture())
+                                            unchanged = if ((result?.rows ?: 0) == previousRows) unchanged + 1 else 0
+                                            if ((result?.rows ?: 0) > 0 && unchanged >= 2) break
+                                            if (!web.pageDown(false)) {
+                                                web.utmbEvaluate(UTMB_RESULTS_NEXT_SCROLL_SCRIPT)
+                                                bottom++
+                                            } else bottom = 0
+                                            delay(650)
+                                            if (bottom >= 3) break
+                                        }
+                                        result = combine(result, capture())
+                                    }
+                                    ensureActive()
+                                    check(readId == id && isUtmbBrowserProfile(web.url.orEmpty(), expected))
+                                    readingDetails = getString(R.string.utmb_read_counts, linksFound, tableRowsFound)
+                                    diagnostics.record(UtmbWebEvent.READ, web.url.orEmpty(), result?.rows ?: 0)
+                                    diagnostics.record(UtmbWebEvent.RACE_LINKS, web.url.orEmpty(), linksFound)
+                                    diagnostics.record(UtmbWebEvent.TABLE_ROWS, web.url.orEmpty(), tableRowsFound)
+                                    if (result == null) message = getString(R.string.utmb_web_empty) + "\n" + readingDetails
+                                    else {
+                                        preview = result; checked = false
+                                        if (result.rows == 0) message = getString(R.string.utmb_read_no_races)
+                                    }
+                                } catch (cancelled: CancellationException) { throw cancelled
+                                } catch (_: Exception) { message = getString(R.string.utmb_web_wrong)
+                                } finally { if (readId == id) { reading = false; scanning = false } }
                             }
-                        }) { Text(stringResource(R.string.utmb_web_read)) }
+                        }) { Text(stringResource(if (reading) R.string.utmb_read_stop else R.string.utmb_web_read)) }
+
                     }
                     popup?.let { child ->
                         Dialog(onDismissRequest = {
@@ -251,6 +311,10 @@ class UtmbProfileActivity : ComponentActivity() {
                             text = {
                                 Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                                     Text(getString(R.string.utmb_web_counts, data.categories, data.rows))
+                                    if (data.rows == 0) {
+                                        Text(stringResource(R.string.utmb_read_no_races), color = MaterialTheme.colorScheme.error)
+                                        Text(readingDetails, style = MaterialTheme.typography.bodySmall)
+                                    }
                                     Text(previewScore)
                                     Text(previewResults)
                                     Text(stringResource(R.string.utmb_web_review))
@@ -271,4 +335,8 @@ class UtmbProfileActivity : ComponentActivity() {
             }
         }
     }
+}
+
+private suspend fun WebView.utmbEvaluate(script: String): String = suspendCancellableCoroutine { continuation ->
+    evaluateJavascript(script) { result -> if (continuation.isActive) continuation.resume(result.orEmpty()) }
 }

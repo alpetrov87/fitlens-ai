@@ -399,4 +399,8 @@
 <string name="utmb_overall">Overall UTMB Index</string>
 <string name="utmb_missing_index">Index unavailable</string>
 <string name="utmb_open_race">Open race</string>
+<string name="utmb_read_scanning">Loading the race section below the charts… You can stop this read.</string>
+<string name="utmb_read_stop">Stop reading</string>
+<string name="utmb_read_no_races">No race rows were recognized in this read. Scroll to the visible race list, open its results tab if needed, then read again. The overall Index does not mean the races were imported.</string>
+<string name="utmb_read_counts">Race links: %1$d · recognized table rows: %2$d</string>
 </resources>

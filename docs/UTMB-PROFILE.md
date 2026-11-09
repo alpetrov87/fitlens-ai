@@ -177,3 +177,33 @@ explicit score cards, locked values and off-site links), Kotlin field validation
 cache merging, category parsing and prompt inclusion. The improved per-race
 selectors and visual appearance still require a phone test with the actual
 signed-in UTMB profile. If a layout is unsupported, it must not invent a score.
+
+## 0.25.1 — results below charts and non-link tables
+
+The user confirmed that even reading while the race list is visible returned
+only the overall Index. That points to unsupported row markup, not just lazy
+loading. The extractor now supports semantic tables/ARIA grids and ordinary
+responsive div grids with Date, Race and UTMB Score headers. A race name may be
+plain text or a button; a URL is no longer mandatory when those strong column
+labels identify the result. Unlinked rows merge by date, race title and distance.
+Arbitrary unlabeled numbers, rankings and the overall Index are still excluded.
+
+If the first explicit read finds no races, the app looks for a Results heading
+and makes up to 12 bounded page scroll/read passes, waiting between them for
+lazy-loaded content. Nested scroll containers are supported when the WebView
+itself cannot page down. The user can stop the operation; navigating or leaving
+the selected profile cancels it. Read snapshots are merged before preview to
+retain rows from virtualized content. There are no new private API calls,
+automated account clicks or authentication changes.
+
+A zero-race result now shows an explicit warning instead of implying that the
+overall Index is a complete import. Counts of found race links and table rows
+are displayed and included as numeric diagnostic events. No page HTML, login
+text or credential values are copied. Open any required Results tab/pagination
+manually, then read again. Existing saved results survive failed/empty reads.
+
+Tests cover plain-cell tables, div grids without links, unknown scores, race
+identity merging and bounded diagnostics. Actual UTMB DOM variants still require
+a phone check; if unsupported, report the displayed counts and a screenshot of
+the race section, without sign-in codes or cookies. No extraction success for
+the newly reported layout is claimed before that test.

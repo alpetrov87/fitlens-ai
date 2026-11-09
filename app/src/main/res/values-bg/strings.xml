@@ -399,4 +399,8 @@
 <string name="utmb_overall">Общ UTMB Index</string>
 <string name="utmb_missing_index">Няма наличен индекс</string>
 <string name="utmb_open_race">Отвори състезанието</string>
+<string name="utmb_read_scanning">Зареждам секцията със състезания под графиките… Можеш да спреш прочита.</string>
+<string name="utmb_read_stop">Спри прочита</string>
+<string name="utmb_read_no_races">В този прочит не са разпознати редове със състезания. Скролирай до видимия списък и отвори резултатите, ако има отделен таб, после прочети отново. Общият Index не означава, че състезанията са прочетени.</string>
+<string name="utmb_read_counts">Линкове към състезания: %1$d · разпознати таблични редове: %2$d</string>
 </resources>

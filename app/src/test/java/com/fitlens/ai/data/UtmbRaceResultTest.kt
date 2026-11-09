@@ -60,4 +60,19 @@ class UtmbRaceResultTest {
         val second = utmbRaceRow(race(400).put("url", "https://utmb.world/utmb-index/races/456.another.2026"))!!
         assertEquals(listOf(first, second), mergeUtmbRaceRows("", "$first\n$second")!!.lines())
     }
+    @Test fun plainCellRaceNeedsNoLinkAndMergesByDateAndName() {
+        val row = race().apply { remove("url") }
+        val first = utmbRaceRow(row)!!
+        assertNull(utmbRaceCardData(first).url)
+        assertEquals(312, utmbRaceCardData(first).score)
+        val updated = utmbRaceRow(row.put("score", 320))!!
+        val merged = mergeUtmbRaceRows(first, updated)!!
+        assertEquals(1, merged.lines().size)
+        assertEquals(320, utmbRaceCardData(merged).score)
+    }
+    @Test fun readDiagnosticsReportOnlyBoundedCounts() {
+        val raw = """{"diagnostics":{"raceLinks":0,"tableRows":7},"password":"DO_NOT_COPY"}"""
+        assertEquals(0 to 7, utmbReadCounts(raw))
+        assertEquals(0 to 0, utmbReadCounts("{}"))
+    }
 }

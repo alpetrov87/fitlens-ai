@@ -2,7 +2,7 @@ package com.fitlens.ai.data
 
 import java.net.URI
 
-internal enum class UtmbWebEvent { START, FINISH, HTTP, NETWORK, TLS, BLOCKED, POPUP, POPUP_BLOCKED, JS_ERROR, BLANK, COOKIES }
+internal enum class UtmbWebEvent { START, FINISH, HTTP, NETWORK, TLS, BLOCKED, POPUP, POPUP_BLOCKED, JS_ERROR, BLANK, COOKIES, READ, RACE_LINKS, TABLE_ROWS }
 
 /** Codes and hostnames only. Never retain URLs, login text, cookies, console messages or form values. */
 internal class UtmbWebDiagnostics {
