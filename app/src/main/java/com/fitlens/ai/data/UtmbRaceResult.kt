@@ -18,7 +18,7 @@ internal fun utmbRaceUrl(raw: String): String? = runCatching {
 internal fun utmbRaceRow(row: JSONObject): String? {
     fun text(key: String, max: Int) = (row.opt(key) as? String)?.replace(Regex("[\\r\\n\\t|]+"), " ")?.trim()?.take(max).orEmpty()
     val name = text("title", 160)
-    val date = text("date", 30).takeIf { it.matches(Regex("(?:20\\d{2}(?:[-/.]\\d{1,2}[-/.]\\d{1,2})?|\\d{1,2}[/.-]\\d{1,2}[/.-]20\\d{2})")) }
+    val date = utmbRaceDate(text("date", 40))
     val rawUrl = text("url", 500)
     val url = if (rawUrl.isBlank()) null else utmbRaceUrl(rawUrl) ?: return null
     if (name.isBlank() || date == null) return null
@@ -33,7 +33,7 @@ internal data class UtmbRaceCardData(val title: String, val date: String?, val s
 internal fun utmbRaceCardData(raw: String): UtmbRaceCardData {
     val parts = raw.split(" | ")
     val first = parts.firstOrNull().orEmpty()
-    val date = Regex("^(20\\d{2}(?:[-/.]\\d{1,2}[-/.]\\d{1,2})?|\\d{1,2}[/.-]\\d{1,2}[/.-]20\\d{2}) · ").find(first)?.groupValues?.get(1)
+    val date = utmbRaceDate(first.substringBefore(" · "))
     val score = Regex("UTMB(?:®)?\\s*(?:Score|Index)\\s*[:=]\\s*([1-9][0-9]{0,3})(?![0-9])", RegexOption.IGNORE_CASE)
         .find(raw)?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it in 1..1000 }
     val url = parts.firstNotNullOfOrNull { utmbRaceUrl(it.trim()) }
@@ -49,7 +49,7 @@ internal fun mergeUtmbRaceRows(previous: String, incoming: String?): String? {
         val row = raw.trim().take(600)
         if (row.isBlank()) return
         val parsed = utmbRaceCardData(row)
-        val key = parsed.url ?: parsed.date?.let { "${it}|${parsed.title}|" + Regex("\\d+(?:[.,]\\d+)?\\s*(?:km|км)", RegexOption.IGNORE_CASE).find(parsed.details)?.value.orEmpty() } ?: row
+        val key = parsed.url ?: parsed.date?.takeIf(::utmbRaceHasYear)?.let { "${it}|${parsed.title}|" + Regex("\\d+(?:[.,]\\d+)?\\s*(?:km|км)", RegexOption.IGNORE_CASE).find(parsed.details)?.value.orEmpty() } ?: row
         val old = rows[key]
         if (old != null && replace && parsed.score == null && utmbRaceCardData(old).score != null) return
         rows.remove(key); rows[key] = row
@@ -62,3 +62,19 @@ internal fun mergeUtmbRaceRows(previous: String, incoming: String?): String? {
     }
     return kept.joinToString("\n").takeIf { it.isNotBlank() }
 }
+
+
+/** Preserve a displayed month/day; a missing year must never be inferred from the phone clock. */
+internal fun utmbRaceDate(raw: String): String? {
+    val text = raw.trim()
+    if (text.matches(Regex("(?:20\\d{2}(?:[-/.]\\d{1,2}[-/.]\\d{1,2})?|\\d{1,2}[/.-]\\d{1,2}[/.-]20\\d{2})"))) return text
+    val match = Regex("^([A-Za-z]+)\\s+([0-9]{1,2})(?:,?\\s+(20[0-9]{2}))?$").matchEntire(text) ?: return null
+    return runCatching {
+        val month = java.time.Month.valueOf(match.groupValues[1].uppercase(java.util.Locale.ROOT))
+        val day = match.groupValues[2].toInt()
+        val year = match.groupValues[3].toIntOrNull()
+        if (year != null) java.time.LocalDate.of(year, month, day).toString()
+        else { java.time.MonthDay.of(month, day); "${month.name} $day" }
+    }.getOrNull()
+}
+internal fun utmbRaceHasYear(date: String): Boolean = Regex("\\b20\\d{2}\\b").containsMatchIn(date)

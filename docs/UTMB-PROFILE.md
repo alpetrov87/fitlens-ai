@@ -207,3 +207,30 @@ identity merging and bounded diagnostics. Actual UTMB DOM variants still require
 a phone check; if unsupported, report the displayed counts and a screenshot of
 the race section, without sign-in codes or cookies. No extraction success for
 the newly reported layout is claimed before that test.
+
+## 0.25.2 — actual mobile month/day result list
+
+The submitted phone screenshot established the missing format: month/day at
+left (e.g. NOVEMBER 7), race title/subtitle, a standalone score at right, and an
+ellipsis action. It contains no year, finish time, column headings or race link.
+Earlier adapters required fields this visible layout does not provide.
+
+A dedicated mobile adapter now anchors on a complete English month/day label,
+checks a bounded horizontally ordered date/name/score/menu row, rejects multiple
+dates or additional numeric columns, and extracts the selected score column.
+The absent-score symbol/empty marker is retained as unknown rather than zero.
+Names/subtitles are retained; duration and distances are never invented.
+
+A displayed month/day is valid without a year. An isolated adjacent year heading
+may supply the year; the phone clock never does. The app labels yearless records
+and the BG/EN ChatGPT prompt warns against assuming the current year. Unlinked
+yearless rows deduplicate by exact saved content, not a fabricated year identity.
+Known dated/linked record merging remains unchanged. The existing 4000-character
+profile-results bound and explicit preview/confirmation still apply.
+
+Synthetic mobile-layout fixtures match the screenshot structure, including five
+numeric scores and one unavailable score, with no headers, links, year or time.
+They also check an explicit year, ambiguous extra numeric columns, unknown
+markers, native date validation and prompt inclusion. Actual DOM nesting can
+still vary; the new phone read must confirm extraction, and no real account
+import is claimed from automated fixture success alone.

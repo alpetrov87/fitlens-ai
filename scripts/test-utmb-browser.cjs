@@ -41,3 +41,43 @@ assert.equal(fixture('Locked','overall').races[0].score,null);
 assert.equal(fixture(312,'table',true).races.length,0);
 assert(!JSON.stringify(table).includes('NEVER_EXPORT'));
 console.log('UTMB race fixtures passed: labeled table scores vs rank, duplicate links, cards, locked scores, off-site rejection, no state secrets');
+
+// Mobile layout matching the submitted screenshot: no year, time, header or anchor.
+function mobileFixture(withYear=false,ambiguous=false,placeholder='') {
+ const dates=['NOVEMBER 7','OCTOBER 4','SEPTEMBER 26','SEPTEMBER 13','JULY 19','JUNE 6'];
+ const scores=[349,305,333,310,337,null], elements=[], container=node();
+ const year=node('2026');year.tagName='H3';
+ function attach(parent,children){parent.children=children;children.forEach(c=>c.parentElement=parent);return parent;}
+ function all(e){return e.children.flatMap(c=>[c,...all(c)]);}
+ function enhance(e,left=0,width=100) {
+  e.tagName=e.tagName||'DIV';e.getBoundingClientRect=()=>({left,width,height:100,top:0,right:left+width,bottom:100});
+  e.contains=x=>e===x || all(e).includes(x);e.matches=q=>e.tagName==='BUTTON' && q.includes('button');
+  const old=e.querySelectorAll.bind(e);
+  e.querySelectorAll=q=>q==='div,span,p,time'?all(e):q.includes('button')?all(e).filter(c=>c.tagName==='BUTTON'||c.tagName==='SVG'):old(q);
+  return e;
+ }
+ const rows=dates.map((date,i)=>{
+  const d=enhance(node(date),10,160), leaf=enhance(node(date),10,160);attach(d,[leaf]);elements.push(d,leaf);
+  const name=enhance(node(`Example trail ${i+1}\nExample event`),200,300);
+  const score=enhance(node(scores[i]===null?placeholder:String(scores[i])),580,60);
+  const menu=enhance(node('⋯'),660,30);menu.tagName='BUTTON';
+  const row=enhance(node(`${date} ${name.innerText} ${score.innerText} ⋯`),0,720);
+  attach(row,[d,name,score,menu]);if(withYear)row.previousElementSibling=year;
+  if(ambiguous){const distance=enhance(node('25'),520,40);attach(row,[d,name,distance,score,menu]);}
+  return row;
+ });
+ attach(container,rows);
+ const state={props:{pageProps:{performanceIndexes:[{piCategory:'general',index:339}]}}};
+ const document={baseURI:'https://utmb.world/en/runner/123.sample.runner',querySelector:()=>({textContent:JSON.stringify(state)}),querySelectorAll:q=>q==='div,span,p,time'?elements:[]};
+ return JSON.parse(vm.runInNewContext(source,{document,URL}));
+}
+const mobile=mobileFixture();
+assert.equal(mobile.races.length,6);
+assert.deepStrictEqual(mobile.races.map(r=>r.score),[349,305,333,310,337,null]);
+assert.equal(mobile.races[0].date,'NOVEMBER 7');
+assert.equal(mobile.races[0].time,'');
+assert.equal(mobileFixture(true).races[0].date,'NOVEMBER 7, 2026');
+assert.equal(mobileFixture(false,true).races.length,0);
+assert.equal(mobileFixture(false,false,'?').races.length,6);
+assert.equal(mobileFixture(false,false,'0').races[5].score,null);
+console.log('UTMB mobile screenshot-layout fixtures passed: month/day, five scores and one unavailable, no invented year/time, ambiguous numeric columns rejected');

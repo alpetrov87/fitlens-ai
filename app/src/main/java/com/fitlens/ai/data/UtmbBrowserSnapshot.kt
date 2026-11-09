@@ -212,6 +212,63 @@ internal val UTMB_BROWSER_SCRIPT = """(function(){
         }
         if(races.size>=30) break;
     }
+    // Mobile result list: MONTH DAY | race name/subtitle | score | ellipsis menu.
+    // This layout has no table headers, finish time, year or race link.
+    const monthDay=/^(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+([1-9]|[12]\d|3[01])${'$'}/i;
+    const shown=e=>e && (e.getClientRects().length || Array.from(e.children || []).some(c=>c.getClientRects().length));
+    const dates=Array.from(document.querySelectorAll('div,span,p,time')).slice(0,16000).filter(e=>shown(e) && monthDay.test(norm(e.innerText)));
+    const boundsFor=e=>{
+        const box=e.getBoundingClientRect();
+        if(box.width>0 && box.height>0) return box;
+        const boxes=Array.from(e.children).flatMap(c=>[c,...Array.from(c.children)]).slice(0,40).map(c=>c.getBoundingClientRect()).filter(b=>b.width>0 && b.height>0);
+        if(!boxes.length) return box;
+        const left=Math.min(...boxes.map(b=>b.left)),right=Math.max(...boxes.map(b=>b.right)),top=Math.min(...boxes.map(b=>b.top)),bottom=Math.max(...boxes.map(b=>b.bottom));
+        return {left,right,top,bottom,width:right-left,height:bottom-top};
+    };
+    const rowYear=row=>{
+        let block=row;
+        for(let depth=0;block && depth<4;depth++,block=block.parentElement) {
+            const prev=block.previousElementSibling;
+            if(prev && /^(?:H[1-6])${'$'}/.test(prev.tagName) && /^20\d{2}${'$'}/.test(norm(prev.innerText))) return norm(prev.innerText);
+        }
+        return '';
+    };
+    const isMenu=e=>{
+        if(!e) return false;
+        const t=norm(e.innerText);
+        return /^[.·•⋯…]+${'$'}/.test(t) || e.matches('button,[role=button],[aria-haspopup]') || e.querySelectorAll('button,[role=button],[aria-haspopup],svg').length>0;
+    };
+    for(const dateNode of dates) {
+        let row=dateNode.parentElement;
+        for(let depth=0;row && depth<5;depth++,row=row.parentElement) {
+            let cells=Array.from(row.children).filter(shown);
+            if(cells.length===2 && cells[0].contains(dateNode)) cells=[cells[0],...Array.from(cells[1].children).filter(shown)];
+            if(cells.length<3 || cells.length>5) continue;
+            const dateCol=cells.findIndex(c=>c===dateNode || c.contains(dateNode));
+            if(dateCol<0 || dateCol>1 || dateCol+2>=cells.length) continue;
+            const nameCell=cells[dateCol+1], scoreCell=cells[dateCol+2], menuCell=cells[dateCol+3] || scoreCell;
+            if(!isMenu(menuCell) || cells.slice(dateCol+3).some(c=>integer(norm(c.innerText))!==null)) continue;
+            const within=Array.from(row.querySelectorAll('div,span,p,time')).filter(e=>shown(e) && monthDay.test(norm(e.innerText)));
+            if(new Set(within.map(e=>norm(e.innerText).toUpperCase())).size>1) break;
+            const bounds=boundsFor(row), dateBounds=boundsFor(cells[dateCol]), nameBounds=boundsFor(nameCell), scoreBounds=boundsFor(scoreCell);
+            if(bounds.width<180 || bounds.height<=0 || nameBounds.left<=dateBounds.left || scoreBounds.left<=nameBounds.left) continue;
+            if(Math.abs((scoreBounds.top+scoreBounds.height/2)-(dateBounds.top+dateBounds.height/2))>Math.max(dateBounds.height,scoreBounds.height,80)) continue;
+            const title=(nameCell.innerText || '').split(/\n+/).map(norm).filter(Boolean).filter((x,i,a)=>a.indexOf(x)===i).join(' · ').slice(0,160);
+            if(!title || /^\d+${'$'}/.test(title) || monthDay.test(title)) continue;
+            const text=norm(scoreCell.innerText).replace(/[.·•⋯…]+${'$'}/,'').trim();
+            const score=integer(text);
+            if(score===null && text && !/^(?:—|-|\?|0|N\/A|unavailable|not available|not valid|unavailable UTMB (?:index|score))${'$'}/i.test(text)) continue;
+            const year=rowYear(row), date=norm(dateNode.innerText).toUpperCase()+(year?', '+year:'');
+            const link=Array.from(nameCell.querySelectorAll('a[href*="/races/"]')).find(a=>raceUrl(a)), url=link?raceUrl(link):'';
+            const distance=title.match(/\b\d{1,4}(?:[.,]\d{1,2})?\s*(?:km|км)\b/i);
+            const key=url || date+'|'+title+'|'+(distance?distance[0]:'');
+            const next={title,date,score,time:'',distance:distance?distance[0]:'',url};
+            if(!races.has(key) || races.get(key).score===null) races.set(key,next);
+            tableRows++;
+            break;
+        }
+        if(races.size>=30) break;
+    }
     return JSON.stringify({indexes:Array.from(found,([piCategory,index])=>({piCategory,index})),races:Array.from(races.values()).slice(0,30),rows:[],diagnostics:{raceLinks:links.length,tableRows}});
 })();"""
 

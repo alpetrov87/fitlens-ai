@@ -241,6 +241,7 @@ private fun UtmbRaceResultCard(raw: String) {
                 Icon(Icons.Default.EmojiEvents, null, tint = MaterialTheme.colorScheme.primary)
                 result.date?.let { Text(it, style = MaterialTheme.typography.labelMedium) }
             }
+            if (result.date != null && !utmbRaceHasYear(result.date)) Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.utmb_year_unknown), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(result.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Surface(color = Color(0xFF04153D), shape = RoundedCornerShape(14.dp)) {
                 Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {

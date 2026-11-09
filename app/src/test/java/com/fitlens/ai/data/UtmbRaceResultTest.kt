@@ -75,4 +75,33 @@ class UtmbRaceResultTest {
         assertEquals(0 to 7, utmbReadCounts(raw))
         assertEquals(0 to 0, utmbReadCounts("{}"))
     }
+    @Test fun screenshotMonthDayWithoutYearOrTimeIsPreserved() {
+        val input = JSONObject().put("title", "Example Trail 25K").put("date", "NOVEMBER 7").put("score", 349)
+        val row = utmbRaceRow(input)!!
+        val card = utmbRaceCardData(row)
+        assertEquals("NOVEMBER 7", card.date)
+        assertEquals("Example Trail 25K", card.title)
+        assertEquals(349, card.score)
+        assertFalse(utmbRaceHasYear(card.date!!))
+        assertFalse(row.contains("2026"))
+        assertFalse(row.contains(":" + "00"))
+    }
+    @Test fun onlyExplicitYearIsUsedAndInvalidMonthDaysAreRejected() {
+        assertEquals("2026-11-07", utmbRaceDate("NOVEMBER 7, 2026"))
+        assertTrue(utmbRaceHasYear("2026-11-07"))
+        assertNull(utmbRaceDate("NOVEMBER 31"))
+        assertNull(utmbRaceDate("FEBRUARY 30"))
+        assertNull(utmbRaceDate("UNKNOWN 7"))
+    }
+    @Test fun yearlessBrowserRowsReachTheReviewedPromptWithoutInventingAYear() {
+        val snapshot = JSONObject().put("races", org.json.JSONArray().put(JSONObject()
+            .put("title", "Example Trail").put("date", "JUNE 6").put("score", JSONObject.NULL)))
+        val preview = parseUtmbBrowserSnapshot(snapshot.toString(), "https://utmb.world/en/runner/123.sample.runner", "123.sample.runner")
+        assertEquals(1, preview.rows)
+        assertTrue(preview.results!!.contains("JUNE 6 · Example Trail | UTMB Score: —"))
+        val profile = RunnerProfile("UTMB", results = preview.results)
+        val report = ChatGptShareReport.build(emptyList(), emptyList(), null, listOf(profile), "en")
+        assertTrue(report.contains("do not assume the current year"))
+        assertTrue(report.contains("JUNE 6"))
+    }
 }
