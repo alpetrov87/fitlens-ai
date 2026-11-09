@@ -370,7 +370,22 @@
   <string name="mh_garmin_backup">Garmin nutrition · backup data</string>
   <string name="home_summary">Overview</string>
   <string name="home_minutes">min</string>
-<string name="utmb_note">Public UTMB profile: overall Index and 20K / 50K / 100K / 100M. — means unavailable. UTMB Index differs from ITRA and Running Stones. Refresh reads the public page; it is not an official API integration.</string>
+<string name="utmb_note">UTMB Index is separate from ITRA and Running Stones. Sign in on the website to read available account data, then review and save. — means unavailable; partial reads can retain earlier saved values.</string>
 <string name="utmb_unavailable">No supported UTMB profile data found. The page may require JavaScript or have changed. Saved values are preserved.</string>
 <string name="utmb_imported">Read UTMB category indexes from the public profile. Missing categories are shown as —. Verify the values before saving.</string>
+<string name="utmb_web_title">UTMB · Sign in and read</string>
+<string name="utmb_web_help">Sign in on the website, then choose My profile. Open the race results you want to read. Nothing is saved until you review and confirm.</string>
+<string name="utmb_web_navigation">This sign-in requires a different app or an unsupported address. Use an HTTPS website sign-in if offered.</string>
+<string name="utmb_web_failed">The website did not load. Check your connection or try another website sign-in option.</string>
+<string name="utmb_web_back">Back</string>
+<string name="utmb_web_profile">My profile</string>
+<string name="utmb_web_read">Read opened profile</string>
+<string name="utmb_web_wrong">Open the complete UTMB profile link for the selected runner. Reading is disabled on sign-in pages and other profiles.</string>
+<string name="utmb_web_empty">No supported fields found. Finish sign-in, return to My profile and open results. The website may use a different layout; saved values are preserved.</string>
+<string name="utmb_web_preview">Preview UTMB data</string>
+<string name="utmb_web_counts">Read categories: %1$d · result rows: %2$d</string>
+<string name="utmb_web_review">Check the profile and all values. Missing categories or results retain saved data only for the same runner. This is a partial snapshot of supported fields, not a complete account export.</string>
+<string name="utmb_web_confirm">I checked the profile and data</string>
+<string name="utmb_web_source">Opened UTMB profile; missing fields may retain earlier saved values</string>
+<string name="utmb_web_saved">UTMB data saved. It is included in your ChatGPT report.</string>
 </resources>

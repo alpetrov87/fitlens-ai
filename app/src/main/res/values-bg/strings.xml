@@ -370,7 +370,22 @@
   <string name="mh_garmin_backup">Резервни данни за хранене от Garmin</string>
   <string name="home_summary">Обобщение</string>
   <string name="home_minutes">мин</string>
-<string name="utmb_note">Публичен UTMB профил: общ Index и 20K / 50K / 100K / 100M. — означава липсващ индекс. UTMB Index е различен от ITRA и Running Stones. Обновяването чете публичната страница; това не е официална API интеграция.</string>
+<string name="utmb_note">UTMB Index е различен от ITRA и Running Stones. Влез в сайта за достъпните данни от профила, после прегледай и запази. — означава липсващ индекс; частичният прочит може да запази предишни стойности.</string>
 <string name="utmb_unavailable">Не намерих поддържани данни за UTMB профил. Страницата може да изисква JavaScript или да е променена. Запазените стойности остават.</string>
 <string name="utmb_imported">Прочетени са UTMB индексите по категории от публичния профил. Липсващите категории са с —. Провери стойностите преди запис.</string>
+<string name="utmb_web_title">UTMB · Вход и прочит</string>
+<string name="utmb_web_help">Влез в сайта, после избери „Моят профил“. Отвори резултатите, които искаш да прочетеш. Записът става след преглед и потвърждение.</string>
+<string name="utmb_web_navigation">Този вход изисква друго приложение или неподдържан адрес. Използвай вход през HTTPS сайта, ако е наличен.</string>
+<string name="utmb_web_failed">Сайтът не се зареди. Провери връзката или пробвай друга опция за вход в сайта.</string>
+<string name="utmb_web_back">Назад</string>
+<string name="utmb_web_profile">Моят профил</string>
+<string name="utmb_web_read">Прочети отворения профил</string>
+<string name="utmb_web_wrong">Отвори пълния UTMB профилен линк на избрания бегач. Прочитът е изключен на страниците за вход и на други профили.</string>
+<string name="utmb_web_empty">Не намерих поддържани полета. Завърши входа, върни се в „Моят профил“ и отвори резултатите. Сайтът може да има различен изглед; запазените стойности остават.</string>
+<string name="utmb_web_preview">Преглед на UTMB данните</string>
+<string name="utmb_web_counts">Прочетени категории: %1$d · редове с резултати: %2$d</string>
+<string name="utmb_web_review">Провери профила и стойностите. Липсващите категории или резултати запазват предишни данни само за същия бегач. Това е частичен прочит на поддържани полета, не пълен експорт на профила.</string>
+<string name="utmb_web_confirm">Проверих профила и данните</string>
+<string name="utmb_web_source">Отворен UTMB профил; липсващи полета може да са запазени от предишен прочит</string>
+<string name="utmb_web_saved">UTMB данните са запазени. Включват се в отчета за ChatGPT.</string>
 </resources>

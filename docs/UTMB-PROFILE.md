@@ -56,3 +56,50 @@ prompt integration are tested with explicitly synthetic fixtures based on the
 above source; API/site access and the latest page schema require the phone test.
 The site may change its schema or restrict access. Failures are shown; no
 invented values, hidden search fallback, or authentication bypass is used.
+
+## 0.24.1 — experimental manual website sign-in and read
+
+The user confirmed that their UTMB website account displays category indexes
+and per-race data after signing in. No official authenticated API contract or
+SSO implementation was verified from this environment. We therefore do not
+invent an OAuth client, scrape passwords, replay cookies through a backend, or
+promise background authenticated synchronization.
+
+UTMB refresh actions now open a dedicated in-app website screen. Enter the
+complete profile link in Progress → UTMB, choose **UTMB · Вход и прочит**, use
+the website's own sign-in button, and complete normal verification there.
+Press **Моят профил**, open the desired results, then **Прочети отворения
+профил**. Inspect the preview and confirm the runner/values before saving.
+The report is the existing saved UTMB profile, automatically included in the
+reviewable ChatGPT prompt. On returning, Progress reloads the saved profile.
+
+The default Android WebView session stays in the app's private browser storage;
+CookieManager.flush persists website sessions, not passwords collected by bAIr.
+The app never exports cookies/tokens or injects a native JavaScript interface.
+MFP cookies are not cleared. Sign out through UTMB's website; no blanket
+CookieManager clear is used. Only HTTPS main-frame navigation is accepted;
+file/content access and mixed content are disabled, TLS errors are cancelled,
+third-party cookies remain disabled. The actual host is displayed throughout
+sign-in. SSO may use other HTTPS domains as a normal website browser would.
+Read actions are disabled outside the exact UTMB runner ID, including all
+sign-in origins; the page URL is rechecked after the JS callback.
+
+The fixed JS reads selected numeric `performanceIndexes` from page state and
+strict visible category-label/score pairs. It returns no full HTML, form values,
+passwords, cookies, localStorage or OAuth state. Per-race extraction is limited
+to visible UTMB race links whose bounded ancestor row has a date/year, finish
+time and a UTMB score/index label (including table headings). Unsupported card
+layouts, hidden tooltips, pagination, or unloaded tabs can return no rows. The
+preview reports only the number actually read. At most 30 rows and 4000 stored
+characters are retained. This is not an exhaustive account export. Missing
+categories/results can retain earlier cached data for the same runner only;
+the preview shows the resulting combined values and explains this behavior.
+Changing runner never transfers cached data to the new runner.
+
+No CAPTCHA/MFA/SSO restrictions are bypassed. Providers such as Google can
+refuse embedded-browser sign-in; use another normal website sign-in method if
+offered. There is no token-copy workaround. Real login, authenticated category
+access and per-race import remain unverified until the user's phone test.
+Automated tests use synthetic snapshots and validate origin/ID checks, limits,
+field selection and conservative cache handling. JS syntax/fixtures are also
+checked locally. Do not send login passwords, tokens or MFA codes in chat.

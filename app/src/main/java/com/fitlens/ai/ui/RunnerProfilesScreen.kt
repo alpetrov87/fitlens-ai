@@ -2,6 +2,8 @@ package com.fitlens.ai.ui
 
 import android.content.Intent
 import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -49,11 +51,26 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
     var busy by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
 
+    val utmbLogin = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            saved = store.all().first { it.provider == initial.provider }
+            url = saved.url; score = saved.score; results = saved.results; source = saved.source
+            editing = false; message = context.getString(com.fitlens.ai.R.string.utmb_web_saved)
+        }
+    }
     fun save(profile: RunnerProfile) {
         store.save(profile)
         saved = store.all().first { it.provider == initial.provider }
     }
     fun refresh() {
+        if (initial.provider == "UTMB") {
+            runCatching {
+                val target = (if (editing) url else saved.url).trim()
+                utmbProfileSlug(target)
+                utmbLogin.launch(Intent(context, com.fitlens.ai.UtmbProfileActivity::class.java).putExtra("profile_url", target))
+            }.onFailure { message = context.getString(com.fitlens.ai.R.string.utmb_web_wrong) }
+            return
+        }
         busy = true
         scope.launch {
             try {
@@ -108,7 +125,7 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
             }
             }
             Button(onClick = { refresh() }, enabled = !busy && saved.url.isNotBlank(), modifier = Modifier.fillMaxWidth()) {
-                Text(if (busy) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_147) else com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_148))
+                Text(if (initial.provider == "UTMB") context.getString(com.fitlens.ai.R.string.utmb_web_title) else if (busy) com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_147) else com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_148))
             }
             TextButton(onClick = {
                 url = saved.url; score = saved.score; results = saved.results; source = saved.source; message = null; editing = true
@@ -116,7 +133,7 @@ private fun RunnerProviderCard(initial: RunnerProfile, store: RunnerProfileStore
         } else {
             OutlinedTextField(url, { if (initial.provider == "UTMB" && it.take(500) != url) { score = ""; results = "" }; url = it.take(500); source = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_149) }, enabled = !busy,
                 label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_040)) }, modifier = Modifier.fillMaxWidth())
-            OutlinedButton(onClick = { refresh() }, enabled = !busy && url.isNotBlank()) { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_041)) }
+            OutlinedButton(onClick = { refresh() }, enabled = !busy && url.isNotBlank()) { Text(androidx.compose.ui.res.stringResource(if (initial.provider == "UTMB") com.fitlens.ai.R.string.utmb_web_title else com.fitlens.ai.R.string.ui_041)) }
             OutlinedTextField(score, { score = it.take(120); source = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_150) }, enabled = !busy,
                 label = { Text(androidx.compose.ui.res.stringResource(com.fitlens.ai.R.string.ui_042)) }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(results, { results = it.take(4000); source = com.fitlens.ai.data.LocalizedText.get(com.fitlens.ai.R.string.extra_150) }, enabled = !busy,
